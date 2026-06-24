@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: childcare-task-agent-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: childcare_task_agent
+      POSTGRES_USER: childcare
+      POSTGRES_PASSWORD: childcare
+    ports:
+      - "5432:5432"
+    volumes:
+      - childcare-task-agent-data:/var/lib/postgresql/data
+
+volumes:
+  childcare-task-agent-data:
