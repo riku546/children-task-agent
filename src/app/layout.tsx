@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ClipboardCheck, Home, ListTodo, Users } from "lucide-react";
+import { UserNav } from "@/components/UserNav";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -28,17 +29,20 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
                 </span>
                 <span>育児タスクAI</span>
               </Link>
-              <nav className="hidden items-center gap-1 md:flex">
-                {navItems.map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <Link key={item.href + item.label} href={item.href} className="button-secondary min-h-9 px-3">
-                      <Icon size={17} />
-                      {item.label}
-                    </Link>
-                  );
-                })}
-              </nav>
+              <div className="flex items-center gap-2">
+                <nav className="hidden items-center gap-1 md:flex">
+                  {navItems.map((item) => {
+                    const Icon = item.icon;
+                    return (
+                      <Link key={item.href + item.label} href={item.href} className="button-secondary min-h-9 px-3">
+                        <Icon size={17} />
+                        {item.label}
+                      </Link>
+                    );
+                  })}
+                </nav>
+                <UserNav />
+              </div>
             </div>
           </header>
           <main>{children}</main>

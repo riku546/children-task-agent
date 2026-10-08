@@ -26,9 +26,22 @@ npm run dev
 
 外部サービスは後から設定できます。`OPENROUTER_API_KEY` が未設定の場合は、簡易ルールベースのTODO生成にフォールバックします。Google Calendar の環境変数が未設定の場合は、デモ用のイベントIDを保存します。
 
+ログインには Supabase Auth を使います。Supabase プロジェクトの URL と publishable key を `.env` に設定してください。
+
+```bash
+NEXT_PUBLIC_SUPABASE_URL="https://your-project.supabase.co"
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY="sb_publishable_..."
+```
+
+Googleログインを使う場合は、Supabase Dashboard の Authentication Providers で Google を有効化し、Google Cloud の OAuth client ID / client secret を登録してください。Supabase の Redirect URLs には以下を追加します。
+
+```text
+http://localhost:3000/auth/callback
+```
+
 ## 画面
 
-- `/login`: デモログイン、Googleログイン導線
+- `/login`: メールアドレス/パスワードログイン、新規登録、Googleログイン
 - `/dashboard`: 今日・明日・未完了TODO
 - `/tasks/new`: テキスト、画像OCR、PDF抽出/OCR、音声入力、AI TODO候補確認
 - `/tasks/[id]`: TODO詳細、編集、完了、Googleカレンダー追加

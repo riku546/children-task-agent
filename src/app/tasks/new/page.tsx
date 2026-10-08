@@ -59,7 +59,7 @@ export default function NewTaskPage() {
 
     // PDFは先に埋め込みテキストを試し、取れないページだけ画像化してOCRする。
     const pdfjs = await import("pdfjs-dist");
-    pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
+    pdfjs.GlobalWorkerOptions.workerSrc = new URL("pdfjs-dist/build/pdf.worker.min.mjs", import.meta.url).toString();
     const buffer = await file.arrayBuffer();
     const pdf = await pdfjs.getDocument({ data: buffer }).promise;
     const pageLimit = Math.min(pdf.numPages, 3);

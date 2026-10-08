@@ -1,38 +1,35 @@
-import { cookies } from "next/headers";
+import type { User } from "@supabase/supabase-js";
 import { prisma, tryDb } from "@/lib/prisma";
 import { ensureMemoryGroup, upsertMemoryUser } from "@/lib/memory-store";
+import { createClient } from "@/lib/supabase/server";
 
-const COOKIE_NAME = "childcare_demo_email";
-
-export async function setDemoSession(email: string) {
-  const cookieStore = await cookies();
-  cookieStore.set(COOKIE_NAME, email, {
-    httpOnly: true,
-    sameSite: "lax",
-    path: "/",
-    maxAge: 60 * 60 * 24 * 30
-  });
+export class UnauthorizedError extends Error {
+  constructor() {
+    super("Unauthorized");
+    this.name = "UnauthorizedError";
+  }
 }
 
-export async function clearDemoSession() {
-  const cookieStore = await cookies();
-  cookieStore.delete(COOKIE_NAME);
+function getDisplayName(user: User) {
+  const metadata = user.user_metadata ?? {};
+  const name = metadata.name || metadata.full_name || metadata.preferred_username;
+  if (typeof name === "string" && name.trim()) return name.trim();
+  return user.email?.split("@")[0] || "ユーザー";
 }
 
-export async function getSessionEmail() {
-  const cookieStore = await cookies();
-  return cookieStore.get(COOKIE_NAME)?.value ?? null;
-}
+export async function syncApplicationUser(user: User) {
+  if (!user.email) {
+    throw new UnauthorizedError();
+  }
 
-export async function ensureCurrentUser() {
-  const email = (await getSessionEmail()) || "demo@example.com";
-  const name = email === "demo@example.com" ? "デモユーザー" : email.split("@")[0];
+  const email = user.email;
+  const name = getDisplayName(user);
 
   const dbUser = await tryDb(() =>
     prisma.user.upsert({
       where: { email },
-      update: { name },
-      create: { email, name }
+      update: { name, image: typeof user.user_metadata?.avatar_url === "string" ? user.user_metadata.avatar_url : undefined },
+      create: { email, name, image: typeof user.user_metadata?.avatar_url === "string" ? user.user_metadata.avatar_url : undefined }
     })
   );
 
@@ -52,7 +49,7 @@ export async function ensureCurrentUser() {
             create: {
               userId: dbUser.id,
               role: "OWNER",
-              displayName: dbUser.name || "デモユーザー"
+              displayName: dbUser.name || name
             }
           },
           children: {
@@ -65,10 +62,36 @@ export async function ensureCurrentUser() {
       });
     });
 
-    return { id: dbUser.id, email: dbUser.email, name: dbUser.name || name, defaultGroupId: group?.id ?? null };
+    return {
+      id: dbUser.id,
+      email: dbUser.email,
+      name: dbUser.name || name,
+      image: dbUser.image ?? null,
+      defaultGroupId: group?.id ?? null
+    };
   }
 
   const memoryUser = upsertMemoryUser(email, name);
   const memoryGroup = ensureMemoryGroup(memoryUser.id, memoryUser.name);
-  return { id: memoryUser.id, email: memoryUser.email, name: memoryUser.name, defaultGroupId: memoryGroup.id };
+  return {
+    id: memoryUser.id,
+    email: memoryUser.email,
+    name: memoryUser.name,
+    image: null,
+    defaultGroupId: memoryGroup.id
+  };
+}
+
+export async function ensureCurrentUser() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+    error
+  } = await supabase.auth.getUser();
+
+  if (error || !user) {
+    throw new UnauthorizedError();
+  }
+
+  return syncApplicationUser(user);
 }
