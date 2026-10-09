@@ -233,7 +233,7 @@ export default function FamilyTasksPage() {
   return (
     <section className="mx-auto max-w-6xl px-4 pb-20 pt-6 sm:px-6 md:pb-12 md:pt-8">
       {/* ページヘッダー */}
-      <div className="flex flex-col gap-2 border-b border-zinc-200/80 pb-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-2 pb-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-xs font-bold tracking-wider uppercase text-zinc-500">
             Team Workload & Assignment
@@ -269,8 +269,8 @@ export default function FamilyTasksPage() {
         </div>
       ) : null}
 
-      {/* フラットなツールバー & フィルター（カードではなくボーダーラインによる制御バー） */}
-      <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-b border-zinc-200 pb-3">
+      {/* フラットなツールバー & フィルター */}
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-3">
           {groups.length > 1 ? (
             <div className="flex items-center gap-1.5">
@@ -535,8 +535,8 @@ function TaskRow({
         <div className="min-w-0 flex-1">
           <Link
             href={`/tasks/${task.id}`}
-            className={`text-xs font-semibold leading-snug hover:underline block ${
-              isDone ? "line-through text-zinc-400" : "text-zinc-900"
+            className={`text-xs font-semibold leading-snug block transition ${
+              isDone ? "line-through text-zinc-400" : "text-zinc-900 hover:text-emerald-700"
             }`}
           >
             {task.title}

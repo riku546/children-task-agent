@@ -21,7 +21,7 @@ export function ConflictAlerts({ conflicts }: Props) {
   const totalCount = siblingConflicts.length + workConflicts.length;
 
   return (
-    <div className="border-b border-amber-200/90 bg-amber-50/40 text-amber-950 transition">
+    <div className="rounded border border-amber-200/90 bg-amber-50/40 text-amber-950 transition">
       {/* 1行インラインバー */}
       <div className="flex items-center justify-between gap-3 py-2 px-3">
         <div className="flex items-center gap-2 min-w-0">
@@ -37,7 +37,7 @@ export function ConflictAlerts({ conflicts }: Props) {
         <div className="flex items-center gap-2 shrink-0">
           <Link
             href="/family"
-            className="text-[11px] font-medium text-amber-800 hover:text-amber-950 underline underline-offset-2"
+            className="text-[11px] font-semibold text-amber-800 hover:text-amber-950"
           >
             分担調整
           </Link>

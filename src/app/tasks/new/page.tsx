@@ -238,33 +238,30 @@ function NewTaskContent() {
 
   return (
     <section className="mx-auto max-w-6xl px-4 pb-20 pt-6 sm:px-6 md:pb-12 md:pt-8">
-      {/* ページヘッダー */}
-      <div className="flex flex-col gap-1 border-b border-zinc-200/80 pb-4 sm:flex-row sm:items-center sm:justify-between">
+      {/* ページヘッダー（無駄なボーダー下線を排除） */}
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between pb-2">
         <div>
-          <p className="text-xs font-bold tracking-wider uppercase text-zinc-500">
-            Task Creation & AI Extraction
-          </p>
           <h1 className="text-xl font-bold tracking-tight text-zinc-950 sm:text-2xl">
             お便り・連絡からTODO作成
           </h1>
+          <p className="mt-0.5 text-xs text-zinc-500">
+            写真やPDFを取り込むとAIが持ち物や提出物を自動抽出します
+          </p>
         </div>
-        <p className="text-xs text-zinc-500">
-          写真やPDFを取り込むとAIが持ち物や提出物を自動抽出します
-        </p>
       </div>
 
-      {/* 統合スプリットパネルワークスペース（左右一体型パネル） */}
-      <div className="mt-6 overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-2xs grid lg:grid-cols-[380px_1fr] divide-y lg:divide-y-0 lg:divide-x divide-zinc-200">
-        {/* 左ペイン: 入力ソースパネル */}
-        <div className="flex flex-col bg-zinc-50/50 p-5">
-          <div className="border-b border-zinc-200 pb-3">
-            <span className="text-xs font-bold uppercase tracking-wider text-zinc-600">
+      {/* フラットなワークスペース（カードコンテナを完全撤廃し、ページ上に直接2カラム展開） */}
+      <div className="mt-6 grid gap-8 lg:grid-cols-[320px_1fr] items-start">
+        {/* 左カラム: 入力ソース */}
+        <div className="space-y-5">
+          <div>
+            <span className="text-xs font-bold uppercase tracking-wider text-zinc-500">
               1. ソースの選択・取り込み
             </span>
           </div>
 
           {/* 入力モード切替タブ */}
-          <div className="mt-4 grid grid-cols-4 gap-1 rounded-md border border-zinc-200 bg-zinc-100/80 p-0.5">
+          <div className="grid grid-cols-4 gap-1 rounded bg-zinc-200/60 p-0.5">
             {modes.map((item) => {
               const Icon = item.icon;
               const isActive = mode === item.id;
@@ -274,7 +271,7 @@ function NewTaskContent() {
                   type="button"
                   className={`flex items-center justify-center gap-1 rounded py-1.5 text-xs font-medium transition ${
                     isActive
-                      ? "bg-white text-zinc-900 shadow-2xs font-semibold"
+                      ? "bg-white text-zinc-900 font-semibold shadow-2xs"
                       : "text-zinc-600 hover:text-zinc-900"
                   }`}
                   onClick={() => setMode(item.id)}
@@ -287,7 +284,7 @@ function NewTaskContent() {
           </div>
 
           {/* グループ選択 */}
-          <div className="mt-4">
+          <div>
             <label className="block text-xs font-semibold text-zinc-700" htmlFor="group">
               共有先ファミリー
             </label>
@@ -306,7 +303,7 @@ function NewTaskContent() {
           </div>
 
           {/* ファイル取込・音声入力ボタン群 */}
-          <div className="mt-4 grid gap-2">
+          <div className="grid gap-2">
             <label className="button-secondary cursor-pointer justify-start">
               <Camera size={14} className="text-zinc-500" />
               <span>写真を撮影</span>
@@ -337,10 +334,10 @@ function NewTaskContent() {
             </button>
           </div>
 
-          {/* プレビューエリア */}
+          {/* プレビューエリア（カードで囲まず画像と削除ボタンのみすっきり表示） */}
           {previewUrl ? (
-            <div className="mt-4 rounded border border-zinc-200 bg-white p-3">
-              <div className="flex items-center justify-between pb-2 border-b border-zinc-100">
+            <div className="space-y-2 pt-1">
+              <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold text-zinc-700">添付プレビュー</span>
                 <button
                   type="button"
@@ -348,17 +345,17 @@ function NewTaskContent() {
                   onClick={clearImage}
                 >
                   <Trash2 size={12} />
-                  削除
+                  <span>削除</span>
                 </button>
               </div>
               <img
                 src={previewUrl}
                 alt="プレビュー"
-                className="mt-2 max-h-56 w-full rounded object-contain bg-zinc-50 border border-zinc-100"
+                className="max-h-60 w-full rounded object-contain bg-zinc-100"
               />
               <button
                 type="button"
-                className="button-primary mt-3 w-full"
+                className="button-primary w-full"
                 onClick={generate}
                 disabled={Boolean(busyText)}
               >
@@ -369,29 +366,29 @@ function NewTaskContent() {
           ) : null}
 
           {selectedGroup ? (
-            <div className="mt-auto pt-6 text-[11px] text-zinc-500">
+            <div className="pt-2 text-[11px] text-zinc-500">
               対象グループ:{" "}
               <span className="font-semibold text-zinc-700">{selectedGroup.name}</span>
             </div>
           ) : null}
         </div>
 
-        {/* 右ペイン: エディタ & TODO候補レビュー */}
-        <div className="flex flex-col divide-y divide-zinc-200">
-          {/* ソーステキスト確認エリア */}
-          <div className="p-5">
+        {/* 右カラム: テキスト入力 & 抽出されたTODO一覧 */}
+        <div className="space-y-6">
+          {/* ソーステキスト入力 */}
+          <div>
             <div className="flex items-center justify-between">
               <label
-                className="text-xs font-bold uppercase tracking-wider text-zinc-600"
+                className="text-xs font-bold uppercase tracking-wider text-zinc-500"
                 htmlFor="confirmed-text"
               >
                 2. 読み取りテキストの確認・編集
               </label>
-              <span className="text-[11px] text-zinc-600">直接編集可能</span>
+              <span className="text-[11px] text-zinc-500">直接編集可能</span>
             </div>
             <textarea
               id="confirmed-text"
-              className="field mt-2.5 min-h-36 resize-y font-mono text-xs leading-relaxed"
+              className="field mt-2 min-h-36 resize-y font-mono text-xs leading-relaxed"
               value={confirmedText}
               onChange={(event) => setConfirmedText(event.target.value)}
               placeholder="お便りのテキストをここに入力するか、左のメニューから写真・PDFを取り込んでください"
@@ -417,18 +414,18 @@ function NewTaskContent() {
 
           {/* 抽出結果・ドラフトTODOリスト */}
           {result ? (
-            <div className="p-5">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-zinc-200 pb-4">
+            <div className="space-y-4 pt-2">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold uppercase tracking-wider text-zinc-600">
+                    <span className="text-xs font-bold uppercase tracking-wider text-zinc-500">
                       3. 生成されたTODO候補
                     </span>
                     <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 border border-emerald-200/60">
                       {candidates.length} 件
                     </span>
                   </div>
-                  <p className="mt-1 text-sm font-semibold text-zinc-900">{result.summary}</p>
+                  <p className="mt-0.5 text-sm font-semibold text-zinc-900">{result.summary}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <button
@@ -451,13 +448,10 @@ function NewTaskContent() {
                 </div>
               </div>
 
-              {/* フラットなドラフトリスト（カードではなくボーダー区切りの行） */}
-              <div className="mt-4 divide-y divide-zinc-200 border-y border-zinc-200">
+              {/* フラットなドラフト行リスト */}
+              <div className="divide-y divide-zinc-200">
                 {candidates.map((candidate, index) => (
-                  <div
-                    key={`${candidate.title}-${index}`}
-                    className="py-4 space-y-3 transition hover:bg-zinc-50/50"
-                  >
+                  <div key={`${candidate.title}-${index}`} className="py-4 space-y-3">
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-[11px] font-bold text-zinc-600 font-mono">
                         #{index + 1}
@@ -545,7 +539,7 @@ function NewTaskContent() {
             </div>
           ) : (
             <div className="flex flex-1 flex-col items-center justify-center p-12 text-center text-zinc-500">
-              <Sparkles size={24} className="text-zinc-500 mb-2" />
+              <Sparkles size={24} className="text-zinc-400 mb-2" />
               <p className="text-xs font-medium text-zinc-600">
                 左側から画像・PDFを取り込むか、上のテキストエリアに入力して「TODO候補を抽出」を押してください。
               </p>

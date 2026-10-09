@@ -71,7 +71,7 @@ export default function GroupSettingsPage() {
   return (
     <section className="mx-auto max-w-5xl px-4 pb-20 pt-6 sm:px-6 md:pb-12 md:pt-8">
       {/* ページヘッダー */}
-      <div className="flex flex-col gap-3 border-b border-zinc-200/80 pb-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 pb-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
             <Link
@@ -119,10 +119,10 @@ export default function GroupSettingsPage() {
       <div className="mt-6 grid gap-8 lg:grid-cols-2">
         {/* メンバーセクション */}
         <div>
-          <div className="flex items-center justify-between pb-2 border-b border-zinc-200">
+          <div className="flex items-center justify-between pb-1">
             <div className="flex items-center gap-2">
               <Users size={15} className="text-zinc-500" />
-              <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-600">
+              <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-500">
                 所属メンバー ({group.members.length})
               </h2>
             </div>
@@ -144,10 +144,10 @@ export default function GroupSettingsPage() {
 
         {/* 子ども情報セクション */}
         <div>
-          <div className="flex items-center justify-between pb-2 border-b border-zinc-200">
+          <div className="flex items-center justify-between pb-1">
             <div className="flex items-center gap-2">
               <Baby size={15} className="text-zinc-500" />
-              <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-600">
+              <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-500">
                 登録中の子ども ({group.children.length})
               </h2>
             </div>

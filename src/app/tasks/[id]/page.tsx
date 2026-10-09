@@ -67,7 +67,7 @@ export default function TaskDetailPage() {
   return (
     <section className="mx-auto max-w-5xl px-4 pb-20 pt-6 sm:px-6 md:pb-12 md:pt-8">
       {/* ナビゲーション & アクションバー */}
-      <div className="flex flex-col gap-3 border-b border-zinc-200/80 pb-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 pb-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <Link
             href="/dashboard"
@@ -166,8 +166,8 @@ export default function TaskDetailPage() {
 
         {/* 右サイドバー: メタデータ属性パネル */}
         <aside className="space-y-5 lg:border-l lg:border-zinc-200 lg:pl-6">
-          <div className="border-b border-zinc-200/80 pb-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-zinc-600">
+          <div className="pb-1">
+            <span className="text-xs font-bold uppercase tracking-wider text-zinc-500">
               属性・プロパティ
             </span>
           </div>

@@ -46,11 +46,8 @@ export default function GroupsPage() {
   return (
     <section className="mx-auto max-w-5xl px-4 pb-20 pt-6 sm:px-6 md:pb-12 md:pt-8">
       {/* ページヘッダー */}
-      <div className="border-b border-zinc-200/80 pb-4">
-        <p className="text-xs font-bold tracking-wider uppercase text-zinc-500">
-          Organization & Family Workspace
-        </p>
-        <h1 className="mt-1 text-xl font-bold tracking-tight text-zinc-950 sm:text-2xl">
+      <div className="pb-2">
+        <h1 className="text-xl font-bold tracking-tight text-zinc-950 sm:text-2xl">
           家族グループ管理
         </h1>
         <p className="mt-0.5 text-xs text-zinc-500">
@@ -89,8 +86,8 @@ export default function GroupsPage() {
 
         {/* グループ一覧テーブル */}
         <div>
-          <div className="flex items-center justify-between pb-2 border-b border-zinc-200">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-600">
+          <div className="flex items-center justify-between pb-1">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-500">
               参加中のグループ ({groups.length})
             </h2>
           </div>

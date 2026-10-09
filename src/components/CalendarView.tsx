@@ -139,7 +139,7 @@ export function CalendarView({
   return (
     <div className="space-y-4">
       {/* カレンダー上部ツールバー */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-200 pb-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 pb-1">
         <div className="flex items-center gap-2.5">
           <h2 className="text-base font-bold tracking-tight text-zinc-950 sm:text-lg">
             {currentMonthDate.getFullYear()}年 {currentMonthDate.getMonth() + 1}月
@@ -354,7 +354,7 @@ export function CalendarView({
                       <div className="flex items-center gap-2 min-w-0">
                         <ChildBadge name={task.childName} isWork={isWork} size="sm" />
                         <span
-                          className={`font-semibold text-zinc-900 group-hover:underline truncate ${
+                          className={`font-semibold text-zinc-900 group-hover:text-emerald-700 transition truncate ${
                             task.status === "DONE" ? "line-through text-zinc-400" : ""
                           }`}
                         >

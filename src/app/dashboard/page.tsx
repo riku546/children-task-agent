@@ -238,7 +238,7 @@ export default function DashboardPage() {
       <FamilyTeamMeter tasks={tasks} />
 
       {/* 3. ツールバー（表示切り替えタブ ＋ ステータスカウント） */}
-      <div className="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-200 pb-3">
+      <div className="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-1">
         {/* セグメントコントロール */}
         <div className="flex items-center rounded-lg border border-zinc-200 bg-zinc-100/80 p-0.5">
           <button
