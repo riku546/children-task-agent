@@ -1,11 +1,11 @@
 "use client";
 
-import { LogIn } from "lucide-react";
+import { Layers, Loader2, ShieldCheck } from "lucide-react";
 import { useEffect, useState } from "react";
 
 function GoogleIcon() {
   return (
-    <svg className="size-5 shrink-0" viewBox="0 0 24 24">
+    <svg className="size-4 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
       <title>Google</title>
       <path
         fill="#4285F4"
@@ -57,48 +57,57 @@ export default function LoginPage() {
   }
 
   return (
-    <section className="mx-auto grid min-h-[calc(100vh-70px)] max-w-6xl items-center px-4 py-12">
-      <div className="grid gap-8 md:grid-cols-[1.1fr_0.9fr] md:items-center">
-        <div>
-          <p className="text-sm font-bold text-moss">Web MVP Prototype</p>
-          <h1 className="mt-3 max-w-2xl text-4xl font-black leading-tight tracking-normal md:text-6xl">
-            育児の連絡を、家族で動けるTODOへ。
+    <section className="mx-auto flex min-h-[calc(100vh-56px)] max-w-4xl flex-col items-center justify-center px-4 py-12">
+      <div className="w-full max-w-sm rounded-xl border border-zinc-200/90 bg-white p-6 sm:p-8 shadow-soft">
+        <div className="text-center">
+          <span className="mx-auto grid size-9 place-items-center rounded-lg bg-zinc-900 text-white shadow-2xs">
+            <Layers size={18} />
+          </span>
+          <h1 className="mt-4 text-xl font-bold tracking-tight text-zinc-950">
+            育児タスクAI にログイン
           </h1>
-          <p className="mt-5 max-w-xl text-base leading-8 text-ink/70">
-            園や学校からの書類・お便りをAIが読み取り、期限や提出物を家族で分担できるタスクに自動変換します。
+          <p className="mt-1.5 text-xs text-zinc-500">
+            Googleアカウントで安全にログインまたは新規登録
           </p>
         </div>
 
-        <div className="rounded-xl border border-ink/10 bg-white p-8 shadow-soft">
-          <div className="text-center sm:text-left">
-            <h2 className="text-2xl font-black text-ink">ログイン / 新規登録</h2>
-            <p className="mt-2 text-sm text-ink/65">
-              Googleアカウントを使って安全にログインできます。パスワードの入力や確認メールは不要です。
-            </p>
+        {error && (
+          <div className="mt-4 rounded-lg bg-rose-50 border border-rose-200 p-3 text-xs font-medium text-rose-700">
+            {error}
           </div>
+        )}
 
-          {error && (
-            <div className="mt-5 rounded-md bg-red-50 p-4 text-sm font-semibold text-red-700">
-              {error}
-            </div>
-          )}
-
-          <div className="mt-8 space-y-4">
-            <button
-              onClick={loginWithGoogle}
-              disabled={loading}
-              className="flex min-h-12 w-full items-center justify-center gap-3 rounded-lg border border-ink/20 bg-white px-4 py-3 text-base font-bold text-ink shadow-sm transition hover:bg-cloud hover:border-ink/30 focus-ring disabled:cursor-not-allowed disabled:opacity-60"
-            >
+        <div className="mt-6 space-y-3">
+          <button
+            type="button"
+            onClick={loginWithGoogle}
+            disabled={loading}
+            className="flex min-h-10 w-full items-center justify-center gap-2.5 rounded-lg border border-zinc-200 bg-white px-4 py-2.5 text-xs font-semibold text-zinc-800 shadow-2xs transition hover:bg-zinc-50 hover:border-zinc-300 focus-ring disabled:opacity-50"
+          >
+            {loading ? (
+              <Loader2 size={15} className="animate-spin text-zinc-400" />
+            ) : (
               <GoogleIcon />
-              <span>{loading ? "Googleへ移動中..." : "Googleでログイン・新規登録"}</span>
-            </button>
+            )}
+            <span>{loading ? "Googleへ移動中..." : "Googleで続ける"}</span>
+          </button>
 
-            <p className="pt-2 text-center text-xs leading-5 text-ink/50">
-              ボタンをクリックするとGoogleの認証画面に移動します。
-            </p>
+          <p className="pt-2 text-center text-[11px] text-zinc-400">
+            パスワード設定不要・1クリックで利用開始
+          </p>
+        </div>
+
+        <div className="mt-6 border-t border-zinc-100 pt-4">
+          <div className="flex items-center justify-center gap-1.5 text-[11px] text-zinc-500">
+            <ShieldCheck size={13} className="text-emerald-600" />
+            <span>ZDR準拠（推論後データ即時破棄）</span>
           </div>
         </div>
       </div>
+
+      <p className="mt-6 text-center text-xs text-zinc-500">
+        アカウント作成により、サービス利用規約およびプライバシーポリシーに同意したものとみなされます。
+      </p>
     </section>
   );
 }

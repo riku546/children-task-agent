@@ -66,22 +66,22 @@ export function UserNav() {
   return (
     <Link
       href="/profile"
-      className="group relative flex items-center gap-2 rounded-full border border-ink/15 bg-white p-1 transition hover:border-moss hover:shadow-sm focus-ring"
+      className="group relative flex items-center gap-2 rounded-full border border-zinc-200 bg-white p-1 transition hover:border-zinc-300 hover:shadow-2xs focus-ring"
       title={`${displayName} の設定・プロフィール`}
     >
       {user?.image ? (
         <img
           src={user.image}
           alt={displayName}
-          className="size-8 rounded-full object-cover"
+          className="size-7 rounded-full object-cover"
           referrerPolicy="no-referrer"
         />
       ) : (
-        <span className="grid size-8 place-items-center rounded-full bg-mint text-xs font-bold text-moss">
-          {initial || <CircleUserRound size={18} />}
+        <span className="grid size-7 place-items-center rounded-full bg-zinc-100 text-xs font-semibold text-zinc-700">
+          {initial || <CircleUserRound size={16} />}
         </span>
       )}
-      <span className="hidden pr-2 text-xs font-semibold text-ink/80 group-hover:text-ink md:inline">
+      <span className="hidden pr-2 text-xs font-medium text-zinc-700 group-hover:text-zinc-900 md:inline">
         {loading ? "..." : displayName}
       </span>
     </Link>

@@ -1,10 +1,9 @@
 "use client";
 
-import { Baby, Circle, Hand, Loader2, Plus, UserPlus } from "lucide-react";
+import { Check, Hand, Heart, Layers, Loader2, Plus, UserPlus } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { DuePill, PriorityPill } from "@/components/StatusPill";
-import { getChildTheme } from "@/lib/child-theme";
 import { invalidateCache } from "@/lib/client-cache";
 import type { GroupRecord, TaskRecord } from "@/lib/types";
 
@@ -105,20 +104,20 @@ export function SiblingTaskTimeline({
   return (
     <div className="mb-8">
       {/* セクションヘッダー */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-ink/10 pb-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-200/80 pb-3">
         <div className="flex items-center gap-2.5">
-          <span className="grid size-9 place-items-center rounded-xl bg-violet-100 text-violet-800 shadow-2xs">
-            <Baby size={20} />
+          <span className="grid size-8 place-items-center rounded-lg border border-zinc-200 bg-white text-zinc-700 shadow-2xs">
+            <Layers size={16} />
           </span>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="text-base font-black text-ink">きょうだい別の予定・持ち物</h3>
-              <span className="rounded-full bg-violet-100 px-2 py-0.5 text-[11px] font-bold text-violet-800">
-                二人目の壁を解消
+              <h3 className="text-sm font-bold text-zinc-900">きょうだい別タスクレーン</h3>
+              <span className="rounded bg-zinc-100 px-1.5 py-0.5 font-mono text-[10px] font-medium text-zinc-600">
+                Multi-Child
               </span>
             </div>
-            <p className="text-xs text-ink/65">
-              子どもごとに持ち物・提出物をレーン分け。情報が混ざらずダブルブッキングを防ぎます
+            <p className="text-[11px] text-zinc-500">
+              子どもごとに提出物・持ち物・予定を分離。重複や混同を防止します
             </p>
           </div>
         </div>
@@ -129,42 +128,40 @@ export function SiblingTaskTimeline({
             <button
               type="button"
               onClick={() => setShowAddForm(!showAddForm)}
-              className="inline-flex items-center gap-1 rounded-lg border border-ink/15 bg-white px-2.5 py-1 text-xs font-bold text-ink transition hover:bg-cloud"
+              className="button-secondary text-xs"
             >
-              <UserPlus size={13} className="text-moss" />
-              <span>子どもを登録</span>
+              <UserPlus size={13} className="text-zinc-500" />
+              <span>お子さんを追加</span>
             </button>
           )}
 
           {/* 子どもフィルターチップ（2人以上いる場合） */}
           {allChildren.length > 1 && (
-            <div className="flex flex-wrap items-center gap-1">
+            <div className="flex items-center rounded-lg border border-zinc-200 bg-zinc-100/80 p-0.5">
               <button
                 type="button"
                 onClick={() => setSelectedChildTab("all")}
-                className={`rounded-full px-2.5 py-0.5 text-xs font-bold transition ${
+                className={`rounded-md px-2 py-1 text-xs font-medium transition ${
                   selectedChildTab === "all"
-                    ? "bg-moss text-white shadow-xs"
-                    : "border border-ink/15 bg-white text-ink/70 hover:bg-cloud"
+                    ? "bg-white font-semibold text-zinc-900 shadow-2xs"
+                    : "text-zinc-600 hover:text-zinc-900"
                 }`}
               >
                 全員
               </button>
               {allChildren.map((c) => {
-                const theme = getChildTheme(c.name);
                 const isSelected = selectedChildTab === c.name;
                 return (
                   <button
                     key={c.name}
                     type="button"
                     onClick={() => setSelectedChildTab(c.name)}
-                    className={`flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-bold transition ${
+                    className={`rounded-md px-2 py-1 text-xs font-medium transition ${
                       isSelected
-                        ? `${theme.badgeBg} ${theme.badgeText} border ${theme.border} ring-2 ring-moss/30`
-                        : "border border-ink/15 bg-white text-ink/70 hover:bg-cloud"
+                        ? "bg-white font-semibold text-zinc-900 shadow-2xs"
+                        : "text-zinc-600 hover:text-zinc-900"
                     }`}
                   >
-                    <span className={`size-1.5 rounded-full ${theme.dotColor}`} />
                     <span>{c.name}</span>
                   </button>
                 );
@@ -178,9 +175,9 @@ export function SiblingTaskTimeline({
       {showAddForm && (
         <form
           onSubmit={handleAddChild}
-          className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-violet-200 bg-violet-50/60 p-3 shadow-2xs animate-in fade-in"
+          className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-zinc-200 bg-white p-3 shadow-2xs animate-in fade-in"
         >
-          <span className="text-xs font-bold text-violet-900">お子さんの名前:</span>
+          <span className="text-xs font-semibold text-zinc-700">お子さんの名前:</span>
           <input
             type="text"
             value={newChildName}
@@ -210,17 +207,15 @@ export function SiblingTaskTimeline({
       {/* きょうだい別カードレーン表示 */}
       <div className="mt-4">
         {allChildren.length === 0 ? (
-          /* 子どもがまだ1人もいない場合の案内カード */
-          <div className="rounded-2xl border border-dashed border-violet-200 bg-gradient-to-br from-violet-50/50 to-cloud p-8 text-center">
-            <span className="mx-auto grid size-12 place-items-center rounded-2xl bg-white text-violet-600 shadow-xs">
-              <Baby size={24} />
+          /* 子どもがまだ1人もいない場合のEmpty State */
+          <div className="rounded-xl border border-dashed border-zinc-200 bg-white/60 p-8 text-center">
+            <span className="mx-auto grid size-10 place-items-center rounded-lg border border-zinc-200 bg-zinc-50 text-zinc-600 shadow-2xs">
+              <Layers size={20} />
             </span>
-            <h4 className="mt-3 text-base font-black text-ink">
-              お子さん（きょうだい）を登録しましょう
-            </h4>
-            <p className="mx-auto mt-1 max-w-md text-xs leading-relaxed text-ink/70">
-              お子さんを登録すると、園や学校から届いたお便りのTODOが自動で子ども別に分類され、
-              行事や提出物の重なり（ダブルブッキング）を事前に防げるようになります。
+            <h4 className="mt-3 text-sm font-bold text-zinc-900">お子さんを登録してください</h4>
+            <p className="mx-auto mt-1 max-w-md text-xs leading-relaxed text-zinc-500">
+              お子さんを登録すると、お便りから抽出されたタスクが自動で子ども別に分類され、
+              個別の持ち物や提出物を管理できるようになります。
             </p>
 
             <form
@@ -232,137 +227,143 @@ export function SiblingTaskTimeline({
                 value={newChildName}
                 onChange={(e) => setNewChildName(e.target.value)}
                 placeholder="例: 太郎、花子"
-                className="field text-sm"
+                className="field text-xs py-2"
                 required
               />
               <button
                 type="submit"
                 disabled={addingChild || !newChildName.trim()}
-                className="button-primary text-sm shrink-0"
+                className="button-primary text-xs shrink-0"
               >
-                {addingChild ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
-                追加する
+                {addingChild ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
+                追加
               </button>
             </form>
           </div>
         ) : (
           /* 子どもレーン（横並びグリッド） */
-          <div className="grid gap-5 md:grid-cols-2">
+          <div className="grid gap-4 md:grid-cols-2">
             {(selectedChildTab === "all"
               ? allChildren
               : allChildren.filter((c) => c.name === selectedChildTab)
             ).map((child) => {
-              const theme = getChildTheme(child.name);
               const childTasks = tasksByChild.get(child.name) || [];
 
               return (
                 <div
                   key={child.name}
-                  className={`flex flex-col rounded-2xl border ${theme.border} ${theme.bg}/40 p-4.5 shadow-xs transition`}
+                  className="flex flex-col rounded-xl border border-zinc-200/90 bg-white p-4 shadow-2xs transition"
                 >
                   {/* 子どもレーンヘッダー */}
-                  <div className="flex items-center justify-between border-b border-ink/5 pb-3">
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`grid size-7 place-items-center rounded-full ${theme.badgeBg} ${theme.badgeText} text-xs font-black shadow-2xs`}
-                      >
+                  <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
+                    <div className="flex items-center gap-2.5">
+                      <span className="grid size-6 place-items-center rounded-md border border-zinc-200 bg-zinc-50 text-xs font-bold text-zinc-800">
                         {child.name.charAt(0)}
                       </span>
                       <div>
-                        <h4 className="text-sm font-black text-ink">{child.name} のタスク</h4>
-                        <p className="text-[11px] text-ink/60">未完了 {childTasks.length}件</p>
+                        <h4 className="text-xs font-bold text-zinc-900">{child.name}</h4>
+                        <p className="text-[10px] font-mono text-zinc-500">
+                          未完了 {childTasks.length}件
+                        </p>
                       </div>
                     </div>
 
                     <Link
                       href={`/tasks/new`}
-                      className="inline-flex items-center gap-1 rounded-md bg-white px-2.5 py-1 text-xs font-bold text-ink/80 hover:bg-cloud hover:text-ink shadow-2xs transition"
+                      className="inline-flex items-center gap-1 rounded border border-zinc-200 bg-white px-2 py-1 text-[11px] font-medium text-zinc-700 hover:bg-zinc-50 shadow-2xs transition"
                     >
-                      <Plus size={13} />
-                      TODO追加
+                      <Plus size={12} className="text-zinc-400" />
+                      追加
                     </Link>
                   </div>
 
                   {/* タスクリスト */}
-                  <div className="mt-3 flex-1 space-y-2.5">
+                  <div className="mt-3 flex-1 space-y-2">
                     {childTasks.length === 0 ? (
-                      <div className="py-6 text-center text-xs font-semibold text-ink/40">
-                        直近の未完了TODOはありません 🎉
+                      <div className="py-6 text-center text-xs font-medium text-zinc-400">
+                        未完了のTODOはありません
                       </div>
                     ) : (
                       childTasks.map((task) => {
                         const isLoading = actionLoadingId === task.id;
+                        const isDone = task.status === "DONE";
+
                         return (
                           <div
                             key={task.id}
-                            className="group flex items-start justify-between gap-2.5 rounded-xl border border-ink/10 bg-white p-3 shadow-2xs transition hover:border-moss/50"
+                            className="group flex items-start justify-between gap-2.5 rounded-lg border border-zinc-100 bg-zinc-50/50 p-2.5 transition hover:border-zinc-200 hover:bg-white"
                           >
                             <div className="min-w-0 flex-1">
                               <div className="flex flex-wrap items-center gap-1.5">
                                 <DuePill dueDate={task.dueDate} />
                                 <PriorityPill priority={task.priority} />
-                                <span className="rounded bg-cloud px-1.5 py-0.5 text-[10px] font-semibold text-ink/60">
+                                <span className="rounded bg-white px-1.5 py-0.5 text-[10px] font-medium text-zinc-500 border border-zinc-100">
                                   {task.type}
                                 </span>
                               </div>
 
                               <Link href={`/tasks/${task.id}`} className="block">
-                                <p className="mt-1.5 text-sm font-bold text-ink hover:text-moss truncate">
+                                <p className="mt-1 text-xs font-semibold text-zinc-900 hover:text-zinc-600 truncate">
                                   {task.title}
                                 </p>
                               </Link>
 
-                              <div className="mt-1.5 flex items-center gap-2 text-xs text-ink/60">
+                              <div className="mt-1 flex items-center gap-2 text-[10px] text-zinc-500">
                                 <span>
                                   {task.assigneeName ? (
-                                    <span className="font-semibold text-ink/80">
+                                    <span className="font-medium text-zinc-700">
                                       担当: {task.assigneeName}
                                     </span>
                                   ) : (
-                                    <span className="text-amber-600 font-semibold">担当未定</span>
+                                    <span className="text-amber-600 font-medium">担当未定</span>
                                   )}
                                 </span>
                               </div>
                             </div>
 
                             {/* アクションボタン */}
-                            <div className="flex shrink-0 flex-col items-end gap-1.5">
+                            <div className="flex shrink-0 items-center gap-1 pt-0.5">
                               {onToggleStatus && (
                                 <button
                                   type="button"
                                   onClick={() => onToggleStatus(task)}
                                   disabled={isLoading}
-                                  className="grid size-7 place-items-center rounded-full text-ink/30 hover:text-moss transition"
+                                  className="grid size-5 place-items-center rounded border border-zinc-300 bg-white text-transparent hover:border-zinc-400 transition focus-ring"
                                   title="完了にする"
                                 >
                                   {isLoading ? (
-                                    <Loader2 size={16} className="animate-spin text-moss" />
+                                    <Loader2 size={11} className="animate-spin text-zinc-400" />
                                   ) : (
-                                    <Circle size={18} />
+                                    <Check
+                                      size={11}
+                                      className="text-transparent group-hover:text-zinc-300"
+                                    />
                                   )}
                                 </button>
                               )}
 
-                              {onAssignToMe && !task.assigneeName && (
+                              {onAssignToMe && !isDone && (
                                 <button
                                   type="button"
                                   onClick={() => onAssignToMe(task.id)}
                                   disabled={isLoading}
-                                  className="inline-flex items-center gap-1 rounded-full border border-moss/40 bg-mint/50 px-2 py-0.5 text-[11px] font-bold text-moss shadow-2xs hover:bg-moss hover:text-white transition"
+                                  className="rounded border border-zinc-200 bg-white px-1.5 py-0.5 text-[10px] font-medium text-zinc-700 hover:bg-zinc-50 transition"
+                                  title="私が担当する"
                                 >
-                                  <Hand size={11} />
-                                  <span>私がやる</span>
+                                  <Hand size={10} className="inline mr-0.5 text-zinc-500" />
+                                  やる
                                 </button>
                               )}
 
-                              {onThankYou && task.assigneeName && (
+                              {onThankYou && !isDone && task.assigneeName && (
                                 <button
                                   type="button"
                                   onClick={() => onThankYou(task)}
-                                  className="inline-flex items-center gap-1 rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-[11px] font-bold text-rose-700 hover:bg-rose-100 transition shadow-2xs"
-                                  title="担当してくれてありがとう！"
+                                  className="rounded border border-zinc-200 bg-white px-1.5 py-0.5 text-[10px] font-medium text-zinc-600 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-200 transition"
+                                  title="感謝を伝える"
                                 >
-                                  <span>❤️ ありがとう</span>
+                                  <Heart size={10} className="inline mr-0.5 text-rose-500" />
+                                  感謝
                                 </button>
                               )}
                             </div>

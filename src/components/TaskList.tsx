@@ -1,9 +1,9 @@
 "use client";
 
-import { CheckCircle2, Circle, Hand, Loader2, UserRound } from "lucide-react";
+import { Check, Hand, Heart, Loader2, UserRound } from "lucide-react";
 import Link from "next/link";
 import { ChildBadge } from "@/components/ChildBadge";
-import { DuePill, PriorityPill, StatusPill } from "@/components/StatusPill";
+import { DuePill, PriorityPill } from "@/components/StatusPill";
 import { isWorkTask } from "@/lib/conflict-detector";
 import type { TaskRecord } from "@/lib/types";
 
@@ -28,110 +28,112 @@ export function TaskList({
 }: Props) {
   if (tasks.length === 0) {
     return (
-      <div className="rounded-xl border border-dashed border-ink/20 bg-white/70 px-4 py-8 text-center text-sm text-ink/60">
+      <div className="rounded-xl border border-dashed border-zinc-200 bg-white/50 px-4 py-8 text-center text-xs font-medium text-zinc-500">
         {emptyText}
       </div>
     );
   }
 
   return (
-    <div className="grid gap-3">
+    <div className="divide-y divide-zinc-100 rounded-xl border border-zinc-200/90 bg-white shadow-2xs overflow-hidden">
       {tasks.map((task) => {
         const isWork = isWorkTask(task);
         const isActionLoading = actionLoadingId === task.id;
+        const isDone = task.status === "DONE";
 
         return (
           <div
             key={task.id}
-            className="group relative rounded-xl border border-ink/10 bg-white p-4 shadow-xs transition hover:border-moss/60 hover:shadow-sm"
+            className={`group flex items-start gap-3 p-3.5 transition hover:bg-zinc-50/70 sm:p-4 ${
+              isDone ? "bg-zinc-50/40" : ""
+            }`}
           >
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0 flex-1">
-                {/* ピル・バッジ群 */}
-                <div className="flex flex-wrap items-center gap-2">
-                  <StatusPill status={task.status} />
-                  <DuePill dueDate={task.dueDate} />
-                  <PriorityPill priority={task.priority} />
-                  <ChildBadge name={task.childName} isWork={isWork} size="sm" />
-                </div>
+            {/* 完了トグル（チェックボックス） */}
+            {onToggleStatus && (
+              <button
+                type="button"
+                onClick={() => onToggleStatus(task)}
+                disabled={isActionLoading}
+                className={`mt-0.5 grid size-5 shrink-0 place-items-center rounded border transition focus-ring ${
+                  isDone
+                    ? "border-zinc-900 bg-zinc-900 text-white"
+                    : "border-zinc-300 bg-white hover:border-zinc-400 text-transparent"
+                }`}
+                title={isDone ? "未完了に戻す" : "完了にする"}
+              >
+                {isActionLoading ? (
+                  <Loader2 size={12} className="animate-spin text-zinc-400" />
+                ) : (
+                  <Check size={13} className={isDone ? "text-white" : "opacity-0"} />
+                )}
+              </button>
+            )}
 
-                {/* タイトル */}
-                <Link href={`/tasks/${task.id}`} className="block">
-                  <h3
-                    className={`mt-2.5 text-base font-bold leading-snug text-ink transition hover:text-moss ${
-                      task.status === "DONE" ? "line-through opacity-60" : ""
-                    }`}
-                  >
-                    {task.title}
-                  </h3>
-                </Link>
-
-                {/* 補足・担当・種別 */}
-                <div className="mt-2.5 flex flex-wrap items-center gap-3 text-xs text-ink/70">
-                  <span className="font-semibold">{task.type}</span>
-                  <span className="inline-flex items-center gap-1 font-semibold">
-                    <UserRound size={13} className="text-ink/50" />
-                    {task.assigneeName ? (
-                      <span className="text-ink">{task.assigneeName}</span>
-                    ) : (
-                      <span className="text-amber-600">担当未設定</span>
-                    )}
-                  </span>
-                </div>
+            {/* タスク情報 */}
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-1.5">
+                <DuePill dueDate={task.dueDate} />
+                <PriorityPill priority={task.priority} />
+                <ChildBadge name={task.childName} isWork={isWork} size="sm" />
+                <span className="rounded bg-zinc-100 px-1.5 py-0.5 text-[10px] font-medium text-zinc-600">
+                  {task.type}
+                </span>
               </div>
 
-              {/* アクションボタン群 */}
-              <div className="flex shrink-0 flex-col items-end gap-2">
-                {/* 完了トグル */}
-                {onToggleStatus && (
-                  <button
-                    type="button"
-                    onClick={() => onToggleStatus(task)}
-                    disabled={isActionLoading}
-                    className="grid size-8 place-items-center rounded-full text-ink/40 transition hover:bg-cloud hover:text-moss"
-                    title={task.status === "DONE" ? "未完了に戻す" : "完了にする"}
-                  >
-                    {isActionLoading ? (
-                      <Loader2 size={18} className="animate-spin text-moss" />
-                    ) : task.status === "DONE" ? (
-                      <CheckCircle2 size={22} className="text-moss" />
-                    ) : (
-                      <Circle size={22} className="text-ink/30 hover:text-moss" />
-                    )}
-                  </button>
-                )}
+              <Link href={`/tasks/${task.id}`} className="block">
+                <h3
+                  className={`mt-1.5 text-sm font-semibold leading-snug text-zinc-900 hover:text-zinc-600 transition truncate ${
+                    isDone ? "line-through text-zinc-400" : ""
+                  }`}
+                >
+                  {task.title}
+                </h3>
+              </Link>
 
-                {/* 機能3: 「私がやる」ボタン（未担当または未完了時） */}
-                {onAssignToMe &&
-                  task.status !== "DONE" &&
-                  (task.assigneeMemberId === currentUserId ? (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-moss/15 px-2 py-0.5 text-xs font-bold text-moss">
-                      担当中
-                    </span>
+              <div className="mt-1.5 flex flex-wrap items-center gap-3 text-[11px] text-zinc-500">
+                <span className="inline-flex items-center gap-1">
+                  <UserRound size={12} className="text-zinc-400" />
+                  {task.assigneeName ? (
+                    <span className="font-medium text-zinc-800">{task.assigneeName}</span>
                   ) : (
-                    <button
-                      type="button"
-                      onClick={() => onAssignToMe(task.id)}
-                      disabled={isActionLoading}
-                      className="inline-flex items-center gap-1 rounded-full border border-moss/40 bg-mint/50 px-2.5 py-1 text-xs font-bold text-moss shadow-2xs transition hover:bg-moss hover:text-white disabled:opacity-50"
-                      title="私がこのタスクを担当します"
-                    >
-                      <Hand size={12} />
-                      <span>私がやる</span>
-                    </button>
-                  ))}
+                    <span className="text-amber-600 font-medium">担当未設定</span>
+                  )}
+                </span>
+              </div>
+            </div>
 
-                {onThankYou && task.status !== "DONE" && task.assigneeName && (
+            {/* アクションボタン群 */}
+            <div className="flex shrink-0 items-center gap-1.5 pt-0.5">
+              {onAssignToMe &&
+                !isDone &&
+                (task.assigneeMemberId === currentUserId ? (
+                  <span className="rounded border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-mono font-medium text-emerald-700">
+                    担当中
+                  </span>
+                ) : (
                   <button
                     type="button"
-                    onClick={() => onThankYou(task)}
-                    className="inline-flex items-center gap-1 rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-[11px] font-bold text-rose-700 shadow-2xs transition hover:bg-rose-100"
-                    title="担当してくれてありがとう！"
+                    onClick={() => onAssignToMe(task.id)}
+                    disabled={isActionLoading}
+                    className="inline-flex items-center gap-1 rounded-md border border-zinc-200 bg-white px-2 py-1 text-[11px] font-medium text-zinc-700 shadow-2xs transition hover:bg-zinc-50 hover:border-zinc-300 disabled:opacity-50"
+                    title="私がこのタスクを担当します"
                   >
-                    <span>❤️ ありがとう</span>
+                    <Hand size={11} className="text-zinc-500" />
+                    <span>引き受ける</span>
                   </button>
-                )}
-              </div>
+                ))}
+
+              {onThankYou && !isDone && task.assigneeName && (
+                <button
+                  type="button"
+                  onClick={() => onThankYou(task)}
+                  className="inline-flex items-center gap-1 rounded-md border border-zinc-200 bg-white px-2 py-1 text-[11px] font-medium text-zinc-600 shadow-2xs transition hover:bg-rose-50 hover:text-rose-700 hover:border-rose-200"
+                  title="担当してくれてありがとう！"
+                >
+                  <Heart size={11} className="text-rose-500" />
+                  <span>感謝</span>
+                </button>
+              )}
             </div>
           </div>
         );

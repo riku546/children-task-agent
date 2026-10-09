@@ -149,82 +149,95 @@ export default function DashboardPage() {
   const doneCount = tasks.filter((task) => task.status === "DONE").length;
 
   return (
-    <section className="mx-auto max-w-6xl px-4 pb-24 pt-8 md:pb-12">
+    <section className="mx-auto max-w-6xl px-4 pb-20 pt-6 sm:px-6 md:pb-12 md:pt-8">
       {/* ページヘッダー */}
-      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
+      <div className="flex flex-col justify-between gap-4 border-b border-zinc-200/80 pb-5 md:flex-row md:items-center">
         <div>
-          <p className="text-xs font-bold tracking-wide uppercase text-moss">
-            Childcare Task Agent
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl font-bold tracking-tight text-zinc-950 sm:text-2xl">
+              家族のTODO
+            </h1>
+            <span className="rounded-full bg-zinc-100 px-2.5 py-0.5 font-mono text-xs font-medium text-zinc-600">
+              未完了 {openTasks.length}件
+            </span>
+          </div>
+          <p className="mt-1 text-xs text-zinc-500">
+            お便りから抽出されたタスクときょうだいの予定を一覧管理
           </p>
-          <h1 className="mt-1 text-2xl font-black tracking-normal sm:text-3xl md:text-4xl">
-            家族のTODO
-          </h1>
         </div>
+
         <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
             className="button-icon"
             onClick={() => load(true)}
-            title="更新"
+            title="最新情報に更新"
             disabled={loading}
           >
-            <RefreshCw size={18} className={loading ? "animate-spin" : ""} />
+            <RefreshCw size={15} className={loading ? "animate-spin" : ""} />
           </button>
 
-          <Link href="/tasks/new" className="button-primary text-xs sm:text-sm">
-            <Camera size={16} />
-            お便りをスキャン
+          <Link href="/tasks/new" className="button-primary">
+            <Camera size={14} />
+            <span>お便りをスキャン</span>
           </Link>
 
           <button
             type="button"
             onClick={() => setIsWorkModalOpen(true)}
-            className="button-secondary text-xs sm:text-sm"
+            className="button-secondary"
             title="残業や出張など、仕事の予定を追加して衝突を検知"
           >
-            <Briefcase size={16} />
-            仕事の予定
+            <Briefcase size={14} />
+            <span>仕事の予定</span>
           </button>
 
-          <Link href="/family" className="button-secondary text-xs sm:text-sm">
-            <Users size={16} />
-            家族の分担
+          <Link href="/family" className="button-secondary">
+            <Users size={14} />
+            <span>チーム分担</span>
           </Link>
 
-          <Link href="/tasks/new" className="button-secondary text-xs sm:text-sm">
-            <Plus size={16} />
-            手動登録
+          <Link href="/tasks/new" className="button-secondary">
+            <Plus size={14} />
+            <span>手動追加</span>
           </Link>
         </div>
       </div>
 
-      {/* 1. お便り・プリントのスキャン（実務用クイックバー） */}
-      <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 rounded-2xl border border-moss/20 bg-gradient-to-r from-mint/25 via-white to-cloud p-4 sm:p-5 shadow-2xs">
-        <div className="flex items-center gap-3">
-          <span className="grid size-11 place-items-center rounded-xl bg-moss text-white shadow-xs shrink-0">
-            <Camera size={22} />
+      {/* 1. お便りスキャン・アクションバー（SaaS風インジェストバー） */}
+      <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-3 rounded-xl border border-zinc-200/90 bg-white p-3.5 sm:px-4 shadow-2xs">
+        <div className="flex items-center gap-3 min-w-0">
+          <span className="grid size-9 shrink-0 place-items-center rounded-lg border border-zinc-200 bg-zinc-50 text-zinc-800">
+            <Camera size={17} />
           </span>
-          <div>
-            <h2 className="text-sm font-bold text-ink">お便り・プリントからTODOを作成</h2>
-            <p className="text-xs text-ink/65">
-              写真撮影・PDF・画像からAIが提出物や持ち物を自動抽出します
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <h2 className="text-xs font-semibold text-zinc-900 truncate">
+                新しいお便りや予定をスキャン
+              </h2>
+              <span className="rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-mono font-medium text-emerald-700">
+                AI Auto-Extract
+              </span>
+            </div>
+            <p className="text-[11px] text-zinc-500 truncate">
+              写真撮影・PDF・画像から提出物や持ち物を自動抽出
             </p>
           </div>
         </div>
         <div className="flex w-full sm:w-auto items-center gap-2 shrink-0">
           <Link
             href="/tasks/new"
-            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 rounded-xl bg-moss px-4 py-2.5 text-xs font-bold text-white shadow-xs transition hover:bg-moss/90 focus-ring"
+            className="inline-flex min-h-8 flex-1 sm:flex-initial items-center justify-center gap-1.5 rounded-lg bg-zinc-900 px-3 py-1.5 text-xs font-medium text-white shadow-2xs transition hover:bg-zinc-800"
           >
-            <Camera size={15} />
+            <Camera size={13} />
             <span>撮影・スキャン</span>
           </Link>
           <Link
             href="/tasks/new"
-            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 rounded-xl border border-ink/15 bg-white px-3.5 py-2.5 text-xs font-bold text-ink shadow-2xs transition hover:bg-cloud focus-ring"
+            className="inline-flex min-h-8 flex-1 sm:flex-initial items-center justify-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 shadow-2xs transition hover:bg-zinc-50"
           >
-            <Upload size={15} className="text-ink/60" />
-            <span>画像・PDF選択</span>
+            <Upload size={13} className="text-zinc-500" />
+            <span>ファイル選択</span>
           </Link>
         </div>
       </div>
@@ -253,38 +266,44 @@ export default function DashboardPage() {
       />
 
       {/* 5. 表示切り替え（ToDoリスト ↔ 月間カレンダー） */}
-      <div className="mt-10 mb-4 flex items-center justify-between border-b border-ink/10 pb-3">
-        <div className="flex items-center gap-2">
+      <div className="mt-10 mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-200/80 pb-3">
+        <div className="flex items-center rounded-lg border border-zinc-200/90 bg-zinc-100/80 p-0.5">
           <button
             type="button"
             onClick={() => setViewMode("list")}
-            className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-bold transition ${
+            className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition ${
               viewMode === "list"
-                ? "bg-moss text-white shadow-2xs"
-                : "text-ink/70 hover:bg-cloud hover:text-ink"
+                ? "bg-white text-zinc-950 shadow-2xs"
+                : "text-zinc-600 hover:text-zinc-900"
             }`}
           >
-            <ListTodo size={17} />
-            期限別リスト ({openTasks.length})
+            <ListTodo size={14} />
+            <span>リスト表示 ({openTasks.length})</span>
           </button>
           <button
             type="button"
             onClick={() => setViewMode("calendar")}
-            className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-bold transition ${
+            className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition ${
               viewMode === "calendar"
-                ? "bg-moss text-white shadow-2xs"
-                : "text-ink/70 hover:bg-cloud hover:text-ink"
+                ? "bg-white text-zinc-950 shadow-2xs"
+                : "text-zinc-600 hover:text-zinc-900"
             }`}
           >
-            <CalendarDays size={17} />
-            カレンダー表示（月間）
+            <CalendarDays size={14} />
+            <span>カレンダー</span>
           </button>
         </div>
 
-        <div className="hidden sm:flex items-center gap-2 text-xs font-semibold text-ink/60">
-          <span>今日: {todayTasks.length}件</span>
-          <span>明日: {tomorrowTasks.length}件</span>
-          <span>完了: {doneCount}件</span>
+        <div className="flex items-center gap-3 text-xs font-mono text-zinc-500">
+          <span>
+            今日: <strong className="text-zinc-900">{todayTasks.length}</strong>
+          </span>
+          <span>
+            明日: <strong className="text-zinc-900">{tomorrowTasks.length}</strong>
+          </span>
+          <span>
+            完了: <strong className="text-zinc-900">{doneCount}</strong>
+          </span>
         </div>
       </div>
 

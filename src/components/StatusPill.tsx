@@ -8,36 +8,46 @@ export function PriorityPill({ priority }: { priority: Priority }) {
   return (
     <span
       className={clsx(
-        "inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-semibold",
-        priority === "high" && "bg-coral/15 text-[#9f3f34]",
-        priority === "medium" && "bg-butter/25 text-[#786126]",
-        priority === "low" && "bg-mint text-moss"
+        "inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium border shadow-2xs",
+        priority === "high" && "bg-rose-50 border-rose-200 text-rose-700",
+        priority === "medium" && "bg-amber-50 border-amber-200 text-amber-700",
+        priority === "low" && "bg-zinc-50 border-zinc-200 text-zinc-600"
       )}
     >
-      <Flag size={13} />
+      <Flag size={10} />
       {label}
     </span>
   );
 }
 
 export function StatusPill({ status }: { status: TaskStatus }) {
+  const isDone = status === "DONE";
   return (
     <span
       className={clsx(
-        "inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-semibold",
-        status === "DONE" ? "bg-mint text-moss" : "bg-white text-ink"
+        "inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium border shadow-2xs",
+        isDone
+          ? "bg-zinc-100 border-zinc-200 text-zinc-600"
+          : "bg-emerald-50 border-emerald-200 text-emerald-700"
       )}
     >
-      {status === "DONE" ? <CheckCircle2 size={13} /> : <Circle size={13} />}
-      {status === "DONE" ? "完了" : "未完了"}
+      {isDone ? <CheckCircle2 size={10} /> : <Circle size={10} />}
+      {isDone ? "完了" : "未完了"}
     </span>
   );
 }
 
 export function DuePill({ dueDate }: { dueDate: string | null }) {
+  if (!dueDate) {
+    return (
+      <span className="inline-flex items-center gap-1 rounded bg-zinc-50 border border-zinc-200/60 px-1.5 py-0.5 text-[10px] font-mono text-zinc-400">
+        期日未定
+      </span>
+    );
+  }
   return (
-    <span className="inline-flex items-center gap-1 rounded-md bg-white px-2 py-1 text-xs font-semibold text-ink">
-      <CalendarDays size={13} />
+    <span className="inline-flex items-center gap-1 rounded bg-zinc-50 border border-zinc-200/80 px-1.5 py-0.5 text-[10px] font-mono text-zinc-600 shadow-2xs">
+      <CalendarDays size={10} className="text-zinc-400" />
       {formatDateJa(dueDate)}
     </span>
   );

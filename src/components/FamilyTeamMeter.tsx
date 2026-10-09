@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronRight, HeartHandshake, Sparkles } from "lucide-react";
+import { ArrowUpRight, BarChart3, Info } from "lucide-react";
 import Link from "next/link";
 import { useMemo } from "react";
 import type { TaskRecord } from "@/lib/types";
@@ -44,15 +44,13 @@ export function FamilyTeamMeter({ tasks }: Props) {
 
     // チームワークスコアの算出（100点満点）
     let score = 100;
-    let message = "未担当のタスクを「私がやる」で引き受け合ってみましょう！";
-    let badgeText = "チーム調整中";
-    let badgeColor = "bg-amber-100 text-amber-800 border-amber-200";
+    let message = "未担当のタスクを引き受け合ってバランスを取りましょう";
+    let badgeText = "調整中";
 
     if (totalTodo === 0 && doneTasks.length > 0) {
       score = 100;
-      message = "🎉 今週のTODOはすべて完了！家族の素晴らしい連携です！";
-      badgeText = "完全制覇 🌟";
-      badgeColor = "bg-emerald-100 text-emerald-800 border-emerald-200";
+      message = "今週のタスクはすべて完了しています。";
+      badgeText = "完了";
     } else if (members.length >= 2) {
       const top = members[0].todoCount;
       const second = members[1].todoCount;
@@ -60,25 +58,21 @@ export function FamilyTeamMeter({ tasks }: Props) {
 
       if (diff <= 1) {
         score = 95;
-        message = "👫 素晴らしい！夫婦でバランスよく助け合えています。";
-        badgeText = "連携バッチリ ✨";
-        badgeColor = "bg-moss/15 text-moss border-moss/30";
+        message = "夫婦でバランスよくタスクを分担できています。";
+        badgeText = "良好";
       } else if (diff <= 3) {
         score = 80;
-        message = "👍 いいチームワークです！無理のない範囲で声かけ合っていきましょう。";
-        badgeText = "助け合い中 🤝";
-        badgeColor = "bg-sky-100 text-sky-800 border-sky-200";
+        message = "概ね良好な分担状況です。";
+        badgeText = "安定";
       } else {
         score = 65;
-        message = `⚠️ ${members[0].name} さんに負担が偏っています。「私がやる」で引き受けてみませんか？`;
-        badgeText = "偏り注意 ⚠️";
-        badgeColor = "bg-rose-100 text-rose-800 border-rose-200";
+        message = `${members[0].name} さんに負担が集中しています。「引き受ける」でサポートしましょう。`;
+        badgeText = "偏りあり";
       }
     } else if (unassignedCount > 0 && members.length === 0) {
       score = 70;
-      message = "📝 担当が決まっていないタスクがあります。みんなで1つずつ引き受けましょう！";
-      badgeText = "引き受け待ち";
-      badgeColor = "bg-amber-100 text-amber-800 border-amber-200";
+      message = "担当が決まっていないタスクがあります。";
+      badgeText = "未割当あり";
     }
 
     return {
@@ -87,69 +81,70 @@ export function FamilyTeamMeter({ tasks }: Props) {
       members,
       score,
       message,
-      badgeText,
-      badgeColor
+      badgeText
     };
   }, [tasks]);
 
   if (tasks.length === 0) return null;
 
   return (
-    <div className="mb-8 rounded-2xl border border-ink/10 bg-white p-5 shadow-xs">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-ink/10 pb-4">
+    <div className="mb-6 rounded-xl border border-zinc-200/90 bg-white p-4 shadow-2xs sm:p-5">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-100 pb-3">
         <div className="flex items-center gap-2.5">
-          <span className="grid size-9 place-items-center rounded-xl bg-mint text-moss shadow-2xs">
-            <HeartHandshake size={20} />
+          <span className="grid size-8 place-items-center rounded-lg border border-zinc-200 bg-zinc-50 text-zinc-700 shadow-2xs">
+            <BarChart3 size={16} />
           </span>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="text-base font-black text-ink">今週のチーム育児メーター</h3>
-              <span
-                className={`rounded-full border px-2.5 py-0.5 text-xs font-bold ${analysis.badgeColor}`}
-              >
+              <h3 className="text-sm font-bold text-zinc-900">ワークロード・チーム分担</h3>
+              <span className="rounded bg-zinc-100 px-1.5 py-0.5 font-mono text-[10px] font-medium text-zinc-600">
                 {analysis.badgeText}
               </span>
             </div>
-            <p className="text-xs text-ink/65">
-              育児は指示出しではなくチーム戦。夫婦のタスク分担と助け合い状況です
+            <p className="text-[11px] text-zinc-500">
+              夫婦間でのタスク保有バランスと未完了件数の比率
             </p>
           </div>
         </div>
 
         <Link
           href="/family"
-          className="flex items-center gap-1 rounded-lg border border-ink/15 bg-cloud/50 px-3 py-1.5 text-xs font-bold text-ink transition hover:bg-cloud hover:border-ink/25"
+          className="inline-flex items-center gap-1 text-xs font-medium text-zinc-600 hover:text-zinc-900 transition"
         >
-          <span>家族の分担ボード</span>
-          <ChevronRight size={14} />
+          <span>詳細分担ボード</span>
+          <ArrowUpRight size={13} />
         </Link>
       </div>
 
-      {/* スコア ＆ メンバー別アバター進捗 */}
-      <div className="mt-4 grid gap-4 md:grid-cols-[140px_1fr] md:items-center">
-        {/* 連携スコアサークル */}
-        <div className="flex flex-col items-center justify-center rounded-xl border border-ink/5 bg-cloud/40 p-3 text-center">
-          <span className="text-xs font-bold text-ink/60">チーム連携スコア</span>
-          <div className="mt-1 flex items-baseline gap-0.5">
-            <span className="text-3xl font-black text-moss">{analysis.score}</span>
-            <span className="text-xs font-bold text-ink/50">/ 100</span>
+      {/* スコア ＆ バー */}
+      <div className="mt-3.5 grid gap-4 sm:grid-cols-[110px_1fr] sm:items-center">
+        {/* スコア */}
+        <div className="flex flex-col items-center justify-center rounded-lg border border-zinc-100 bg-zinc-50/70 p-2.5 text-center">
+          <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-500">
+            Balance
+          </span>
+          <div className="mt-0.5 flex items-baseline gap-1">
+            <span className="font-mono text-2xl font-bold tracking-tight text-zinc-900">
+              {analysis.score}
+            </span>
+            <span className="font-mono text-[10px] text-zinc-400">/100</span>
           </div>
         </div>
 
         {/* スタックバー ＆ 担当者内訳 */}
-        <div>
+        <div className="min-w-0">
           {analysis.totalTodo > 0 ? (
             <div>
-              <div className="flex h-3.5 w-full overflow-hidden rounded-full bg-cloud p-0.5 shadow-inner">
+              <div className="flex h-2.5 w-full overflow-hidden rounded-full bg-zinc-100">
                 {analysis.members.map((m, idx) => {
                   const pct = (m.todoCount / analysis.totalTodo) * 100;
-                  const bgColors = ["bg-moss", "bg-sky-500", "bg-violet-500", "bg-rose-500"];
-                  const color = bgColors[idx % bgColors.length];
+                  const colors = ["bg-zinc-800", "bg-zinc-500", "bg-zinc-400", "bg-zinc-300"];
+                  const color = colors[idx % colors.length];
                   return (
                     <div
                       key={m.name}
                       style={{ width: `${pct}%` }}
-                      className={`h-full ${color} rounded-sm transition-all duration-300`}
+                      className={`h-full ${color} transition-all duration-300`}
                       title={`${m.name}: ${m.todoCount}件`}
                     />
                   );
@@ -157,45 +152,41 @@ export function FamilyTeamMeter({ tasks }: Props) {
                 {analysis.unassignedCount > 0 && (
                   <div
                     style={{ width: `${(analysis.unassignedCount / analysis.totalTodo) * 100}%` }}
-                    className="h-full bg-amber-400 rounded-sm transition-all duration-300"
-                    title={`担当未定: ${analysis.unassignedCount}件`}
+                    className="h-full bg-amber-400 transition-all duration-300"
+                    title={`未定: ${analysis.unassignedCount}件`}
                   />
                 )}
               </div>
 
-              {/* メンバー別件数 */}
-              <div className="mt-2.5 flex flex-wrap items-center gap-3">
+              {/* メンバー別数値 */}
+              <div className="mt-2 flex flex-wrap items-center gap-3 text-xs">
                 {analysis.members.map((m, idx) => {
-                  const dotColors = ["bg-moss", "bg-sky-500", "bg-violet-500", "bg-rose-500"];
+                  const dotColors = ["bg-zinc-800", "bg-zinc-500", "bg-zinc-400", "bg-zinc-300"];
                   const color = dotColors[idx % dotColors.length];
                   return (
-                    <div
-                      key={m.name}
-                      className="flex items-center gap-1.5 text-xs font-semibold text-ink"
-                    >
+                    <div key={m.name} className="flex items-center gap-1.5 text-zinc-700">
                       <span className={`size-2 rounded-full ${color}`} />
-                      <span>{m.name}:</span>
-                      <span className="font-bold text-ink">{m.todoCount}件</span>
-                      <span className="text-[11px] text-ink/50">（完了{m.doneCount}）</span>
+                      <span className="font-medium">{m.name}:</span>
+                      <span className="font-mono font-semibold text-zinc-900">{m.todoCount}件</span>
                     </div>
                   );
                 })}
                 {analysis.unassignedCount > 0 && (
-                  <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-700">
+                  <div className="flex items-center gap-1.5 text-amber-700">
                     <span className="size-2 rounded-full bg-amber-400" />
-                    <span>担当未定:</span>
-                    <span className="font-bold">{analysis.unassignedCount}件</span>
+                    <span className="font-medium">未定:</span>
+                    <span className="font-mono font-semibold">{analysis.unassignedCount}件</span>
                   </div>
                 )}
               </div>
             </div>
           ) : (
-            <p className="text-xs font-semibold text-moss">未完了のタスクはありません。</p>
+            <p className="text-xs text-zinc-500">未完了のタスクはありません。</p>
           )}
 
-          {/* 協働アドバイス */}
-          <div className="mt-3 flex items-center gap-2 rounded-lg bg-mint/20 px-3 py-2 text-xs font-semibold text-moss">
-            <Sparkles size={14} className="shrink-0" />
+          {/* インフォメッセージ */}
+          <div className="mt-2.5 flex items-center gap-1.5 rounded-lg border border-zinc-100 bg-zinc-50 px-2.5 py-1.5 text-[11px] text-zinc-600">
+            <Info size={13} className="shrink-0 text-zinc-400" />
             <span>{analysis.message}</span>
           </div>
         </div>

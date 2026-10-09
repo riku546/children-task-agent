@@ -65,36 +65,39 @@ export default function TaskDetailPage() {
   }
 
   return (
-    <section className="mx-auto max-w-4xl px-4 pb-24 pt-8 md:pb-12">
+    <section className="mx-auto max-w-4xl px-4 pb-20 pt-6 sm:px-6 md:pb-12 md:pt-8">
       <Link
         href="/dashboard"
-        className="inline-flex items-center gap-2 text-sm font-semibold text-moss"
+        className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-500 hover:text-zinc-900 transition"
       >
-        <Undo2 size={16} />
-        戻る
+        <Undo2 size={14} />
+        ダッシュボードへ戻る
       </Link>
 
-      <div className="mt-5 rounded-md border border-ink/10 bg-white p-5 shadow-soft">
+      <div className="mt-4 rounded-xl border border-zinc-200/90 bg-white p-5 sm:p-6 shadow-2xs">
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
           <div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap items-center gap-1.5">
               <StatusPill status={task.status} />
               <DuePill dueDate={task.dueDate} />
               <PriorityPill priority={task.priority} />
             </div>
-            <h1 className="mt-4 text-2xl font-black tracking-normal md:text-4xl">{task.title}</h1>
+            <h1 className="mt-3 text-xl font-bold tracking-tight text-zinc-950 sm:text-2xl">
+              {task.title}
+            </h1>
           </div>
           <button
+            type="button"
             className={task.status === "DONE" ? "button-secondary" : "button-primary"}
             onClick={toggleDone}
           >
-            <CheckCircle2 size={18} />
-            {task.status === "DONE" ? "未完了に戻す" : "完了"}
+            <CheckCircle2 size={15} />
+            <span>{task.status === "DONE" ? "未完了に戻す" : "完了にする"}</span>
           </button>
         </div>
 
         {calendarState ? (
-          <div className="mt-5 rounded-md bg-mint px-4 py-3 text-sm font-semibold text-moss">
+          <div className="mt-4 rounded-lg bg-emerald-50 border border-emerald-200 px-3 py-2 text-xs font-medium text-emerald-800">
             カレンダー連携: {calendarState}
           </div>
         ) : null}
@@ -116,7 +119,7 @@ export default function TaskDetailPage() {
             value={toDateInputValue(form.dueDate)}
             onChange={(value) => setForm((current) => ({ ...current, dueDate: value }))}
           />
-          <label className="block text-sm font-semibold">
+          <label className="block text-xs font-semibold text-zinc-700">
             重要度
             <select
               className="field mt-1"
@@ -132,7 +135,7 @@ export default function TaskDetailPage() {
           </label>
         </div>
 
-        <label className="mt-4 block text-sm font-semibold">
+        <label className="mt-4 block text-xs font-semibold text-zinc-700">
           説明
           <textarea
             className="field mt-1 min-h-28"
@@ -144,17 +147,17 @@ export default function TaskDetailPage() {
         </label>
 
         <div className="mt-5 flex flex-wrap gap-2">
-          <button className="button-primary" onClick={() => save()}>
-            <Save size={18} />
-            保存
+          <button type="button" className="button-primary" onClick={() => save()}>
+            <Save size={14} />
+            <span>保存</span>
           </button>
           <a className="button-secondary" href={`/api/calendar/start?taskId=${task.id}`}>
-            <CalendarPlus size={18} />
-            Googleカレンダーに追加
+            <CalendarPlus size={14} />
+            <span>Googleカレンダーに追加</span>
           </a>
         </div>
 
-        <div className="mt-6 grid gap-3 border-t border-ink/10 pt-5 text-sm text-ink/70 md:grid-cols-2">
+        <div className="mt-6 grid gap-3 border-t border-zinc-100 pt-4 text-xs text-zinc-500 md:grid-cols-2 font-mono">
           <div>対象: {task.childName || "未設定"}</div>
           <div>担当: {task.assigneeName || "未設定"}</div>
           <div>Calendar ID: {task.googleEventId || "未登録"}</div>

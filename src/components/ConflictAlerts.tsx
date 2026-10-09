@@ -30,19 +30,24 @@ export function ConflictAlerts({ conflicts, onSelectDate }: Props) {
   const totalCount = siblingConflicts.length + workConflicts.length;
 
   return (
-    <section className="mb-6 overflow-hidden rounded-xl border border-amber-200 bg-amber-50/60 shadow-sm transition">
+    <section className="mb-6 overflow-hidden rounded-xl border border-amber-200/90 bg-amber-50/40 shadow-2xs transition">
       {/* ヘッダーバー */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-amber-200/70 bg-amber-100/60 px-4 py-3">
-        <div className="flex items-center gap-2.5">
-          <span className="grid size-8 place-items-center rounded-full bg-amber-500 text-white shadow-sm">
-            <AlertTriangle size={18} />
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-amber-200/70 bg-amber-100/50 px-4 py-2.5">
+        <div className="flex items-center gap-2">
+          <span className="grid size-6 place-items-center rounded-md bg-amber-500 text-white shadow-2xs">
+            <AlertTriangle size={13} />
           </span>
           <div>
-            <h3 className="text-base font-black text-amber-950">
-              予定の重複・衝突が {totalCount}件 検出されました
-            </h3>
-            <p className="text-xs text-amber-800">
-              ダブルブッキングや仕事とのバッティングを未然に防ぐため、事前に確認・調整しましょう
+            <div className="flex items-center gap-2">
+              <h3 className="text-xs font-bold text-amber-950">
+                予定の重複・衝突 ({totalCount}件)
+              </h3>
+              <span className="rounded bg-amber-200/60 px-1.5 py-0.2 font-mono text-[10px] font-medium text-amber-900">
+                Action Required
+              </span>
+            </div>
+            <p className="text-[11px] text-amber-800">
+              ダブルブッキングや仕事とのバッティングを未然に防ぐため事前に確認してください
             </p>
           </div>
         </div>
@@ -50,18 +55,18 @@ export function ConflictAlerts({ conflicts, onSelectDate }: Props) {
         <div className="flex items-center gap-2">
           <Link
             href="/family"
-            className="inline-flex items-center gap-1 rounded-full border border-amber-300 bg-white px-3 py-1 text-xs font-bold text-amber-900 transition hover:bg-amber-50"
+            className="inline-flex items-center gap-1 rounded-md border border-amber-300 bg-white px-2.5 py-1 text-xs font-medium text-amber-900 transition hover:bg-amber-50 shadow-2xs"
           >
-            <Users size={14} />
-            家族で分担調整
+            <Users size={12} />
+            分担調整
           </Link>
           <button
             type="button"
             onClick={() => setExpanded(!expanded)}
-            className="grid size-7 place-items-center rounded-full text-amber-900 transition hover:bg-amber-200/50"
+            className="grid size-6 place-items-center rounded text-amber-900 transition hover:bg-amber-200/50"
             title={expanded ? "折りたたむ" : "展開する"}
           >
-            {expanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+            {expanded ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
           </button>
         </div>
       </div>

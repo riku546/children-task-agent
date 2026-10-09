@@ -1,14 +1,14 @@
 "use client";
 
-import { ClipboardCheck, Home, ListTodo, Users } from "lucide-react";
+import { CheckSquare, Home, Layers, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const appNavItems = [
-  { href: "/dashboard", label: "ホーム", icon: Home },
-  { href: "/family", label: "家族の分担", icon: Users },
-  { href: "/tasks/new", label: "作成", icon: ClipboardCheck },
-  { href: "/groups", label: "グループ", icon: ListTodo }
+  { href: "/dashboard", label: "ダッシュボード", icon: Home },
+  { href: "/family", label: "チーム分担", icon: Users },
+  { href: "/tasks/new", label: "スキャン・追加", icon: CheckSquare },
+  { href: "/groups", label: "設定", icon: Layers }
 ];
 
 export function HeaderNav() {
@@ -18,8 +18,8 @@ export function HeaderNav() {
   if (isLandingOrLogin) {
     return (
       <nav className="hidden items-center gap-2 md:flex">
-        <Link href="/dashboard" className="button-secondary min-h-9 px-3 text-xs font-bold">
-          ダッシュボードを開く
+        <Link href="/dashboard" className="button-secondary text-xs">
+          ダッシュボードへ
         </Link>
       </nav>
     );
@@ -34,14 +34,14 @@ export function HeaderNav() {
           <Link
             key={item.href + item.label}
             href={item.href}
-            className={`min-h-9 px-3 text-xs font-bold transition rounded-lg inline-flex items-center gap-1.5 ${
+            className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs transition ${
               isActive
-                ? "bg-moss text-white shadow-2xs"
-                : "button-secondary text-ink/75 hover:text-ink"
+                ? "bg-zinc-100 font-semibold text-zinc-900 shadow-2xs"
+                : "font-medium text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900"
             }`}
           >
-            <Icon size={16} />
-            {item.label}
+            <Icon size={14} className={isActive ? "text-zinc-900" : "text-zinc-400"} />
+            <span>{item.label}</span>
           </Link>
         );
       })}

@@ -237,34 +237,41 @@ function NewTaskContent() {
   }
 
   return (
-    <section className="mx-auto max-w-6xl px-4 pb-24 pt-8 md:pb-12">
-      <p className="text-sm font-bold text-moss">New Task</p>
-      <h1 className="mt-2 text-3xl font-black tracking-normal md:text-5xl">連絡からTODO作成</h1>
+    <section className="mx-auto max-w-6xl px-4 pb-20 pt-6 sm:px-6 md:pb-12 md:pt-8">
+      <div className="border-b border-zinc-200/80 pb-4">
+        <p className="text-xs font-bold tracking-wider uppercase text-zinc-500">
+          New Task Extraction
+        </p>
+        <h1 className="mt-1 text-xl font-bold tracking-tight text-zinc-950 sm:text-2xl">
+          お便り・連絡からTODO作成
+        </h1>
+      </div>
 
-      <div className="mt-7 grid gap-7 lg:grid-cols-[420px_1fr]">
-        <section className="rounded-md border border-ink/10 bg-white p-5 shadow-sm">
+      <div className="mt-6 grid gap-6 lg:grid-cols-[400px_1fr]">
+        <section className="rounded-xl border border-zinc-200/90 bg-white p-5 shadow-2xs">
           <div className="grid grid-cols-2 gap-2">
             {modes.map((item) => {
               const Icon = item.icon;
               return (
                 <button
                   key={item.id}
+                  type="button"
                   className={mode === item.id ? "button-primary" : "button-secondary"}
                   onClick={() => setMode(item.id)}
                 >
-                  <Icon size={17} />
-                  {item.label}
+                  <Icon size={14} />
+                  <span>{item.label}</span>
                 </button>
               );
             })}
           </div>
 
-          <label className="mt-5 block text-sm font-semibold" htmlFor="group">
-            共有先
+          <label className="mt-5 block text-xs font-semibold text-zinc-700" htmlFor="group">
+            共有先ファミリー
           </label>
           <select
             id="group"
-            className="field mt-2"
+            className="field mt-1.5"
             value={groupId}
             onChange={(event) => setGroupId(event.target.value)}
           >
@@ -275,10 +282,10 @@ function NewTaskContent() {
             ))}
           </select>
 
-          <div className="mt-5 grid gap-3">
+          <div className="mt-5 grid gap-2.5">
             <label className="button-secondary cursor-pointer">
-              <Camera size={18} />
-              写真を撮影
+              <Camera size={14} />
+              <span>写真を撮影</span>
               <input
                 className="hidden"
                 type="file"
@@ -288,38 +295,38 @@ function NewTaskContent() {
               />
             </label>
             <label className="button-secondary cursor-pointer">
-              <Upload size={18} />
-              画像を選択
+              <Upload size={14} />
+              <span>画像を選択</span>
               <input className="hidden" type="file" accept="image/*" onChange={handleImage} />
             </label>
             <label className="button-secondary cursor-pointer">
-              <FileText size={18} />
-              PDFを選択
+              <FileText size={14} />
+              <span>PDFを選択</span>
               <input className="hidden" type="file" accept="application/pdf" onChange={handlePdf} />
             </label>
-            <button className="button-secondary" onClick={startVoice}>
-              <Mic size={18} />
-              {listening ? "聞き取り中" : "音声入力"}
+            <button type="button" className="button-secondary" onClick={startVoice}>
+              <Mic size={14} />
+              <span>{listening ? "聞き取り中..." : "音声入力"}</span>
             </button>
           </div>
 
           {previewUrl ? (
-            <div className="mt-5 rounded-md border border-ink/10 bg-cloud/50 p-3">
+            <div className="mt-5 rounded-lg border border-zinc-200 bg-zinc-50 p-3">
               <div className="flex items-center justify-between pb-2">
-                <span className="text-xs font-bold text-ink/70">画像プレビュー</span>
+                <span className="text-xs font-semibold text-zinc-700">画像プレビュー</span>
                 <button
                   type="button"
-                  className="inline-flex items-center gap-1 text-xs font-semibold text-rose-600 transition hover:text-rose-700"
+                  className="inline-flex items-center gap-1 text-xs font-medium text-rose-600 transition hover:text-rose-700"
                   onClick={clearImage}
                 >
-                  <Trash2 size={14} />
+                  <Trash2 size={13} />
                   削除
                 </button>
               </div>
               <img
                 src={previewUrl}
                 alt="プレビュー"
-                className="max-h-64 w-full rounded-md object-contain bg-white"
+                className="max-h-64 w-full rounded-md object-contain bg-white border border-zinc-200"
               />
               <div className="mt-3">
                 <button
@@ -329,42 +336,43 @@ function NewTaskContent() {
                   disabled={Boolean(busyText)}
                 >
                   {busyText ? (
-                    <Loader2 className="animate-spin" size={17} />
+                    <Loader2 className="animate-spin" size={14} />
                   ) : (
-                    <Sparkles size={17} />
+                    <Sparkles size={14} />
                   )}
-                  画像からTODO候補を生成
+                  <span>画像からTODO候補を生成</span>
                 </button>
               </div>
             </div>
           ) : null}
           {selectedGroup ? (
-            <p className="mt-5 text-sm text-ink/60">対象: {selectedGroup.name}</p>
+            <p className="mt-4 text-xs text-zinc-500">対象: {selectedGroup.name}</p>
           ) : null}
         </section>
 
         <section className="grid gap-6">
-          <div className="rounded-md border border-ink/10 bg-white p-5 shadow-sm">
-            <label className="block text-sm font-semibold" htmlFor="confirmed-text">
+          <div className="rounded-xl border border-zinc-200/90 bg-white p-5 shadow-2xs">
+            <label className="block text-xs font-semibold text-zinc-700" htmlFor="confirmed-text">
               確認済みテキスト
             </label>
             <textarea
               id="confirmed-text"
-              className="field mt-2 min-h-52 resize-y leading-7"
+              className="field mt-2 min-h-52 resize-y leading-relaxed font-mono text-xs"
               value={confirmedText}
               onChange={(event) => setConfirmedText(event.target.value)}
             />
             <div className="mt-4 flex flex-wrap gap-2">
               <button
+                type="button"
                 className="button-primary"
                 onClick={generate}
                 disabled={Boolean(busyText) || (!confirmedText.trim() && !previewUrl)}
               >
-                {busyText ? <Loader2 className="animate-spin" size={18} /> : <Sparkles size={18} />}
-                TODO候補生成
+                {busyText ? <Loader2 className="animate-spin" size={14} /> : <Sparkles size={14} />}
+                <span>TODO候補生成</span>
               </button>
               {busyText ? (
-                <span className="inline-flex items-center text-sm font-semibold text-moss">
+                <span className="inline-flex items-center text-xs font-medium text-zinc-600">
                   {busyText}
                 </span>
               ) : null}
@@ -372,15 +380,22 @@ function NewTaskContent() {
           </div>
 
           {result ? (
-            <div className="rounded-md border border-ink/10 bg-white p-5 shadow-sm">
+            <div className="rounded-xl border border-zinc-200/90 bg-white p-5 shadow-2xs">
               <div className="flex flex-col justify-between gap-3 md:flex-row md:items-center">
                 <div>
-                  <p className="text-sm font-bold text-moss">AI候補</p>
-                  <h2 className="text-xl font-bold">{result.summary}</h2>
+                  <p className="text-xs font-bold text-zinc-500 uppercase tracking-wider">
+                    AI抽出サマリー
+                  </p>
+                  <h2 className="text-base font-bold text-zinc-950">{result.summary}</h2>
                 </div>
-                <button className="button-primary" onClick={save} disabled={Boolean(busyText)}>
-                  <Save size={18} />
-                  確定して登録
+                <button
+                  type="button"
+                  className="button-primary"
+                  onClick={save}
+                  disabled={Boolean(busyText)}
+                >
+                  <Save size={14} />
+                  <span>確定して登録</span>
                 </button>
               </div>
 

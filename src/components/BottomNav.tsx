@@ -20,7 +20,7 @@ export function BottomNav() {
   }
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-4 border-t border-ink/10 bg-cloud/95 px-2 py-2 backdrop-blur md:hidden">
+    <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-4 border-t border-zinc-200/80 bg-white/95 px-2 py-2 backdrop-blur-md md:hidden">
       {navItems.map((item) => {
         const Icon = item.icon;
         const isActive = pathname === item.href;
@@ -28,11 +28,11 @@ export function BottomNav() {
           <Link
             key={item.href + item.label}
             href={item.href}
-            className={`flex flex-col items-center gap-1 rounded-md px-2 py-1.5 text-xs font-semibold transition ${
-              isActive ? "text-moss font-bold" : "text-ink/70 hover:text-ink"
+            className={`flex flex-col items-center gap-1 rounded-md px-2 py-1.5 text-xs transition ${
+              isActive ? "text-zinc-950 font-bold" : "text-zinc-500 hover:text-zinc-900"
             }`}
           >
-            <Icon size={18} />
+            <Icon size={17} />
             {item.label}
           </Link>
         );
