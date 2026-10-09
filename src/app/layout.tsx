@@ -1,20 +1,16 @@
-import { ClipboardCheck, Home, ListTodo, Users } from "lucide-react";
+import { ClipboardCheck } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { BottomNav } from "@/components/BottomNav";
+import { HeaderNav } from "@/components/HeaderNav";
 import { UserNav } from "@/components/UserNav";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "育児事務AIエージェント",
-  description: "連絡内容から家族で共有できるTODOを作るWeb MVP"
+  title: "育児タスクAI | 園・学校のお便りをパシャリ。TODOを家族でシェア",
+  description:
+    "園や学校からのお便り・プリントからAIがTODO・持ち物を自動抽出。きょうだい別管理と夫婦のチーム分担で育児負担を減らすWebアプリ。"
 };
-
-const navItems = [
-  { href: "/dashboard", label: "ホーム", icon: Home },
-  { href: "/family", label: "家族の分担", icon: Users },
-  { href: "/tasks/new", label: "作成", icon: ClipboardCheck },
-  { href: "/groups", label: "グループ", icon: ListTodo }
-];
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
@@ -23,48 +19,20 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <div className="min-h-screen">
           <header className="sticky top-0 z-30 border-b border-ink/10 bg-cloud/90 backdrop-blur">
             <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-              <Link href="/dashboard" className="flex items-center gap-2 font-bold tracking-normal">
+              <Link href="/" className="flex items-center gap-2 font-bold tracking-normal">
                 <span className="grid size-9 place-items-center rounded-md bg-ink text-white">
                   <ClipboardCheck size={19} />
                 </span>
                 <span>育児タスクAI</span>
               </Link>
               <div className="flex items-center gap-2">
-                <nav className="hidden items-center gap-1 md:flex">
-                  {navItems.map((item) => {
-                    const Icon = item.icon;
-                    return (
-                      <Link
-                        key={item.href + item.label}
-                        href={item.href}
-                        className="button-secondary min-h-9 px-3"
-                      >
-                        <Icon size={17} />
-                        {item.label}
-                      </Link>
-                    );
-                  })}
-                </nav>
+                <HeaderNav />
                 <UserNav />
               </div>
             </div>
           </header>
           <main>{children}</main>
-          <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-4 border-t border-ink/10 bg-cloud/95 px-2 py-2 backdrop-blur md:hidden">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.href + item.label}
-                  href={item.href}
-                  className="flex flex-col items-center gap-1 rounded-md px-2 py-1.5 text-xs font-semibold"
-                >
-                  <Icon size={18} />
-                  {item.label}
-                </Link>
-              );
-            })}
-          </nav>
+          <BottomNav />
         </div>
       </body>
     </html>

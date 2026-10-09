@@ -52,6 +52,14 @@ export function UserNav() {
     return null;
   }
 
+  if (!loading && !user) {
+    return (
+      <Link href="/login" className="button-primary min-h-9 px-3.5 text-xs font-bold">
+        ログイン
+      </Link>
+    );
+  }
+
   const displayName = user?.name || "ユーザー";
   const initial = displayName.trim().charAt(0).toUpperCase();
 

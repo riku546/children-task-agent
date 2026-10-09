@@ -1,12 +1,21 @@
 "use client";
 
-import { Briefcase, CalendarDays, Heart, ListTodo, Plus, RefreshCw, Users } from "lucide-react";
+import {
+  Briefcase,
+  CalendarDays,
+  Camera,
+  Heart,
+  ListTodo,
+  Plus,
+  RefreshCw,
+  Upload,
+  Users
+} from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { CalendarView } from "@/components/CalendarView";
 import { ConflictAlerts } from "@/components/ConflictAlerts";
 import { FamilyTeamMeter } from "@/components/FamilyTeamMeter";
-import { QuickScanHero } from "@/components/QuickScanHero";
 import { QuickWorkScheduleModal } from "@/components/QuickWorkScheduleModal";
 import { SiblingTaskTimeline } from "@/components/SiblingTaskTimeline";
 import { TaskList } from "@/components/TaskList";
@@ -144,8 +153,12 @@ export default function DashboardPage() {
       {/* ページヘッダー */}
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
         <div>
-          <p className="text-sm font-bold text-moss">Team Parenting Dashboard</p>
-          <h1 className="mt-1 text-3xl font-black tracking-normal md:text-5xl">家族のTODO</h1>
+          <p className="text-xs font-bold tracking-wide uppercase text-moss">
+            Childcare Task Agent
+          </p>
+          <h1 className="mt-1 text-2xl font-black tracking-normal sm:text-3xl md:text-4xl">
+            家族のTODO
+          </h1>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <button
@@ -158,7 +171,11 @@ export default function DashboardPage() {
             <RefreshCw size={18} className={loading ? "animate-spin" : ""} />
           </button>
 
-          {/* 仕事予定クイック追加ボタン */}
+          <Link href="/tasks/new" className="button-primary text-xs sm:text-sm">
+            <Camera size={16} />
+            お便りをスキャン
+          </Link>
+
           <button
             type="button"
             onClick={() => setIsWorkModalOpen(true)}
@@ -173,16 +190,43 @@ export default function DashboardPage() {
             <Users size={16} />
             家族の分担
           </Link>
-          <Link href="/tasks/new" className="button-primary text-xs sm:text-sm">
+
+          <Link href="/tasks/new" className="button-secondary text-xs sm:text-sm">
             <Plus size={16} />
-            TODO手動登録
+            手動登録
           </Link>
         </div>
       </div>
 
-      {/* 1. お便り・プリントのクイックスキャン Hero（最上部の主役） */}
-      <div className="mt-7">
-        <QuickScanHero />
+      {/* 1. お便り・プリントのスキャン（実務用クイックバー） */}
+      <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 rounded-2xl border border-moss/20 bg-gradient-to-r from-mint/25 via-white to-cloud p-4 sm:p-5 shadow-2xs">
+        <div className="flex items-center gap-3">
+          <span className="grid size-11 place-items-center rounded-xl bg-moss text-white shadow-xs shrink-0">
+            <Camera size={22} />
+          </span>
+          <div>
+            <h2 className="text-sm font-bold text-ink">お便り・プリントからTODOを作成</h2>
+            <p className="text-xs text-ink/65">
+              写真撮影・PDF・画像からAIが提出物や持ち物を自動抽出します
+            </p>
+          </div>
+        </div>
+        <div className="flex w-full sm:w-auto items-center gap-2 shrink-0">
+          <Link
+            href="/tasks/new"
+            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 rounded-xl bg-moss px-4 py-2.5 text-xs font-bold text-white shadow-xs transition hover:bg-moss/90 focus-ring"
+          >
+            <Camera size={15} />
+            <span>撮影・スキャン</span>
+          </Link>
+          <Link
+            href="/tasks/new"
+            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 rounded-xl border border-ink/15 bg-white px-3.5 py-2.5 text-xs font-bold text-ink shadow-2xs transition hover:bg-cloud focus-ring"
+          >
+            <Upload size={15} className="text-ink/60" />
+            <span>画像・PDF選択</span>
+          </Link>
+        </div>
       </div>
 
       {/* 2. チーム育児メーター（夫婦の協働スコア・偏り解消） */}
