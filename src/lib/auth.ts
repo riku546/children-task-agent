@@ -24,37 +24,81 @@ export async function syncApplicationUser(user: User) {
 
   const email = user.email;
   const name = getDisplayName(user);
+  const avatarUrl =
+    typeof user.user_metadata?.avatar_url === "string" ? user.user_metadata.avatar_url : undefined;
 
-  const dbUser = await tryDb(() =>
-    prisma.user.upsert({
+  // 通常アクセス時はSELECT 1回でユーザーとグループを高速取得（重いupsertと2段階クエリを回避）
+  const existingUser = await tryDb(() =>
+    prisma.user.findUnique({
       where: { email },
-      update: {
-        name,
-        image:
-          typeof user.user_metadata?.avatar_url === "string"
-            ? user.user_metadata.avatar_url
-            : undefined
-      },
-      create: {
+      include: {
+        groups: {
+          take: 1,
+          select: { groupId: true }
+        }
+      }
+    })
+  );
+
+  if (existingUser) {
+    const defaultGroupId = existingUser.groups[0]?.groupId ?? null;
+
+    // グループが既に存在していれば、追加クエリや書き込みなしで即座に返却
+    if (defaultGroupId) {
+      return {
+        id: existingUser.id,
+        email: existingUser.email,
+        name: existingUser.name || name,
+        image: existingUser.image ?? null,
+        defaultGroupId
+      };
+    }
+
+    // グループが存在しない場合のみ作成
+    const newGroup = await tryDb(() =>
+      prisma.familyGroup.create({
+        data: {
+          name: "わが家",
+          createdById: existingUser.id,
+          members: {
+            create: {
+              userId: existingUser.id,
+              role: "OWNER",
+              displayName: existingUser.name || name
+            }
+          },
+          children: {
+            create: {
+              name: "未設定"
+            }
+          }
+        }
+      })
+    );
+
+    return {
+      id: existingUser.id,
+      email: existingUser.email,
+      name: existingUser.name || name,
+      image: existingUser.image ?? null,
+      defaultGroupId: newGroup?.id ?? null
+    };
+  }
+
+  // ユーザーが未登録の場合（初回登録時のみ実行）
+  const dbUser = await tryDb(() =>
+    prisma.user.create({
+      data: {
         email,
         name,
-        image:
-          typeof user.user_metadata?.avatar_url === "string"
-            ? user.user_metadata.avatar_url
-            : undefined
+        image: avatarUrl
       }
     })
   );
 
   if (dbUser) {
-    const group = await tryDb(async () => {
-      const existing = await prisma.familyGroup.findFirst({
-        where: { members: { some: { userId: dbUser.id } } },
-        include: { members: true, children: true }
-      });
-      if (existing) return existing;
-
-      return prisma.familyGroup.create({
+    const newGroup = await tryDb(() =>
+      prisma.familyGroup.create({
         data: {
           name: "わが家",
           createdById: dbUser.id,
@@ -70,17 +114,16 @@ export async function syncApplicationUser(user: User) {
               name: "未設定"
             }
           }
-        },
-        include: { members: true, children: true }
-      });
-    });
+        }
+      })
+    );
 
     return {
       id: dbUser.id,
       email: dbUser.email,
       name: dbUser.name || name,
       image: dbUser.image ?? null,
-      defaultGroupId: group?.id ?? null
+      defaultGroupId: newGroup?.id ?? null
     };
   }
 

@@ -128,16 +128,23 @@ export async function addChild(groupId: string, name: string): Promise<ChildReco
 }
 
 export async function listTasks(user: UserLike): Promise<TaskRecord[]> {
-  const groupIds = (await listGroups(user)).map((group) => group.id);
   const dbTasks = await tryDb(() =>
     prisma.task.findMany({
-      where: { groupId: { in: groupIds } },
+      where: {
+        group: {
+          members: {
+            some: { userId: user.id }
+          }
+        }
+      },
       include: { child: true, assignee: true },
       orderBy: [{ status: "asc" }, { dueDate: "asc" }, { createdAt: "desc" }]
     })
   );
 
   if (dbTasks) return dbTasks.map(mapTask);
+
+  const groupIds = (await listGroups(user)).map((group) => group.id);
   return memoryStore.tasks
     .filter((task) => groupIds.includes(task.groupId))
     .sort((a, b) =>
@@ -148,15 +155,23 @@ export async function listTasks(user: UserLike): Promise<TaskRecord[]> {
 }
 
 export async function getTask(user: UserLike, taskId: string): Promise<TaskRecord | null> {
-  const groupIds = (await listGroups(user)).map((group) => group.id);
   const dbTask = await tryDb(() =>
     prisma.task.findFirst({
-      where: { id: taskId, groupId: { in: groupIds } },
+      where: {
+        id: taskId,
+        group: {
+          members: {
+            some: { userId: user.id }
+          }
+        }
+      },
       include: { child: true, assignee: true }
     })
   );
 
   if (dbTask) return mapTask(dbTask);
+
+  const groupIds = (await listGroups(user)).map((group) => group.id);
   return (
     memoryStore.tasks.find((task) => task.id === taskId && groupIds.includes(task.groupId)) ?? null
   );
