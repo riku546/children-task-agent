@@ -204,18 +204,18 @@ function DashboardContent() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 md:py-8">
-      {/* ページヘッダー（Linearスタイル） */}
+      {/* ページヘッダー */}
       <div className="flex flex-col justify-between gap-4 border-b border-zinc-200 pb-4 md:flex-row md:items-center">
         <div>
           <div className="flex items-center gap-2.5">
-            <h1 className="text-lg font-bold tracking-tight text-zinc-950 sm:text-xl">
+            <h1 className="text-xl font-bold tracking-tight text-zinc-950 sm:text-2xl">
               タスク管理
             </h1>
-            <span className="rounded bg-zinc-100 px-2 py-0.5 font-mono text-xs font-medium text-zinc-600">
+            <span className="rounded bg-zinc-100 px-2 py-0.5 font-mono text-xs font-semibold text-zinc-700">
               未完了 {openTasks.length}件
             </span>
           </div>
-          <p className="mt-0.5 text-xs text-zinc-500">
+          <p className="mt-1 text-sm text-zinc-600">
             お便りから抽出されたタスクと提出期限・分担の一元管理
           </p>
         </div>
@@ -229,11 +229,11 @@ function DashboardContent() {
             title="最新情報に更新"
             disabled={loading}
           >
-            <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
+            <RefreshCw size={15} className={loading ? "animate-spin" : ""} />
           </button>
 
           <Link href="/tasks/new" className="button-primary">
-            <Camera size={14} />
+            <Camera size={15} />
             <span>お便りをスキャン</span>
           </Link>
 
@@ -243,18 +243,18 @@ function DashboardContent() {
             className="button-secondary"
             title="残業や出張など、仕事の予定を追加して衝突を検知"
           >
-            <Briefcase size={14} />
+            <Briefcase size={15} />
             <span>仕事の予定</span>
           </button>
 
           <Link href="/tasks/new" className="button-secondary">
-            <Plus size={14} />
+            <Plus size={15} />
             <span>新規タスク</span>
           </Link>
         </div>
       </div>
 
-      {/* 1. 予定の重複・衝突アラート（1行インラインバナー） */}
+      {/* 1. 予定の重複・衝突アラート */}
       <ConflictAlerts
         conflicts={conflicts}
         onSelectDate={(dateKey) => {
@@ -263,7 +263,7 @@ function DashboardContent() {
         }}
       />
 
-      {/* 2. ワークロード分析ストリップ（1行インラインバー） */}
+      {/* 2. ワークロード分析ストリップ */}
       <FamilyTeamMeter tasks={tasks} />
 
       {/* 3. ツールバー（表示切り替えタブ ＋ ステータスカウント） */}
@@ -273,66 +273,66 @@ function DashboardContent() {
           <button
             type="button"
             onClick={() => handleViewChange("siblings")}
-            className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition ${
+            className={`flex items-center gap-1.5 rounded-md px-3.5 py-1.5 text-sm font-semibold transition ${
               viewMode === "siblings"
                 ? "bg-white text-zinc-950 shadow-2xs"
                 : "text-zinc-600 hover:text-zinc-900"
             }`}
           >
-            <Layers size={13} />
+            <Layers size={15} />
             <span>きょうだい別</span>
           </button>
 
           <button
             type="button"
             onClick={() => handleViewChange("assignee")}
-            className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition ${
+            className={`flex items-center gap-1.5 rounded-md px-3.5 py-1.5 text-sm font-semibold transition ${
               viewMode === "assignee"
                 ? "bg-white text-zinc-950 shadow-2xs"
                 : "text-zinc-600 hover:text-zinc-900"
             }`}
           >
-            <Users size={13} />
+            <Users size={15} />
             <span>担当者別</span>
           </button>
 
           <button
             type="button"
             onClick={() => handleViewChange("list")}
-            className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition ${
+            className={`flex items-center gap-1.5 rounded-md px-3.5 py-1.5 text-sm font-semibold transition ${
               viewMode === "list"
                 ? "bg-white text-zinc-950 shadow-2xs"
                 : "text-zinc-600 hover:text-zinc-900"
             }`}
           >
-            <ListTodo size={13} />
+            <ListTodo size={15} />
             <span>期限別</span>
           </button>
 
           <button
             type="button"
             onClick={() => handleViewChange("calendar")}
-            className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition ${
+            className={`flex items-center gap-1.5 rounded-md px-3.5 py-1.5 text-sm font-semibold transition ${
               viewMode === "calendar"
                 ? "bg-white text-zinc-950 shadow-2xs"
                 : "text-zinc-600 hover:text-zinc-900"
             }`}
           >
-            <CalendarDays size={13} />
+            <CalendarDays size={15} />
             <span>カレンダー</span>
           </button>
         </div>
 
         {/* サマリーカウンター */}
-        <div className="flex items-center gap-4 text-xs font-mono text-zinc-500">
+        <div className="flex items-center gap-4 text-sm font-mono text-zinc-600">
           <span>
-            今日: <strong className="text-zinc-900">{todayTasks.length}</strong>
+            今日: <strong className="text-zinc-950">{todayTasks.length}</strong>
           </span>
           <span>
-            明日: <strong className="text-zinc-900">{tomorrowTasks.length}</strong>
+            明日: <strong className="text-zinc-950">{tomorrowTasks.length}</strong>
           </span>
           <span>
-            完了: <strong className="text-zinc-900">{doneCount}</strong>
+            完了: <strong className="text-zinc-950">{doneCount}</strong>
           </span>
         </div>
       </div>
@@ -367,14 +367,14 @@ function DashboardContent() {
             onChildAdded={() => load(true)}
           />
         ) : (
-          /* 期限別フラットテーブル（セクション分割） */
+          /* 期限別フラットテーブル */
           <div className="space-y-6">
             {/* 今日 */}
             <div>
-              <div className="flex items-center justify-between border-b border-zinc-200 pb-1.5 text-xs font-bold text-zinc-900">
+              <div className="flex items-center justify-between border-b border-zinc-200 pb-2 text-sm font-bold text-zinc-900">
                 <div className="flex items-center gap-2">
                   <span>今日のTODO</span>
-                  <span className="font-mono text-[11px] text-zinc-400">({todayTasks.length})</span>
+                  <span className="font-mono text-xs text-zinc-400">({todayTasks.length})</span>
                 </div>
               </div>
               <TaskList
@@ -391,10 +391,10 @@ function DashboardContent() {
             {/* 明日 */}
             {tomorrowTasks.length > 0 && (
               <div>
-                <div className="flex items-center justify-between border-b border-zinc-200 pb-1.5 text-xs font-bold text-zinc-900">
+                <div className="flex items-center justify-between border-b border-zinc-200 pb-2 text-sm font-bold text-zinc-900">
                   <div className="flex items-center gap-2">
                     <span>明日のTODO</span>
-                    <span className="font-mono text-[11px] text-zinc-400">
+                    <span className="font-mono text-xs text-zinc-400">
                       ({tomorrowTasks.length})
                     </span>
                   </div>
@@ -413,12 +413,10 @@ function DashboardContent() {
 
             {/* 今後 */}
             <div>
-              <div className="flex items-center justify-between border-b border-zinc-200 pb-1.5 text-xs font-bold text-zinc-900">
+              <div className="flex items-center justify-between border-b border-zinc-200 pb-2 text-sm font-bold text-zinc-900">
                 <div className="flex items-center gap-2">
                   <span>今後のTODO</span>
-                  <span className="font-mono text-[11px] text-zinc-400">
-                    ({upcomingTasks.length})
-                  </span>
+                  <span className="font-mono text-xs text-zinc-400">({upcomingTasks.length})</span>
                 </div>
               </div>
               <TaskList
@@ -435,10 +433,10 @@ function DashboardContent() {
             {/* 完了済み */}
             {doneTasks.length > 0 && (
               <div className="pt-4">
-                <div className="flex items-center justify-between border-b border-zinc-200 pb-1.5 text-xs font-bold text-zinc-400">
+                <div className="flex items-center justify-between border-b border-zinc-200 pb-2 text-sm font-bold text-zinc-400">
                   <div className="flex items-center gap-2">
                     <span>完了済み</span>
-                    <span className="font-mono text-[11px]">({doneCount})</span>
+                    <span className="font-mono text-xs">({doneCount})</span>
                   </div>
                 </div>
                 <TaskList
@@ -465,7 +463,7 @@ function DashboardContent() {
 
       {/* トースト通知 */}
       {thankYouMessage && (
-        <div className="fixed bottom-6 right-6 z-50 rounded-lg bg-zinc-900 px-4 py-2.5 text-xs font-medium text-white shadow-soft animate-in fade-in slide-in-from-bottom-2">
+        <div className="fixed bottom-6 right-6 z-50 rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white shadow-soft animate-in fade-in slide-in-from-bottom-2">
           {thankYouMessage}
         </div>
       )}
@@ -477,7 +475,7 @@ export default function DashboardPage() {
   return (
     <Suspense
       fallback={
-        <div className="mx-auto max-w-5xl px-4 py-16 text-center text-xs text-zinc-400">
+        <div className="mx-auto max-w-5xl px-4 py-16 text-center text-sm text-zinc-400">
           読み込み中...
         </div>
       }

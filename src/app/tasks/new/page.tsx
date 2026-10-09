@@ -244,7 +244,7 @@ function NewTaskContent() {
           <h1 className="text-xl font-bold tracking-tight text-zinc-950 sm:text-2xl">
             お便り・連絡からTODO作成
           </h1>
-          <p className="mt-0.5 text-xs text-zinc-500">
+          <p className="mt-1 text-sm text-zinc-600">
             写真やPDFを取り込むとAIが持ち物や提出物を自動抽出します
           </p>
         </div>
@@ -255,7 +255,7 @@ function NewTaskContent() {
         {/* 左カラム: 入力ソース */}
         <div className="space-y-5">
           <div>
-            <span className="text-xs font-bold uppercase tracking-wider text-zinc-500">
+            <span className="text-sm font-bold uppercase tracking-wider text-zinc-600">
               1. ソースの選択・取り込み
             </span>
           </div>
@@ -269,14 +269,14 @@ function NewTaskContent() {
                 <button
                   key={item.id}
                   type="button"
-                  className={`flex items-center justify-center gap-1 rounded py-1.5 text-xs font-medium transition ${
+                  className={`flex items-center justify-center gap-1.5 rounded py-2 text-sm font-medium transition ${
                     isActive
                       ? "bg-white text-zinc-900 font-semibold shadow-2xs"
                       : "text-zinc-600 hover:text-zinc-900"
                   }`}
                   onClick={() => setMode(item.id)}
                 >
-                  <Icon size={13} />
+                  <Icon size={15} />
                   <span>{item.label}</span>
                 </button>
               );
@@ -285,7 +285,7 @@ function NewTaskContent() {
 
           {/* グループ選択 */}
           <div>
-            <label className="block text-xs font-semibold text-zinc-700" htmlFor="group">
+            <label className="block text-sm font-semibold text-zinc-700" htmlFor="group">
               共有先ファミリー
             </label>
             <select
@@ -379,16 +379,16 @@ function NewTaskContent() {
           <div>
             <div className="flex items-center justify-between">
               <label
-                className="text-xs font-bold uppercase tracking-wider text-zinc-500"
+                className="text-sm font-bold uppercase tracking-wider text-zinc-600"
                 htmlFor="confirmed-text"
               >
                 2. 読み取りテキストの確認・編集
               </label>
-              <span className="text-[11px] text-zinc-500">直接編集可能</span>
+              <span className="text-xs text-zinc-500">直接編集可能</span>
             </div>
             <textarea
               id="confirmed-text"
-              className="field mt-2 min-h-36 resize-y font-mono text-xs leading-relaxed"
+              className="field mt-2 min-h-36 resize-y font-mono text-sm leading-relaxed"
               value={confirmedText}
               onChange={(event) => setConfirmedText(event.target.value)}
               placeholder="お便りのテキストをここに入力するか、左のメニューから写真・PDFを取り込んでください"
@@ -396,16 +396,16 @@ function NewTaskContent() {
             <div className="mt-3 flex items-center justify-between">
               <button
                 type="button"
-                className="button-primary"
+                className="button-primary text-sm"
                 onClick={generate}
                 disabled={Boolean(busyText) || (!confirmedText.trim() && !previewUrl)}
               >
-                {busyText ? <Loader2 className="animate-spin" size={14} /> : <Sparkles size={14} />}
+                {busyText ? <Loader2 className="animate-spin" size={15} /> : <Sparkles size={15} />}
                 <span>テキストからTODO候補を抽出</span>
               </button>
               {busyText ? (
-                <span className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700">
-                  <Loader2 className="animate-spin" size={13} />
+                <span className="inline-flex items-center gap-1.5 text-sm font-medium text-emerald-700">
+                  <Loader2 className="animate-spin" size={14} />
                   {busyText}
                 </span>
               ) : null}
@@ -418,31 +418,31 @@ function NewTaskContent() {
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold uppercase tracking-wider text-zinc-500">
+                    <span className="text-sm font-bold uppercase tracking-wider text-zinc-600">
                       3. 生成されたTODO候補
                     </span>
-                    <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 border border-emerald-200/60">
+                    <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700 border border-emerald-200/60">
                       {candidates.length} 件
                     </span>
                   </div>
-                  <p className="mt-0.5 text-sm font-semibold text-zinc-900">{result.summary}</p>
+                  <p className="mt-1 text-base font-semibold text-zinc-900">{result.summary}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
                     onClick={addManualCandidate}
-                    className="button-secondary text-xs"
+                    className="button-secondary text-sm"
                   >
-                    <Plus size={13} />
+                    <Plus size={14} />
                     <span>行を追加</span>
                   </button>
                   <button
                     type="button"
-                    className="button-primary"
+                    className="button-primary text-sm"
                     onClick={save}
                     disabled={Boolean(busyText) || candidates.length === 0}
                   >
-                    <Save size={14} />
+                    <Save size={15} />
                     <span>確定して一括登録</span>
                   </button>
                 </div>
@@ -453,7 +453,7 @@ function NewTaskContent() {
                 {candidates.map((candidate, index) => (
                   <div key={`${candidate.title}-${index}`} className="py-4 space-y-3">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-[11px] font-bold text-zinc-600 font-mono">
+                      <span className="text-xs font-bold text-zinc-600 font-mono">
                         #{index + 1}
                       </span>
                       <button
@@ -505,10 +505,10 @@ function NewTaskContent() {
                         value={candidate.childName}
                         onChange={(value) => updateCandidate(index, { childName: value })}
                       />
-                      <label className="block text-xs font-semibold text-zinc-700">
+                      <label className="block text-sm font-semibold text-zinc-700">
                         重要度
                         <select
-                          className="field mt-1"
+                          className="field mt-1 text-sm"
                           value={candidate.priority}
                           onChange={(event) =>
                             updateCandidate(index, {
@@ -523,11 +523,11 @@ function NewTaskContent() {
                       </label>
                     </div>
 
-                    <label className="block text-xs font-semibold text-zinc-700">
+                    <label className="block text-sm font-semibold text-zinc-700">
                       メモ・補足
                       <input
                         type="text"
-                        className="field mt-1"
+                        className="field mt-1 text-sm"
                         value={candidate.notes}
                         onChange={(event) => updateCandidate(index, { notes: event.target.value })}
                         placeholder="持ち物の個数や注意事項など"
@@ -540,15 +540,15 @@ function NewTaskContent() {
           ) : (
             <div className="flex flex-1 flex-col items-center justify-center p-12 text-center text-zinc-500">
               <Sparkles size={24} className="text-zinc-400 mb-2" />
-              <p className="text-xs font-medium text-zinc-600">
+              <p className="text-sm font-medium text-zinc-600">
                 左側から画像・PDFを取り込むか、上のテキストエリアに入力して「TODO候補を抽出」を押してください。
               </p>
               <button
                 type="button"
                 onClick={addManualCandidate}
-                className="button-secondary mt-4 text-xs"
+                className="button-secondary mt-4 text-sm"
               >
-                <Plus size={13} />
+                <Plus size={14} />
                 手動でTODOを入力する
               </button>
             </div>
@@ -573,10 +573,10 @@ function Field({
   onChange: (value: string) => void;
 }) {
   return (
-    <label className="block text-xs font-semibold text-zinc-700">
+    <label className="block text-sm font-semibold text-zinc-700">
       {label}
       <input
-        className="field mt-1"
+        className="field mt-1 text-sm"
         type={type}
         list={list}
         value={value}

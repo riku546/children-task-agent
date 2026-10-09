@@ -71,10 +71,10 @@ export default function TaskDetailPage() {
         <div className="flex items-center gap-3">
           <Link
             href="/dashboard"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-zinc-600 hover:text-zinc-950 transition"
+            className="inline-flex items-center gap-1.5 text-sm font-semibold text-zinc-600 hover:text-zinc-950 transition"
           >
-            <Undo2 size={13} />
-            ダッシュボード
+            <Undo2 size={14} />
+            タスク管理
           </Link>
           <span className="text-zinc-300">/</span>
           <span className="font-mono text-xs text-zinc-500">{task.id.slice(0, 8)}</span>
@@ -84,22 +84,22 @@ export default function TaskDetailPage() {
           <button
             type="button"
             className={
-              task.status === "DONE" ? "button-secondary text-xs" : "button-primary text-xs"
+              task.status === "DONE" ? "button-secondary text-sm" : "button-primary text-sm"
             }
             onClick={toggleDone}
           >
-            <CheckCircle2 size={14} />
+            <CheckCircle2 size={15} />
             <span>{task.status === "DONE" ? "未完了に戻す" : "完了にする"}</span>
           </button>
-          <button type="button" className="button-primary text-xs" onClick={() => save()}>
-            <Save size={13} />
+          <button type="button" className="button-primary text-sm" onClick={() => save()}>
+            <Save size={14} />
             <span>変更を保存</span>
           </button>
         </div>
       </div>
 
       {calendarState ? (
-        <div className="mt-4 rounded border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-800">
+        <div className="mt-4 rounded border border-emerald-200 bg-emerald-50 px-3.5 py-2.5 text-sm font-medium text-emerald-800">
           Googleカレンダー連携: {calendarState}
         </div>
       ) : null}
@@ -111,14 +111,14 @@ export default function TaskDetailPage() {
           <div>
             <label
               htmlFor="task-title"
-              className="block text-xs font-bold uppercase tracking-wider text-zinc-500"
+              className="block text-sm font-bold uppercase tracking-wider text-zinc-600"
             >
               タスク名
             </label>
             <input
               id="task-title"
               type="text"
-              className="mt-1.5 w-full rounded border border-zinc-200 bg-white px-3 py-2 text-lg font-bold tracking-tight text-zinc-950 placeholder-zinc-400 focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+              className="mt-1.5 w-full rounded border border-zinc-200 bg-white px-3 py-2 text-xl font-bold tracking-tight text-zinc-950 placeholder-zinc-400 focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
               value={form.title || ""}
               onChange={(e) => setForm((curr) => ({ ...curr, title: e.target.value }))}
               placeholder="タスクのタイトル"
@@ -128,7 +128,7 @@ export default function TaskDetailPage() {
           <div>
             <label
               htmlFor="task-desc"
-              className="block text-xs font-bold uppercase tracking-wider text-zinc-500"
+              className="block text-sm font-bold uppercase tracking-wider text-zinc-600"
             >
               詳細・メモ
             </label>
@@ -143,19 +143,19 @@ export default function TaskDetailPage() {
 
           {/* カレンダー連携アクション */}
           <div className="border-t border-zinc-200 pt-5">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-500">外部連携</h3>
-            <div className="mt-3 flex items-center justify-between rounded border border-zinc-200 bg-zinc-50/50 p-3">
-              <div className="flex items-center gap-2.5">
-                <CalendarPlus size={16} className="text-zinc-600" />
+            <h3 className="text-sm font-bold uppercase tracking-wider text-zinc-600">外部連携</h3>
+            <div className="mt-3 flex items-center justify-between rounded border border-zinc-200 bg-zinc-50/50 p-3.5">
+              <div className="flex items-center gap-3">
+                <CalendarPlus size={18} className="text-zinc-600" />
                 <div>
-                  <div className="text-xs font-semibold text-zinc-900">Google カレンダー</div>
-                  <div className="text-[11px] text-zinc-500">
+                  <div className="text-sm font-semibold text-zinc-900">Google カレンダー</div>
+                  <div className="text-xs text-zinc-500">
                     {task.googleEventId ? `登録済み (${task.googleEventId})` : "未連携"}
                   </div>
                 </div>
               </div>
               <a
-                className="button-secondary text-xs"
+                className="button-secondary text-sm"
                 href={`/api/calendar/start?taskId=${task.id}`}
               >
                 <span>{task.googleEventId ? "再同期する" : "カレンダーに追加"}</span>
@@ -167,26 +167,26 @@ export default function TaskDetailPage() {
         {/* 右サイドバー: メタデータ属性パネル */}
         <aside className="space-y-5 lg:border-l lg:border-zinc-200 lg:pl-6">
           <div className="pb-1">
-            <span className="text-xs font-bold uppercase tracking-wider text-zinc-500">
+            <span className="text-sm font-bold uppercase tracking-wider text-zinc-600">
               属性・プロパティ
             </span>
           </div>
 
           <div className="space-y-4">
             <div>
-              <span className="block text-xs font-semibold text-zinc-600">ステータス</span>
+              <span className="block text-sm font-semibold text-zinc-700">ステータス</span>
               <div className="mt-1">
                 <StatusPill status={task.status} />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-zinc-600" htmlFor="task-type">
+              <label className="block text-sm font-semibold text-zinc-700" htmlFor="task-type">
                 種別
               </label>
               <input
                 id="task-type"
-                className="field mt-1 text-xs"
+                className="field mt-1 text-sm"
                 value={form.type || ""}
                 onChange={(e) => setForm((curr) => ({ ...curr, type: e.target.value }))}
                 placeholder="提出物, 持ち物, 行事 等"
@@ -194,25 +194,25 @@ export default function TaskDetailPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-zinc-600" htmlFor="task-due">
+              <label className="block text-sm font-semibold text-zinc-700" htmlFor="task-due">
                 期限日
               </label>
               <input
                 id="task-due"
                 type="date"
-                className="field mt-1 text-xs"
+                className="field mt-1 text-sm"
                 value={toDateInputValue(form.dueDate)}
                 onChange={(e) => setForm((curr) => ({ ...curr, dueDate: e.target.value }))}
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-zinc-600" htmlFor="task-priority">
+              <label className="block text-sm font-semibold text-zinc-700" htmlFor="task-priority">
                 優先度
               </label>
               <select
                 id="task-priority"
-                className="field mt-1 text-xs"
+                className="field mt-1 text-sm"
                 value={form.priority || "medium"}
                 onChange={(e) =>
                   setForm((curr) => ({ ...curr, priority: e.target.value as Priority }))
@@ -225,20 +225,20 @@ export default function TaskDetailPage() {
             </div>
 
             <div className="border-t border-zinc-200 pt-3">
-              <span className="block text-xs font-semibold text-zinc-600">対象の子ども</span>
-              <span className="mt-1 block text-xs font-medium text-zinc-900">
+              <span className="block text-sm font-semibold text-zinc-700">対象の子ども</span>
+              <span className="mt-1 block text-sm font-medium text-zinc-900">
                 {task.childName || "未指定"}
               </span>
             </div>
 
             <div>
-              <span className="block text-xs font-semibold text-zinc-600">現在の担当者</span>
-              <span className="mt-1 block text-xs font-medium text-zinc-900">
+              <span className="block text-sm font-semibold text-zinc-700">現在の担当者</span>
+              <span className="mt-1 block text-sm font-medium text-zinc-900">
                 {task.assigneeName || "未設定"}
               </span>
             </div>
 
-            <div className="border-t border-zinc-200 pt-3 text-[11px] font-mono text-zinc-600 space-y-1">
+            <div className="border-t border-zinc-200 pt-3 text-xs font-mono text-zinc-500 space-y-1">
               <div>作成日: {new Date(task.createdAt).toLocaleDateString("ja-JP")}</div>
               <div>更新日: {new Date(task.updatedAt).toLocaleDateString("ja-JP")}</div>
             </div>

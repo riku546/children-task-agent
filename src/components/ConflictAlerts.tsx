@@ -23,41 +23,41 @@ export function ConflictAlerts({ conflicts }: Props) {
   return (
     <div className="rounded border border-amber-200/90 bg-amber-50/40 text-amber-950 transition">
       {/* 1行インラインバー */}
-      <div className="flex items-center justify-between gap-3 py-2 px-3">
+      <div className="flex items-center justify-between gap-3 py-2.5 px-3.5">
         <div className="flex items-center gap-2 min-w-0">
-          <AlertTriangle size={14} className="text-amber-600 shrink-0" />
-          <span className="text-xs font-semibold truncate">
+          <AlertTriangle size={15} className="text-amber-600 shrink-0" />
+          <span className="text-sm font-semibold truncate">
             予定の重複・衝突が {totalCount}件 検出されました
           </span>
-          <span className="hidden sm:inline text-[11px] text-amber-700 truncate">
+          <span className="hidden sm:inline text-xs text-amber-800 truncate">
             — 仕事やきょうだい間の重複を確認してください
           </span>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2.5 shrink-0">
           <Link
             href="/dashboard?view=assignee"
-            className="text-[11px] font-semibold text-amber-800 hover:text-amber-950"
+            className="text-xs font-semibold text-amber-800 hover:text-amber-950 transition"
           >
             分担調整
           </Link>
           <button
             type="button"
             onClick={() => setExpanded(!expanded)}
-            className="inline-flex items-center gap-0.5 text-[11px] font-medium text-amber-800 hover:text-amber-950"
+            className="inline-flex items-center gap-0.5 text-xs font-medium text-amber-800 hover:text-amber-950 transition"
           >
             <span>{expanded ? "閉じる" : "詳細"}</span>
-            {expanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+            {expanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
           </button>
         </div>
       </div>
 
       {/* 展開時詳細（フラットなインライン展開） */}
       {expanded && (
-        <div className="space-y-2.5 px-3 pb-3 pt-1 border-t border-amber-200/60 text-xs">
+        <div className="space-y-2.5 px-3.5 pb-3.5 pt-1 border-t border-amber-200/60 text-sm">
           {workConflicts.map((c) => (
             <div key={`work-${c.dateKey}`} className="flex items-start gap-2 text-zinc-700">
-              <Briefcase size={13} className="text-rose-600 mt-0.5 shrink-0" />
+              <Briefcase size={14} className="text-rose-600 mt-0.5 shrink-0" />
               <div>
                 <span className="font-semibold text-zinc-900">{c.formattedDate || c.dateKey}</span>:{" "}
                 {c.summary}

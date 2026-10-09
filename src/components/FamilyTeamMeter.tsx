@@ -52,14 +52,14 @@ export function FamilyTeamMeter({ tasks }: Props) {
   if (tasks.length === 0 || analysis.totalTodo === 0) return null;
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-200/70 py-2.5 text-xs text-zinc-600">
+    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-200/70 py-2.5 text-sm text-zinc-600">
       {/* 担当者内訳プログレスバー（インライン） */}
       <div className="flex items-center gap-3 min-w-0 flex-1">
-        <span className="font-mono text-[11px] uppercase tracking-wider text-zinc-400 shrink-0">
+        <span className="font-mono text-xs uppercase tracking-wider text-zinc-400 shrink-0">
           Workload
         </span>
 
-        <div className="flex h-2 w-32 sm:w-48 overflow-hidden rounded-full bg-zinc-100 shrink-0">
+        <div className="flex h-2.5 w-32 sm:w-48 overflow-hidden rounded-full bg-zinc-100 shrink-0">
           {analysis.members.map((m, idx) => {
             const pct = (m.todoCount / analysis.totalTodo) * 100;
             const colors = ["bg-zinc-800", "bg-zinc-500", "bg-zinc-400", "bg-zinc-300"];
@@ -82,7 +82,7 @@ export function FamilyTeamMeter({ tasks }: Props) {
           )}
         </div>
 
-        <div className="hidden sm:flex items-center gap-2.5 text-[11px] truncate">
+        <div className="hidden sm:flex items-center gap-2.5 text-xs truncate">
           {analysis.members.map((m, idx) => {
             const dotColors = ["bg-zinc-800", "bg-zinc-500", "bg-zinc-400", "bg-zinc-300"];
             const color = dotColors[idx % dotColors.length];
@@ -106,10 +106,10 @@ export function FamilyTeamMeter({ tasks }: Props) {
 
       <Link
         href="/dashboard?view=assignee"
-        className="inline-flex items-center gap-1 text-[11px] font-medium text-zinc-500 hover:text-zinc-900 transition shrink-0"
+        className="inline-flex items-center gap-1 text-xs font-medium text-zinc-500 hover:text-zinc-900 transition shrink-0"
       >
         <span>分担ボード</span>
-        <ArrowUpRight size={12} />
+        <ArrowUpRight size={13} />
       </Link>
     </div>
   );

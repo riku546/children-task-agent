@@ -119,7 +119,7 @@ export function SiblingTaskTimeline({
               <button
                 type="button"
                 onClick={() => setSelectedChildTab("all")}
-                className={`rounded-md px-2.5 py-1 text-xs font-medium transition ${
+                className={`rounded-md px-3 py-1.5 text-sm font-medium transition ${
                   selectedChildTab === "all"
                     ? "bg-white font-semibold text-zinc-950 shadow-2xs"
                     : "text-zinc-600 hover:text-zinc-900"
@@ -134,7 +134,7 @@ export function SiblingTaskTimeline({
                     key={c.name}
                     type="button"
                     onClick={() => setSelectedChildTab(c.name)}
-                    className={`rounded-md px-2.5 py-1 text-xs font-medium transition ${
+                    className={`rounded-md px-3 py-1.5 text-sm font-medium transition ${
                       isSelected
                         ? "bg-white font-semibold text-zinc-950 shadow-2xs"
                         : "text-zinc-600 hover:text-zinc-900"
@@ -153,9 +153,9 @@ export function SiblingTaskTimeline({
           <button
             type="button"
             onClick={() => setShowAddForm(!showAddForm)}
-            className="inline-flex items-center gap-1 text-xs font-medium text-zinc-600 hover:text-zinc-900 transition"
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-zinc-600 hover:text-zinc-900 transition"
           >
-            <UserPlus size={13} className="text-zinc-400" />
+            <UserPlus size={14} className="text-zinc-400" />
             <span>お子さんを追加</span>
           </button>
         )}
@@ -167,44 +167,44 @@ export function SiblingTaskTimeline({
           onSubmit={handleAddChild}
           className="mt-3 flex flex-wrap items-center gap-2 border-b border-zinc-200 pb-3"
         >
-          <span className="text-xs font-medium text-zinc-700">お子さんの名前:</span>
+          <span className="text-sm font-medium text-zinc-700">お子さんの名前:</span>
           <input
             type="text"
             value={newChildName}
             onChange={(e) => setNewChildName(e.target.value)}
             placeholder="例: 太郎（小1）、花子（年少）"
-            className="field text-xs py-1.5 max-w-xs"
+            className="field text-sm py-1.5 max-w-xs"
             required
           />
           <button
             type="submit"
             disabled={addingChild || !newChildName.trim()}
-            className="button-primary text-xs py-1 px-3"
+            className="button-primary text-sm py-1 px-3"
           >
-            {addingChild ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />}
+            {addingChild ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />}
             登録
           </button>
           <button
             type="button"
             onClick={() => setShowAddForm(false)}
-            className="button-secondary text-xs py-1 px-2.5"
+            className="button-secondary text-sm py-1 px-2.5"
           >
             キャンセル
           </button>
         </form>
       )}
 
-      {/* きょうだい別グルーピングリスト（カードではなくフラットなセクション） */}
+      {/* きょうだい別グルーピングリスト */}
       <div className="mt-4 divide-y divide-zinc-200/80">
         {allChildren.length === 0 ? (
-          <div className="py-12 text-center text-xs text-zinc-400">
+          <div className="py-12 text-center text-sm text-zinc-500">
             <p>登録されたお子さんがいません。</p>
             <button
               type="button"
               onClick={() => setShowAddForm(true)}
-              className="button-secondary mt-3 text-xs"
+              className="button-secondary mt-3 text-sm"
             >
-              <UserPlus size={12} />
+              <UserPlus size={14} />
               お子さんを登録する
             </button>
           </div>
@@ -214,28 +214,26 @@ export function SiblingTaskTimeline({
 
             return (
               <div key={child.name} className="py-4 first:pt-0 last:pb-0">
-                {/* グループセクションヘッダー（Linear風） */}
+                {/* グループセクションヘッダー */}
                 <div className="flex items-center justify-between pb-2">
                   <div className="flex items-center gap-2">
-                    <span className="grid size-5 place-items-center rounded bg-zinc-100 text-[11px] font-bold text-zinc-700">
+                    <span className="grid size-6 place-items-center rounded bg-zinc-100 text-xs font-bold text-zinc-700">
                       {child.name.charAt(0)}
                     </span>
-                    <h3 className="text-xs font-bold text-zinc-900">{child.name}</h3>
-                    <span className="font-mono text-[11px] text-zinc-400">
-                      ({childTasks.length})
-                    </span>
+                    <h3 className="text-sm font-bold text-zinc-900">{child.name}</h3>
+                    <span className="font-mono text-xs text-zinc-400">({childTasks.length})</span>
                   </div>
 
                   <Link
                     href={`/tasks/new`}
-                    className="inline-flex items-center gap-1 text-[11px] font-medium text-zinc-400 hover:text-zinc-700 transition"
+                    className="inline-flex items-center gap-1 text-xs font-medium text-zinc-400 hover:text-zinc-700 transition"
                   >
-                    <Plus size={12} />
+                    <Plus size={13} />
                     <span>追加</span>
                   </Link>
                 </div>
 
-                {/* タスク行リスト（フラット） */}
+                {/* タスク行リスト */}
                 <TaskList
                   tasks={childTasks}
                   emptyText="直近の未完了タスクはありません"

@@ -15,10 +15,10 @@ export function ChildBadge({ name, isWork = false, size = "sm", showIcon = true 
     return (
       <span
         className={`inline-flex items-center gap-1 rounded font-medium border border-zinc-200 bg-zinc-100 text-zinc-700 shadow-2xs ${
-          size === "sm" ? "px-1.5 py-0.5 text-[10px]" : "px-2 py-0.5 text-xs"
+          size === "sm" ? "px-2 py-0.5 text-xs" : "px-2.5 py-1 text-sm"
         }`}
       >
-        {showIcon && <Briefcase size={size === "sm" ? 10 : 12} />}
+        {showIcon && <Briefcase size={size === "sm" ? 11 : 13} />}
         <span>仕事</span>
       </span>
     );
@@ -33,7 +33,7 @@ export function ChildBadge({ name, isWork = false, size = "sm", showIcon = true 
   return (
     <span
       className={`inline-flex items-center gap-1 rounded font-medium border ${theme.border} ${theme.badgeBg} ${theme.badgeText} shadow-2xs ${
-        size === "sm" ? "px-1.5 py-0.5 text-[10px]" : "px-2 py-0.5 text-xs"
+        size === "sm" ? "px-2 py-0.5 text-xs" : "px-2.5 py-1 text-sm"
       }`}
     >
       <span className={`size-1.5 rounded-full ${theme.dotColor}`} />

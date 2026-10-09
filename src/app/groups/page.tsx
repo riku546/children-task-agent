@@ -50,35 +50,33 @@ export default function GroupsPage() {
         <h1 className="text-xl font-bold tracking-tight text-zinc-950 sm:text-2xl">
           家族グループ管理
         </h1>
-        <p className="mt-0.5 text-xs text-zinc-500">
-          タスクを共有する家族グループを作成・管理します
-        </p>
+        <p className="mt-1 text-sm text-zinc-600">タスクを共有する家族グループを作成・管理します</p>
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[320px_1fr]">
         {/* グループ作成サイドパネル */}
         <div className="rounded-lg border border-zinc-200 bg-zinc-50/50 p-4 shadow-2xs">
-          <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-600">
+          <h2 className="text-sm font-bold uppercase tracking-wider text-zinc-700">
             グループ新規作成
           </h2>
           <div className="mt-3">
-            <label className="block text-xs font-semibold text-zinc-700" htmlFor="group-name">
+            <label className="block text-sm font-semibold text-zinc-700" htmlFor="group-name">
               グループ名
             </label>
             <input
               id="group-name"
-              className="field mt-1.5 text-xs"
+              className="field mt-1.5 text-sm"
               placeholder="例: 佐藤家, 実家サポート 等"
               value={name}
               onChange={(event) => setName(event.target.value)}
             />
             <button
               type="button"
-              className="button-primary mt-3 w-full text-xs"
+              className="button-primary mt-3 w-full text-sm"
               onClick={create}
               disabled={!name.trim()}
             >
-              <Plus size={14} />
+              <Plus size={15} />
               <span>グループを作成</span>
             </button>
           </div>
@@ -87,13 +85,13 @@ export default function GroupsPage() {
         {/* グループ一覧テーブル */}
         <div>
           <div className="flex items-center justify-between pb-1">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-500">
+            <h2 className="text-sm font-bold uppercase tracking-wider text-zinc-700">
               参加中のグループ ({groups.length})
             </h2>
           </div>
           <div className="mt-3 divide-y divide-zinc-200 rounded-lg border border-zinc-200 bg-white overflow-hidden shadow-2xs">
             {groups.length === 0 ? (
-              <div className="p-8 text-center text-xs text-zinc-500">
+              <div className="p-8 text-center text-sm text-zinc-500">
                 参加しているグループはありません
               </div>
             ) : (
