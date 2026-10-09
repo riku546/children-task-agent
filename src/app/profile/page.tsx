@@ -123,140 +123,171 @@ export default function ProfilePage() {
   const initial = (name || user?.email || "U").trim().charAt(0).toUpperCase();
 
   return (
-    <section className="mx-auto max-w-2xl px-4 pb-24 pt-8 md:pb-12">
-      <Link
-        href="/dashboard"
-        className="inline-flex items-center gap-2 text-sm font-semibold text-moss"
-      >
-        <Undo2 size={16} />
-        ダッシュボードへ戻る
-      </Link>
-
-      <div className="mt-5">
-        <p className="text-sm font-bold text-moss">User Settings</p>
-        <h1 className="mt-1 text-3xl font-black tracking-normal md:text-4xl">ユーザー情報・設定</h1>
+    <section className="mx-auto max-w-3xl px-4 pb-20 pt-6 sm:px-6 md:pb-12 md:pt-8">
+      {/* ページヘッダー */}
+      <div className="border-b border-zinc-200/80 pb-4">
+        <Link
+          href="/dashboard"
+          className="inline-flex items-center gap-1 text-xs font-semibold text-zinc-600 hover:text-zinc-950 transition"
+        >
+          <Undo2 size={13} />
+          ダッシュボードへ戻る
+        </Link>
+        <h1 className="mt-2 text-xl font-bold tracking-tight text-zinc-950 sm:text-2xl">
+          アカウント設定
+        </h1>
+        <p className="mt-0.5 text-xs text-zinc-500">
+          プロフィール情報、参加グループの確認、セッション管理を行います
+        </p>
       </div>
 
       {message && (
         <div
-          className={`mt-6 rounded-md px-4 py-3 text-sm font-semibold ${
-            message.type === "success" ? "bg-mint text-moss" : "bg-red-50 text-red-700"
+          className={`mt-4 rounded-md px-3.5 py-2.5 text-xs font-medium ${
+            message.type === "success"
+              ? "border border-emerald-200 bg-emerald-50 text-emerald-800"
+              : "border border-rose-200 bg-rose-50 text-rose-800"
           }`}
         >
           {message.text}
         </div>
       )}
 
-      {/* ユーザー情報登録・編集フォーム */}
-      <form
-        onSubmit={handleSave}
-        className="mt-6 rounded-md border border-ink/10 bg-white p-6 shadow-sm"
-      >
-        <div className="flex items-center gap-4">
-          {user?.image ? (
-            <img
-              src={user.image}
-              alt={user.name || "User"}
-              className="size-16 rounded-full border border-ink/15 object-cover"
-              referrerPolicy="no-referrer"
-            />
-          ) : (
-            <div className="grid size-16 place-items-center rounded-full bg-mint text-2xl font-black text-moss">
-              {initial || <CircleUserRound size={32} />}
+      <div className="mt-6 space-y-8 divide-y divide-zinc-200">
+        {/* セクション 1: ユーザー基本情報 */}
+        <form onSubmit={handleSave} className="space-y-4">
+          <div className="flex items-center gap-3">
+            {user?.image ? (
+              <img
+                src={user.image}
+                alt={user.name || "User"}
+                className="size-12 rounded-full border border-zinc-200 object-cover"
+                referrerPolicy="no-referrer"
+              />
+            ) : (
+              <div className="grid size-12 place-items-center rounded-full bg-zinc-100 text-sm font-bold text-zinc-700 border border-zinc-200">
+                {initial || <CircleUserRound size={22} />}
+              </div>
+            )}
+            <div>
+              <div className="text-sm font-bold text-zinc-950">{user?.name || "ユーザー"}</div>
+              <div className="text-xs text-zinc-500">{user?.email}</div>
             </div>
-          )}
-          <div>
-            <div className="text-lg font-bold">{user?.name || "ユーザー"}</div>
-            <div className="text-sm text-ink/60">{user?.email}</div>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2 pt-2">
+            <div>
+              <label htmlFor="user-name" className="block text-xs font-semibold text-zinc-700">
+                お名前（表示名）
+              </label>
+              <input
+                id="user-name"
+                className="field mt-1 text-xs"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="お名前を入力"
+                disabled={saving}
+              />
+              <p className="mt-1 text-[11px] text-zinc-400">
+                家族グループやタスクの担当者として表示されます
+              </p>
+            </div>
+
+            <div>
+              <label htmlFor="email" className="block text-xs font-semibold text-zinc-700">
+                メールアドレス
+              </label>
+              <input
+                id="email"
+                className="field mt-1 text-xs bg-zinc-50 text-zinc-500 cursor-not-allowed"
+                value={user?.email || ""}
+                readOnly
+                disabled
+              />
+              <p className="mt-1 text-[11px] text-zinc-400">
+                ログイン用メールアドレスです（変更不可）
+              </p>
+            </div>
+          </div>
+
+          <div className="flex justify-end pt-2">
+            <button
+              type="submit"
+              className="button-primary text-xs"
+              disabled={saving || !name.trim()}
+            >
+              <Save size={13} />
+              <span>{saving ? "保存中..." : "変更を保存"}</span>
+            </button>
+          </div>
+        </form>
+
+        {/* セクション 2: 参加中の家族グループ */}
+        <div className="pt-8">
+          <div className="flex items-center justify-between pb-2">
+            <div className="flex items-center gap-2">
+              <Users size={15} className="text-zinc-500" />
+              <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-600">
+                参加中の家族グループ ({groups.length})
+              </h2>
+            </div>
+            <Link
+              href="/groups"
+              className="text-xs font-semibold text-zinc-600 hover:text-zinc-950 transition"
+            >
+              グループ管理へ →
+            </Link>
+          </div>
+
+          <div className="mt-3 divide-y divide-zinc-200 rounded-lg border border-zinc-200 bg-white overflow-hidden shadow-2xs">
+            {groups.length === 0 ? (
+              <p className="p-6 text-center text-xs text-zinc-500">参加中のグループはありません</p>
+            ) : (
+              groups.map((g) => (
+                <div
+                  key={g.id}
+                  className="flex items-center justify-between p-3.5 hover:bg-zinc-50/50 transition"
+                >
+                  <div>
+                    <div className="text-xs font-bold text-zinc-900">{g.name}</div>
+                    <div className="text-[11px] text-zinc-500">
+                      メンバー {g.members.length}名 · 子ども {g.children.length}名
+                    </div>
+                  </div>
+                  <Link
+                    href={`/groups/${g.id}/settings`}
+                    className="text-xs font-medium text-zinc-600 hover:text-zinc-950 transition"
+                  >
+                    設定
+                  </Link>
+                </div>
+              ))
+            )}
           </div>
         </div>
 
-        <div className="mt-6">
-          <label htmlFor="user-name" className="block text-sm font-semibold text-ink">
-            お名前（表示名）
-          </label>
-          <input
-            id="user-name"
-            className="field mt-2"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="お名前を入力"
-            disabled={saving}
-          />
-          <p className="mt-1.5 text-xs text-ink/50">
-            家族グループやタスクの担当者として表示される名前です。
-          </p>
-        </div>
-
-        <div className="mt-6">
-          <label htmlFor="email" className="block text-sm font-semibold text-ink">
-            メールアドレス
-          </label>
-          <input
-            id="email"
-            className="field mt-2 bg-cloud text-ink/70 cursor-not-allowed"
-            value={user?.email || ""}
-            readOnly
-            disabled
-          />
-          <p className="mt-1.5 text-xs text-ink/50">ログイン用メールアドレスです（変更不可）。</p>
-        </div>
-
-        <div className="mt-6 flex justify-end">
-          <button type="submit" className="button-primary" disabled={saving || !name.trim()}>
-            <Save size={18} />
-            {saving ? "保存中..." : "変更を保存する"}
-          </button>
-        </div>
-      </form>
-
-      {/* 所属グループ情報 */}
-      <div className="mt-6 rounded-md border border-ink/10 bg-white p-6 shadow-sm">
-        <h2 className="flex items-center gap-2 text-base font-bold text-ink">
-          <Users size={18} />
-          参加中の家族グループ
-        </h2>
-        <div className="mt-4 space-y-2">
-          {groups.length === 0 ? (
-            <p className="text-sm text-ink/60">参加中のグループはありません。</p>
-          ) : (
-            groups.map((g) => (
-              <div
-                key={g.id}
-                className="flex items-center justify-between rounded-md bg-cloud px-4 py-3"
-              >
-                <div>
-                  <div className="font-semibold text-ink">{g.name}</div>
-                  <div className="text-xs text-ink/60">
-                    メンバー {g.members.length}人 / 子ども {g.children.length}人
-                  </div>
-                </div>
-                <Link
-                  href={`/groups/${g.id}/settings`}
-                  className="text-xs font-semibold text-moss hover:underline"
-                >
-                  設定
-                </Link>
+        {/* セクション 3: アカウント操作 / サインアウト */}
+        <div className="pt-8">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-600">
+            セッション管理
+          </h2>
+          <div className="mt-3 flex items-center justify-between rounded-lg border border-zinc-200 bg-zinc-50/50 p-4">
+            <div>
+              <div className="text-xs font-semibold text-zinc-900">サインアウト</div>
+              <div className="text-[11px] text-zinc-500">
+                現在ログインしている端末からログアウトします
               </div>
-            ))
-          )}
-        </div>
-      </div>
-
-      {/* セッション管理・ログアウト */}
-      <div className="mt-6 rounded-md border border-red-100 bg-red-50/40 p-6 shadow-sm">
-        <h2 className="text-base font-bold text-ink">アカウント操作</h2>
-        <p className="mt-1 text-xs text-ink/65">現在ログインしている端末からサインアウトします。</p>
-        <div className="mt-4">
-          <button
-            type="button"
-            onClick={handleLogout}
-            disabled={loggingOut}
-            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md border border-red-300 bg-white px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50 focus-ring disabled:opacity-50"
-          >
-            <LogOut size={18} />
-            {loggingOut ? "ログアウト中..." : "ログアウトする"}
-          </button>
+            </div>
+            <button
+              type="button"
+              onClick={handleLogout}
+              disabled={loggingOut}
+              className="inline-flex items-center gap-1.5 rounded border border-rose-200 bg-white px-3 py-1.5 text-xs font-medium text-rose-600 hover:bg-rose-50 transition"
+            >
+              <LogOut size={13} />
+              <span>{loggingOut ? "ログアウト中..." : "ログアウト"}</span>
+            </button>
+          </div>
         </div>
       </div>
     </section>

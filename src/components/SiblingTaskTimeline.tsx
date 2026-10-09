@@ -1,15 +1,16 @@
 "use client";
 
-import { Check, Hand, Heart, Layers, Loader2, Plus, UserPlus } from "lucide-react";
+import { Loader2, Plus, UserPlus } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { DuePill, PriorityPill } from "@/components/StatusPill";
+import { TaskList } from "@/components/TaskList";
 import { invalidateCache } from "@/lib/client-cache";
 import type { GroupRecord, TaskRecord } from "@/lib/types";
 
 type Props = {
   tasks: TaskRecord[];
   group?: GroupRecord | null;
+  currentUserId?: string | null;
   onAssignToMe?: (taskId: string) => Promise<void> | void;
   onToggleStatus?: (task: TaskRecord) => Promise<void> | void;
   actionLoadingId?: string | null;
@@ -20,6 +21,7 @@ type Props = {
 export function SiblingTaskTimeline({
   tasks,
   group,
+  currentUserId,
   onAssignToMe,
   onToggleStatus,
   actionLoadingId,
@@ -101,49 +103,25 @@ export function SiblingTaskTimeline({
     }
   }
 
+  const displayedChildren = useMemo(() => {
+    if (selectedChildTab === "all") return allChildren;
+    return allChildren.filter((c) => c.name === selectedChildTab);
+  }, [allChildren, selectedChildTab]);
+
   return (
-    <div className="mb-8">
-      {/* セクションヘッダー */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-200/80 pb-3">
-        <div className="flex items-center gap-2.5">
-          <span className="grid size-8 place-items-center rounded-lg border border-zinc-200 bg-white text-zinc-700 shadow-2xs">
-            <Layers size={16} />
-          </span>
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className="text-sm font-bold text-zinc-900">きょうだい別タスクレーン</h3>
-              <span className="rounded bg-zinc-100 px-1.5 py-0.5 font-mono text-[10px] font-medium text-zinc-600">
-                Multi-Child
-              </span>
-            </div>
-            <p className="text-[11px] text-zinc-500">
-              子どもごとに提出物・持ち物・予定を分離。重複や混同を防止します
-            </p>
-          </div>
-        </div>
-
+    <div className="w-full">
+      {/* ツールバー / フィルター */}
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-200 pb-3">
         <div className="flex items-center gap-2">
-          {/* お子さん追加ボタン */}
-          {group && (
-            <button
-              type="button"
-              onClick={() => setShowAddForm(!showAddForm)}
-              className="button-secondary text-xs"
-            >
-              <UserPlus size={13} className="text-zinc-500" />
-              <span>お子さんを追加</span>
-            </button>
-          )}
-
           {/* 子どもフィルターチップ（2人以上いる場合） */}
           {allChildren.length > 1 && (
             <div className="flex items-center rounded-lg border border-zinc-200 bg-zinc-100/80 p-0.5">
               <button
                 type="button"
                 onClick={() => setSelectedChildTab("all")}
-                className={`rounded-md px-2 py-1 text-xs font-medium transition ${
+                className={`rounded-md px-2.5 py-1 text-xs font-medium transition ${
                   selectedChildTab === "all"
-                    ? "bg-white font-semibold text-zinc-900 shadow-2xs"
+                    ? "bg-white font-semibold text-zinc-950 shadow-2xs"
                     : "text-zinc-600 hover:text-zinc-900"
                 }`}
               >
@@ -156,9 +134,9 @@ export function SiblingTaskTimeline({
                     key={c.name}
                     type="button"
                     onClick={() => setSelectedChildTab(c.name)}
-                    className={`rounded-md px-2 py-1 text-xs font-medium transition ${
+                    className={`rounded-md px-2.5 py-1 text-xs font-medium transition ${
                       isSelected
-                        ? "bg-white font-semibold text-zinc-900 shadow-2xs"
+                        ? "bg-white font-semibold text-zinc-950 shadow-2xs"
                         : "text-zinc-600 hover:text-zinc-900"
                     }`}
                   >
@@ -169,15 +147,27 @@ export function SiblingTaskTimeline({
             </div>
           )}
         </div>
+
+        {/* お子さん追加ボタン */}
+        {group && (
+          <button
+            type="button"
+            onClick={() => setShowAddForm(!showAddForm)}
+            className="inline-flex items-center gap-1 text-xs font-medium text-zinc-600 hover:text-zinc-900 transition"
+          >
+            <UserPlus size={13} className="text-zinc-400" />
+            <span>お子さんを追加</span>
+          </button>
+        )}
       </div>
 
       {/* お子さんクイック追加フォーム */}
       {showAddForm && (
         <form
           onSubmit={handleAddChild}
-          className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-zinc-200 bg-white p-3 shadow-2xs animate-in fade-in"
+          className="mt-3 flex flex-wrap items-center gap-2 border-b border-zinc-200 pb-3"
         >
-          <span className="text-xs font-semibold text-zinc-700">お子さんの名前:</span>
+          <span className="text-xs font-medium text-zinc-700">お子さんの名前:</span>
           <input
             type="text"
             value={newChildName}
@@ -189,193 +179,75 @@ export function SiblingTaskTimeline({
           <button
             type="submit"
             disabled={addingChild || !newChildName.trim()}
-            className="button-primary text-xs py-1.5 px-3"
+            className="button-primary text-xs py-1 px-3"
           >
-            {addingChild ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />}
+            {addingChild ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />}
             登録
           </button>
           <button
             type="button"
             onClick={() => setShowAddForm(false)}
-            className="button-secondary text-xs py-1.5 px-2.5"
+            className="button-secondary text-xs py-1 px-2.5"
           >
-            閉じる
+            キャンセル
           </button>
         </form>
       )}
 
-      {/* きょうだい別カードレーン表示 */}
-      <div className="mt-4">
+      {/* きょうだい別グルーピングリスト（カードではなくフラットなセクション） */}
+      <div className="mt-4 divide-y divide-zinc-200/80">
         {allChildren.length === 0 ? (
-          /* 子どもがまだ1人もいない場合のEmpty State */
-          <div className="rounded-xl border border-dashed border-zinc-200 bg-white/60 p-8 text-center">
-            <span className="mx-auto grid size-10 place-items-center rounded-lg border border-zinc-200 bg-zinc-50 text-zinc-600 shadow-2xs">
-              <Layers size={20} />
-            </span>
-            <h4 className="mt-3 text-sm font-bold text-zinc-900">お子さんを登録してください</h4>
-            <p className="mx-auto mt-1 max-w-md text-xs leading-relaxed text-zinc-500">
-              お子さんを登録すると、お便りから抽出されたタスクが自動で子ども別に分類され、
-              個別の持ち物や提出物を管理できるようになります。
-            </p>
-
-            <form
-              onSubmit={handleAddChild}
-              className="mx-auto mt-4 flex max-w-sm items-center gap-2"
+          <div className="py-12 text-center text-xs text-zinc-400">
+            <p>登録されたお子さんがいません。</p>
+            <button
+              type="button"
+              onClick={() => setShowAddForm(true)}
+              className="button-secondary mt-3 text-xs"
             >
-              <input
-                type="text"
-                value={newChildName}
-                onChange={(e) => setNewChildName(e.target.value)}
-                placeholder="例: 太郎、花子"
-                className="field text-xs py-2"
-                required
-              />
-              <button
-                type="submit"
-                disabled={addingChild || !newChildName.trim()}
-                className="button-primary text-xs shrink-0"
-              >
-                {addingChild ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
-                追加
-              </button>
-            </form>
+              <UserPlus size={12} />
+              お子さんを登録する
+            </button>
           </div>
         ) : (
-          /* 子どもレーン（横並びグリッド） */
-          <div className="grid gap-4 md:grid-cols-2">
-            {(selectedChildTab === "all"
-              ? allChildren
-              : allChildren.filter((c) => c.name === selectedChildTab)
-            ).map((child) => {
-              const childTasks = tasksByChild.get(child.name) || [];
+          displayedChildren.map((child) => {
+            const childTasks = tasksByChild.get(child.name) || [];
 
-              return (
-                <div
-                  key={child.name}
-                  className="flex flex-col rounded-xl border border-zinc-200/90 bg-white p-4 shadow-2xs transition"
-                >
-                  {/* 子どもレーンヘッダー */}
-                  <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
-                    <div className="flex items-center gap-2.5">
-                      <span className="grid size-6 place-items-center rounded-md border border-zinc-200 bg-zinc-50 text-xs font-bold text-zinc-800">
-                        {child.name.charAt(0)}
-                      </span>
-                      <div>
-                        <h4 className="text-xs font-bold text-zinc-900">{child.name}</h4>
-                        <p className="text-[10px] font-mono text-zinc-500">
-                          未完了 {childTasks.length}件
-                        </p>
-                      </div>
-                    </div>
-
-                    <Link
-                      href={`/tasks/new`}
-                      className="inline-flex items-center gap-1 rounded border border-zinc-200 bg-white px-2 py-1 text-[11px] font-medium text-zinc-700 hover:bg-zinc-50 shadow-2xs transition"
-                    >
-                      <Plus size={12} className="text-zinc-400" />
-                      追加
-                    </Link>
+            return (
+              <div key={child.name} className="py-4 first:pt-0 last:pb-0">
+                {/* グループセクションヘッダー（Linear風） */}
+                <div className="flex items-center justify-between pb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="grid size-5 place-items-center rounded bg-zinc-100 text-[11px] font-bold text-zinc-700">
+                      {child.name.charAt(0)}
+                    </span>
+                    <h3 className="text-xs font-bold text-zinc-900">{child.name}</h3>
+                    <span className="font-mono text-[11px] text-zinc-400">
+                      ({childTasks.length})
+                    </span>
                   </div>
 
-                  {/* タスクリスト */}
-                  <div className="mt-3 flex-1 space-y-2">
-                    {childTasks.length === 0 ? (
-                      <div className="py-6 text-center text-xs font-medium text-zinc-400">
-                        未完了のTODOはありません
-                      </div>
-                    ) : (
-                      childTasks.map((task) => {
-                        const isLoading = actionLoadingId === task.id;
-                        const isDone = task.status === "DONE";
-
-                        return (
-                          <div
-                            key={task.id}
-                            className="group flex items-start justify-between gap-2.5 rounded-lg border border-zinc-100 bg-zinc-50/50 p-2.5 transition hover:border-zinc-200 hover:bg-white"
-                          >
-                            <div className="min-w-0 flex-1">
-                              <div className="flex flex-wrap items-center gap-1.5">
-                                <DuePill dueDate={task.dueDate} />
-                                <PriorityPill priority={task.priority} />
-                                <span className="rounded bg-white px-1.5 py-0.5 text-[10px] font-medium text-zinc-500 border border-zinc-100">
-                                  {task.type}
-                                </span>
-                              </div>
-
-                              <Link href={`/tasks/${task.id}`} className="block">
-                                <p className="mt-1 text-xs font-semibold text-zinc-900 hover:text-zinc-600 truncate">
-                                  {task.title}
-                                </p>
-                              </Link>
-
-                              <div className="mt-1 flex items-center gap-2 text-[10px] text-zinc-500">
-                                <span>
-                                  {task.assigneeName ? (
-                                    <span className="font-medium text-zinc-700">
-                                      担当: {task.assigneeName}
-                                    </span>
-                                  ) : (
-                                    <span className="text-amber-600 font-medium">担当未定</span>
-                                  )}
-                                </span>
-                              </div>
-                            </div>
-
-                            {/* アクションボタン */}
-                            <div className="flex shrink-0 items-center gap-1 pt-0.5">
-                              {onToggleStatus && (
-                                <button
-                                  type="button"
-                                  onClick={() => onToggleStatus(task)}
-                                  disabled={isLoading}
-                                  className="grid size-5 place-items-center rounded border border-zinc-300 bg-white text-transparent hover:border-zinc-400 transition focus-ring"
-                                  title="完了にする"
-                                >
-                                  {isLoading ? (
-                                    <Loader2 size={11} className="animate-spin text-zinc-400" />
-                                  ) : (
-                                    <Check
-                                      size={11}
-                                      className="text-transparent group-hover:text-zinc-300"
-                                    />
-                                  )}
-                                </button>
-                              )}
-
-                              {onAssignToMe && !isDone && (
-                                <button
-                                  type="button"
-                                  onClick={() => onAssignToMe(task.id)}
-                                  disabled={isLoading}
-                                  className="rounded border border-zinc-200 bg-white px-1.5 py-0.5 text-[10px] font-medium text-zinc-700 hover:bg-zinc-50 transition"
-                                  title="私が担当する"
-                                >
-                                  <Hand size={10} className="inline mr-0.5 text-zinc-500" />
-                                  やる
-                                </button>
-                              )}
-
-                              {onThankYou && !isDone && task.assigneeName && (
-                                <button
-                                  type="button"
-                                  onClick={() => onThankYou(task)}
-                                  className="rounded border border-zinc-200 bg-white px-1.5 py-0.5 text-[10px] font-medium text-zinc-600 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-200 transition"
-                                  title="感謝を伝える"
-                                >
-                                  <Heart size={10} className="inline mr-0.5 text-rose-500" />
-                                  感謝
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })
-                    )}
-                  </div>
+                  <Link
+                    href={`/tasks/new`}
+                    className="inline-flex items-center gap-1 text-[11px] font-medium text-zinc-400 hover:text-zinc-700 transition"
+                  >
+                    <Plus size={12} />
+                    <span>追加</span>
+                  </Link>
                 </div>
-              );
-            })}
-          </div>
+
+                {/* タスク行リスト（フラット） */}
+                <TaskList
+                  tasks={childTasks}
+                  emptyText="直近の未完了タスクはありません"
+                  currentUserId={currentUserId}
+                  onAssignToMe={onAssignToMe}
+                  onToggleStatus={onToggleStatus}
+                  actionLoadingId={actionLoadingId}
+                  onThankYou={onThankYou}
+                />
+              </div>
+            );
+          })
         )}
       </div>
     </div>

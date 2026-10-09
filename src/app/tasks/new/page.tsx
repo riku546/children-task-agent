@@ -238,53 +238,77 @@ function NewTaskContent() {
 
   return (
     <section className="mx-auto max-w-6xl px-4 pb-20 pt-6 sm:px-6 md:pb-12 md:pt-8">
-      <div className="border-b border-zinc-200/80 pb-4">
-        <p className="text-xs font-bold tracking-wider uppercase text-zinc-500">
-          New Task Extraction
+      {/* ページヘッダー */}
+      <div className="flex flex-col gap-1 border-b border-zinc-200/80 pb-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-xs font-bold tracking-wider uppercase text-zinc-500">
+            Task Creation & AI Extraction
+          </p>
+          <h1 className="text-xl font-bold tracking-tight text-zinc-950 sm:text-2xl">
+            お便り・連絡からTODO作成
+          </h1>
+        </div>
+        <p className="text-xs text-zinc-500">
+          写真やPDFを取り込むとAIが持ち物や提出物を自動抽出します
         </p>
-        <h1 className="mt-1 text-xl font-bold tracking-tight text-zinc-950 sm:text-2xl">
-          お便り・連絡からTODO作成
-        </h1>
       </div>
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-[400px_1fr]">
-        <section className="rounded-xl border border-zinc-200/90 bg-white p-5 shadow-2xs">
-          <div className="grid grid-cols-2 gap-2">
+      {/* 統合スプリットパネルワークスペース（左右一体型パネル） */}
+      <div className="mt-6 overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-2xs grid lg:grid-cols-[380px_1fr] divide-y lg:divide-y-0 lg:divide-x divide-zinc-200">
+        {/* 左ペイン: 入力ソースパネル */}
+        <div className="flex flex-col bg-zinc-50/50 p-5">
+          <div className="border-b border-zinc-200 pb-3">
+            <span className="text-xs font-bold uppercase tracking-wider text-zinc-600">
+              1. ソースの選択・取り込み
+            </span>
+          </div>
+
+          {/* 入力モード切替タブ */}
+          <div className="mt-4 grid grid-cols-4 gap-1 rounded-md border border-zinc-200 bg-zinc-100/80 p-0.5">
             {modes.map((item) => {
               const Icon = item.icon;
+              const isActive = mode === item.id;
               return (
                 <button
                   key={item.id}
                   type="button"
-                  className={mode === item.id ? "button-primary" : "button-secondary"}
+                  className={`flex items-center justify-center gap-1 rounded py-1.5 text-xs font-medium transition ${
+                    isActive
+                      ? "bg-white text-zinc-900 shadow-2xs font-semibold"
+                      : "text-zinc-600 hover:text-zinc-900"
+                  }`}
                   onClick={() => setMode(item.id)}
                 >
-                  <Icon size={14} />
+                  <Icon size={13} />
                   <span>{item.label}</span>
                 </button>
               );
             })}
           </div>
 
-          <label className="mt-5 block text-xs font-semibold text-zinc-700" htmlFor="group">
-            共有先ファミリー
-          </label>
-          <select
-            id="group"
-            className="field mt-1.5"
-            value={groupId}
-            onChange={(event) => setGroupId(event.target.value)}
-          >
-            {groups.map((group) => (
-              <option key={group.id} value={group.id}>
-                {group.name}
-              </option>
-            ))}
-          </select>
+          {/* グループ選択 */}
+          <div className="mt-4">
+            <label className="block text-xs font-semibold text-zinc-700" htmlFor="group">
+              共有先ファミリー
+            </label>
+            <select
+              id="group"
+              className="field mt-1.5"
+              value={groupId}
+              onChange={(event) => setGroupId(event.target.value)}
+            >
+              {groups.map((group) => (
+                <option key={group.id} value={group.id}>
+                  {group.name}
+                </option>
+              ))}
+            </select>
+          </div>
 
-          <div className="mt-5 grid gap-2.5">
-            <label className="button-secondary cursor-pointer">
-              <Camera size={14} />
+          {/* ファイル取込・音声入力ボタン群 */}
+          <div className="mt-4 grid gap-2">
+            <label className="button-secondary cursor-pointer justify-start">
+              <Camera size={14} className="text-zinc-500" />
               <span>写真を撮影</span>
               <input
                 className="hidden"
@@ -294,74 +318,85 @@ function NewTaskContent() {
                 onChange={handleImage}
               />
             </label>
-            <label className="button-secondary cursor-pointer">
-              <Upload size={14} />
-              <span>画像を選択</span>
+            <label className="button-secondary cursor-pointer justify-start">
+              <Upload size={14} className="text-zinc-500" />
+              <span>画像ファイルを選択</span>
               <input className="hidden" type="file" accept="image/*" onChange={handleImage} />
             </label>
-            <label className="button-secondary cursor-pointer">
-              <FileText size={14} />
-              <span>PDFを選択</span>
+            <label className="button-secondary cursor-pointer justify-start">
+              <FileText size={14} className="text-zinc-500" />
+              <span>PDFを選択 (複数ページ対応)</span>
               <input className="hidden" type="file" accept="application/pdf" onChange={handlePdf} />
             </label>
-            <button type="button" className="button-secondary" onClick={startVoice}>
-              <Mic size={14} />
-              <span>{listening ? "聞き取り中..." : "音声入力"}</span>
+            <button type="button" className="button-secondary justify-start" onClick={startVoice}>
+              <Mic
+                size={14}
+                className={listening ? "text-rose-500 animate-pulse" : "text-zinc-500"}
+              />
+              <span>{listening ? "聞き取り中..." : "音声で入力"}</span>
             </button>
           </div>
 
+          {/* プレビューエリア */}
           {previewUrl ? (
-            <div className="mt-5 rounded-lg border border-zinc-200 bg-zinc-50 p-3">
-              <div className="flex items-center justify-between pb-2">
-                <span className="text-xs font-semibold text-zinc-700">画像プレビュー</span>
+            <div className="mt-4 rounded border border-zinc-200 bg-white p-3">
+              <div className="flex items-center justify-between pb-2 border-b border-zinc-100">
+                <span className="text-xs font-semibold text-zinc-700">添付プレビュー</span>
                 <button
                   type="button"
-                  className="inline-flex items-center gap-1 text-xs font-medium text-rose-600 transition hover:text-rose-700"
+                  className="inline-flex items-center gap-1 text-xs font-medium text-rose-600 hover:text-rose-700 transition"
                   onClick={clearImage}
                 >
-                  <Trash2 size={13} />
+                  <Trash2 size={12} />
                   削除
                 </button>
               </div>
               <img
                 src={previewUrl}
                 alt="プレビュー"
-                className="max-h-64 w-full rounded-md object-contain bg-white border border-zinc-200"
+                className="mt-2 max-h-56 w-full rounded object-contain bg-zinc-50 border border-zinc-100"
               />
-              <div className="mt-3">
-                <button
-                  type="button"
-                  className="button-primary w-full"
-                  onClick={generate}
-                  disabled={Boolean(busyText)}
-                >
-                  {busyText ? (
-                    <Loader2 className="animate-spin" size={14} />
-                  ) : (
-                    <Sparkles size={14} />
-                  )}
-                  <span>画像からTODO候補を生成</span>
-                </button>
-              </div>
+              <button
+                type="button"
+                className="button-primary mt-3 w-full"
+                onClick={generate}
+                disabled={Boolean(busyText)}
+              >
+                {busyText ? <Loader2 className="animate-spin" size={14} /> : <Sparkles size={14} />}
+                <span>画像からTODOをAI抽出</span>
+              </button>
             </div>
           ) : null}
-          {selectedGroup ? (
-            <p className="mt-4 text-xs text-zinc-500">対象: {selectedGroup.name}</p>
-          ) : null}
-        </section>
 
-        <section className="grid gap-6">
-          <div className="rounded-xl border border-zinc-200/90 bg-white p-5 shadow-2xs">
-            <label className="block text-xs font-semibold text-zinc-700" htmlFor="confirmed-text">
-              確認済みテキスト
-            </label>
+          {selectedGroup ? (
+            <div className="mt-auto pt-6 text-[11px] text-zinc-500">
+              対象グループ:{" "}
+              <span className="font-semibold text-zinc-700">{selectedGroup.name}</span>
+            </div>
+          ) : null}
+        </div>
+
+        {/* 右ペイン: エディタ & TODO候補レビュー */}
+        <div className="flex flex-col divide-y divide-zinc-200">
+          {/* ソーステキスト確認エリア */}
+          <div className="p-5">
+            <div className="flex items-center justify-between">
+              <label
+                className="text-xs font-bold uppercase tracking-wider text-zinc-600"
+                htmlFor="confirmed-text"
+              >
+                2. 読み取りテキストの確認・編集
+              </label>
+              <span className="text-[11px] text-zinc-600">直接編集可能</span>
+            </div>
             <textarea
               id="confirmed-text"
-              className="field mt-2 min-h-52 resize-y leading-relaxed font-mono text-xs"
+              className="field mt-2.5 min-h-36 resize-y font-mono text-xs leading-relaxed"
               value={confirmedText}
               onChange={(event) => setConfirmedText(event.target.value)}
+              placeholder="お便りのテキストをここに入力するか、左のメニューから写真・PDFを取り込んでください"
             />
-            <div className="mt-4 flex flex-wrap gap-2">
+            <div className="mt-3 flex items-center justify-between">
               <button
                 type="button"
                 className="button-primary"
@@ -369,48 +404,83 @@ function NewTaskContent() {
                 disabled={Boolean(busyText) || (!confirmedText.trim() && !previewUrl)}
               >
                 {busyText ? <Loader2 className="animate-spin" size={14} /> : <Sparkles size={14} />}
-                <span>TODO候補生成</span>
+                <span>テキストからTODO候補を抽出</span>
               </button>
               {busyText ? (
-                <span className="inline-flex items-center text-xs font-medium text-zinc-600">
+                <span className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700">
+                  <Loader2 className="animate-spin" size={13} />
                   {busyText}
                 </span>
               ) : null}
             </div>
           </div>
 
+          {/* 抽出結果・ドラフトTODOリスト */}
           {result ? (
-            <div className="rounded-xl border border-zinc-200/90 bg-white p-5 shadow-2xs">
-              <div className="flex flex-col justify-between gap-3 md:flex-row md:items-center">
+            <div className="p-5">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-zinc-200 pb-4">
                 <div>
-                  <p className="text-xs font-bold text-zinc-500 uppercase tracking-wider">
-                    AI抽出サマリー
-                  </p>
-                  <h2 className="text-base font-bold text-zinc-950">{result.summary}</h2>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold uppercase tracking-wider text-zinc-600">
+                      3. 生成されたTODO候補
+                    </span>
+                    <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 border border-emerald-200/60">
+                      {candidates.length} 件
+                    </span>
+                  </div>
+                  <p className="mt-1 text-sm font-semibold text-zinc-900">{result.summary}</p>
                 </div>
-                <button
-                  type="button"
-                  className="button-primary"
-                  onClick={save}
-                  disabled={Boolean(busyText)}
-                >
-                  <Save size={14} />
-                  <span>確定して登録</span>
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={addManualCandidate}
+                    className="button-secondary text-xs"
+                  >
+                    <Plus size={13} />
+                    <span>行を追加</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="button-primary"
+                    onClick={save}
+                    disabled={Boolean(busyText) || candidates.length === 0}
+                  >
+                    <Save size={14} />
+                    <span>確定して一括登録</span>
+                  </button>
+                </div>
               </div>
 
-              <div className="mt-5 grid gap-4">
+              {/* フラットなドラフトリスト（カードではなくボーダー区切りの行） */}
+              <div className="mt-4 divide-y divide-zinc-200 border-y border-zinc-200">
                 {candidates.map((candidate, index) => (
                   <div
                     key={`${candidate.title}-${index}`}
-                    className="rounded-md border border-ink/10 bg-cloud p-4"
+                    className="py-4 space-y-3 transition hover:bg-zinc-50/50"
                   >
-                    <div className="grid gap-3 md:grid-cols-2">
-                      <Field
-                        label="タイトル"
-                        value={candidate.title}
-                        onChange={(value) => updateCandidate(index, { title: value })}
-                      />
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[11px] font-bold text-zinc-600 font-mono">
+                        #{index + 1}
+                      </span>
+                      <button
+                        type="button"
+                        className="text-xs text-zinc-500 hover:text-rose-600 transition"
+                        onClick={() =>
+                          setCandidates((current) => current.filter((_, i) => i !== index))
+                        }
+                      >
+                        削除
+                      </button>
+                    </div>
+
+                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                      <div className="sm:col-span-2">
+                        <Field
+                          label="タイトル"
+                          value={candidate.title}
+                          onChange={(value) => updateCandidate(index, { title: value })}
+                        />
+                      </div>
                       <Field
                         label="種別"
                         value={candidate.type}
@@ -441,7 +511,7 @@ function NewTaskContent() {
                         value={candidate.childName}
                         onChange={(value) => updateCandidate(index, { childName: value })}
                       />
-                      <label className="block text-sm font-semibold">
+                      <label className="block text-xs font-semibold text-zinc-700">
                         重要度
                         <select
                           className="field mt-1"
@@ -458,45 +528,38 @@ function NewTaskContent() {
                         </select>
                       </label>
                     </div>
-                    <label className="mt-3 block text-sm font-semibold">
-                      メモ
-                      <textarea
-                        className="field mt-1 min-h-20"
+
+                    <label className="block text-xs font-semibold text-zinc-700">
+                      メモ・補足
+                      <input
+                        type="text"
+                        className="field mt-1"
                         value={candidate.notes}
                         onChange={(event) => updateCandidate(index, { notes: event.target.value })}
+                        placeholder="持ち物の個数や注意事項など"
                       />
                     </label>
                   </div>
                 ))}
               </div>
-
-              <div className="mt-4">
-                <button
-                  type="button"
-                  onClick={addManualCandidate}
-                  className="button-secondary text-xs"
-                >
-                  <Plus size={14} />
-                  さらにTODOを1件追加
-                </button>
-              </div>
             </div>
           ) : (
-            <div className="rounded-xl border border-dashed border-ink/20 bg-white p-8 text-center">
-              <p className="text-sm font-semibold text-ink/60">
-                お便りや写真を読み取ってAIで自動抽出するか、手動で直接TODOを作成できます。
+            <div className="flex flex-1 flex-col items-center justify-center p-12 text-center text-zinc-500">
+              <Sparkles size={24} className="text-zinc-500 mb-2" />
+              <p className="text-xs font-medium text-zinc-600">
+                左側から画像・PDFを取り込むか、上のテキストエリアに入力して「TODO候補を抽出」を押してください。
               </p>
               <button
                 type="button"
                 onClick={addManualCandidate}
-                className="button-secondary mt-4 inline-flex text-xs"
+                className="button-secondary mt-4 text-xs"
               >
-                <Plus size={15} />
-                手動でTODOを作成する
+                <Plus size={13} />
+                手動でTODOを入力する
               </button>
             </div>
           )}
-        </section>
+        </div>
       </div>
     </section>
   );
@@ -516,7 +579,7 @@ function Field({
   onChange: (value: string) => void;
 }) {
   return (
-    <label className="block text-sm font-semibold">
+    <label className="block text-xs font-semibold text-zinc-700">
       {label}
       <input
         className="field mt-1"
@@ -533,8 +596,8 @@ export default function NewTaskPage() {
   return (
     <Suspense
       fallback={
-        <div className="mx-auto max-w-6xl px-4 py-16 text-center text-sm font-semibold text-ink/60">
-          <Loader2 className="mx-auto animate-spin text-moss" size={24} />
+        <div className="mx-auto max-w-6xl px-4 py-16 text-center text-xs font-semibold text-zinc-500">
+          <Loader2 className="mx-auto animate-spin text-emerald-600" size={20} />
           <p className="mt-2">読み込み中...</p>
         </div>
       }

@@ -44,53 +44,88 @@ export default function GroupsPage() {
   }, []);
 
   return (
-    <section className="mx-auto max-w-6xl px-4 pb-24 pt-8 md:pb-12">
-      <p className="text-sm font-bold text-moss">Family Groups</p>
-      <h1 className="mt-2 text-3xl font-black tracking-normal md:text-5xl">家族グループ</h1>
+    <section className="mx-auto max-w-5xl px-4 pb-20 pt-6 sm:px-6 md:pb-12 md:pt-8">
+      {/* ページヘッダー */}
+      <div className="border-b border-zinc-200/80 pb-4">
+        <p className="text-xs font-bold tracking-wider uppercase text-zinc-500">
+          Organization & Family Workspace
+        </p>
+        <h1 className="mt-1 text-xl font-bold tracking-tight text-zinc-950 sm:text-2xl">
+          家族グループ管理
+        </h1>
+        <p className="mt-0.5 text-xs text-zinc-500">
+          タスクを共有する家族グループを作成・管理します
+        </p>
+      </div>
 
-      <div className="mt-7 grid gap-6 lg:grid-cols-[360px_1fr]">
-        <section className="rounded-md border border-ink/10 bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-bold">グループ作成</h2>
-          <label className="mt-4 block text-sm font-semibold" htmlFor="group-name">
-            グループ名
-          </label>
-          <input
-            id="group-name"
-            className="field mt-2"
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-          />
-          <button className="button-primary mt-4 w-full" onClick={create} disabled={!name.trim()}>
-            <Plus size={18} />
-            作成
-          </button>
-        </section>
+      <div className="mt-6 grid gap-6 lg:grid-cols-[320px_1fr]">
+        {/* グループ作成サイドパネル */}
+        <div className="rounded-lg border border-zinc-200 bg-zinc-50/50 p-4 shadow-2xs">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-600">
+            グループ新規作成
+          </h2>
+          <div className="mt-3">
+            <label className="block text-xs font-semibold text-zinc-700" htmlFor="group-name">
+              グループ名
+            </label>
+            <input
+              id="group-name"
+              className="field mt-1.5 text-xs"
+              placeholder="例: 佐藤家, 実家サポート 等"
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+            />
+            <button
+              type="button"
+              className="button-primary mt-3 w-full text-xs"
+              onClick={create}
+              disabled={!name.trim()}
+            >
+              <Plus size={14} />
+              <span>グループを作成</span>
+            </button>
+          </div>
+        </div>
 
-        <section>
-          <h2 className="mb-3 text-lg font-bold">一覧</h2>
-          <div className="grid gap-3">
-            {groups.map((group) => (
-              <Link
-                key={group.id}
-                href={`/groups/${group.id}/settings`}
-                className="rounded-md border border-ink/10 bg-white p-4 shadow-sm transition hover:border-moss hover:shadow-soft"
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <div className="flex items-center gap-2 text-lg font-bold">
-                      <Users size={20} />
-                      {group.name}
+        {/* グループ一覧テーブル */}
+        <div>
+          <div className="flex items-center justify-between pb-2 border-b border-zinc-200">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-600">
+              参加中のグループ ({groups.length})
+            </h2>
+          </div>
+          <div className="mt-3 divide-y divide-zinc-200 rounded-lg border border-zinc-200 bg-white overflow-hidden shadow-2xs">
+            {groups.length === 0 ? (
+              <div className="p-8 text-center text-xs text-zinc-500">
+                参加しているグループはありません
+              </div>
+            ) : (
+              groups.map((group) => (
+                <Link
+                  key={group.id}
+                  href={`/groups/${group.id}/settings`}
+                  className="flex items-center justify-between p-4 transition hover:bg-zinc-50/80"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="grid size-8 place-items-center rounded bg-zinc-100 text-zinc-700">
+                      <Users size={16} />
                     </div>
-                    <div className="mt-2 text-sm text-ink/65">
-                      メンバー {group.members.length}人 / 子ども {group.children.length}人
+                    <div>
+                      <div className="text-sm font-bold text-zinc-900">{group.name}</div>
+                      <div className="mt-0.5 text-xs text-zinc-500">
+                        メンバー {group.members.length}名 · 子ども {group.children.length}名
+                      </div>
                     </div>
                   </div>
-                  <Settings className="text-ink/40" size={22} />
-                </div>
-              </Link>
-            ))}
+                  <div className="flex items-center gap-1.5 text-xs font-medium text-zinc-400 group-hover:text-zinc-700">
+                    <Settings size={15} />
+                    <span>設定</span>
+                  </div>
+                </Link>
+              ))
+            )}
           </div>
-        </section>
+        </div>
       </div>
     </section>
   );

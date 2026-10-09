@@ -5,12 +5,10 @@ import {
   Baby,
   CheckCircle2,
   Circle,
-  Filter,
   Hand,
   Loader2,
   Plus,
   RefreshCw,
-  UserCheck,
   UserRound,
   Users
 } from "lucide-react";
@@ -18,7 +16,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { ChildBadge } from "@/components/ChildBadge";
 import { ConflictAlerts } from "@/components/ConflictAlerts";
-import { DuePill, PriorityPill, StatusPill } from "@/components/StatusPill";
+import { DuePill, PriorityPill } from "@/components/StatusPill";
 import { fetchJsonWithCache, getCachedData, invalidateCache } from "@/lib/client-cache";
 import { detectAllConflicts, isWorkTask } from "@/lib/conflict-detector";
 import type { GroupRecord, MemberRecord, TaskRecord } from "@/lib/types";
@@ -213,8 +211,8 @@ export default function FamilyTasksPage() {
   if (loading && !currentGroup) {
     return (
       <section className="mx-auto max-w-6xl px-4 py-20 text-center">
-        <Loader2 className="mx-auto animate-spin text-moss" size={32} />
-        <p className="mt-3 text-sm text-ink/60">読み込み中...</p>
+        <Loader2 className="mx-auto animate-spin text-emerald-600" size={28} />
+        <p className="mt-3 text-xs text-zinc-500">読み込み中...</p>
       </section>
     );
   }
@@ -222,8 +220,8 @@ export default function FamilyTasksPage() {
   if (!currentGroup) {
     return (
       <section className="mx-auto max-w-6xl px-4 py-16 text-center">
-        <p className="text-lg font-bold">参加している家族グループがありません</p>
-        <Link href="/groups" className="button-primary mt-4 inline-flex">
+        <p className="text-base font-bold text-zinc-900">参加している家族グループがありません</p>
+        <Link href="/groups" className="button-primary mt-4 inline-flex text-xs">
           グループを作成する
         </Link>
       </section>
@@ -233,44 +231,52 @@ export default function FamilyTasksPage() {
   const allTodoCount = groupTasks.filter((t) => t.status === "TODO").length;
 
   return (
-    <section className="mx-auto max-w-6xl px-4 pb-24 pt-8 md:pb-12">
-      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
+    <section className="mx-auto max-w-6xl px-4 pb-20 pt-6 sm:px-6 md:pb-12 md:pt-8">
+      {/* ページヘッダー */}
+      <div className="flex flex-col gap-2 border-b border-zinc-200/80 pb-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-sm font-bold text-moss">Family Task Board</p>
-          <h1 className="mt-2 text-3xl font-black tracking-normal md:text-5xl">家族のタスク管理</h1>
-          <p className="mt-2 text-sm text-ink/70">
-            誰が何のタスクを持っているか、分担状況を一覧で確認・調整できます。
+          <p className="text-xs font-bold tracking-wider uppercase text-zinc-500">
+            Team Workload & Assignment
+          </p>
+          <h1 className="text-xl font-bold tracking-tight text-zinc-950 sm:text-2xl">
+            家族のタスク管理・分担
+          </h1>
+          <p className="mt-0.5 text-xs text-zinc-500">
+            誰が何のタスクを持っているか、分担状況を一覧で確認・引き受けできます
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex items-center gap-2">
           <button
+            type="button"
             className="button-icon"
             onClick={() => loadData(true)}
-            title="更新"
+            title="最新情報に更新"
             disabled={loading}
           >
-            <RefreshCw size={18} className={loading ? "animate-spin" : ""} />
+            <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
           </button>
-          <Link href="/tasks/new" className="button-primary">
-            <Plus size={18} />
-            新しいTODO
+          <Link href="/tasks/new" className="button-primary text-xs">
+            <Plus size={14} />
+            <span>新しいTODO</span>
           </Link>
         </div>
       </div>
 
       {/* 重複・衝突警告 */}
-      <div className="mt-6">
-        <ConflictAlerts conflicts={conflicts} />
-      </div>
+      {conflicts.hasAnyConflict ? (
+        <div className="mt-4">
+          <ConflictAlerts conflicts={conflicts} />
+        </div>
+      ) : null}
 
-      {/* フィルター＆グループ選択エリア */}
-      <div className="mt-7 flex flex-wrap items-center justify-between gap-4 rounded-md border border-ink/10 bg-white p-4 shadow-sm">
-        <div className="flex flex-wrap items-center gap-4">
+      {/* フラットなツールバー & フィルター（カードではなくボーダーラインによる制御バー） */}
+      <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-b border-zinc-200 pb-3">
+        <div className="flex flex-wrap items-center gap-3">
           {groups.length > 1 ? (
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-ink/60">グループ:</span>
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-semibold text-zinc-500">グループ:</span>
               <select
-                className="field text-sm py-1.5"
+                className="field text-xs py-1 h-7"
                 value={currentGroup.id}
                 onChange={(e) => setSelectedGroupId(e.target.value)}
               >
@@ -282,18 +288,18 @@ export default function FamilyTasksPage() {
               </select>
             </div>
           ) : (
-            <div className="flex items-center gap-2 text-sm font-bold text-ink">
-              <Users size={18} className="text-moss" />
-              {currentGroup.name}
+            <div className="flex items-center gap-1.5 text-xs font-bold text-zinc-800">
+              <Users size={14} className="text-zinc-500" />
+              <span>{currentGroup.name}</span>
             </div>
           )}
 
           {/* 子どもフィルター */}
           {currentGroup.children.length > 0 ? (
-            <div className="flex items-center gap-2">
-              <Baby size={16} className="text-ink/60" />
+            <div className="flex items-center gap-1.5 border-l border-zinc-200 pl-3">
+              <Baby size={13} className="text-zinc-400" />
               <select
-                className="field text-sm py-1.5"
+                className="field text-xs py-1 h-7"
                 value={selectedChildId}
                 onChange={(e) => setSelectedChildId(e.target.value)}
               >
@@ -308,27 +314,36 @@ export default function FamilyTasksPage() {
           ) : null}
         </div>
 
-        {/* 完了状態フィルター */}
-        <div className="flex items-center gap-1 rounded-md bg-cloud p-1 text-xs font-semibold">
+        {/* 完了状態フィルター (セグメントコントロール) */}
+        <div className="flex items-center gap-0.5 rounded-md border border-zinc-200 bg-zinc-100/70 p-0.5 text-xs">
           <button
-            className={`rounded px-2.5 py-1 transition ${
-              statusFilter === "TODO" ? "bg-white text-ink shadow-xs" : "text-ink/60 hover:text-ink"
+            type="button"
+            className={`rounded px-2.5 py-1 text-xs font-medium transition ${
+              statusFilter === "TODO"
+                ? "bg-white text-zinc-950 font-semibold shadow-2xs"
+                : "text-zinc-600 hover:text-zinc-950"
             }`}
             onClick={() => setStatusFilter("TODO")}
           >
             未完了 ({allTodoCount})
           </button>
           <button
-            className={`rounded px-2.5 py-1 transition ${
-              statusFilter === "ALL" ? "bg-white text-ink shadow-xs" : "text-ink/60 hover:text-ink"
+            type="button"
+            className={`rounded px-2.5 py-1 text-xs font-medium transition ${
+              statusFilter === "ALL"
+                ? "bg-white text-zinc-950 font-semibold shadow-2xs"
+                : "text-zinc-600 hover:text-zinc-950"
             }`}
             onClick={() => setStatusFilter("ALL")}
           >
             すべて
           </button>
           <button
-            className={`rounded px-2.5 py-1 transition ${
-              statusFilter === "DONE" ? "bg-white text-ink shadow-xs" : "text-ink/60 hover:text-ink"
+            type="button"
+            className={`rounded px-2.5 py-1 text-xs font-medium transition ${
+              statusFilter === "DONE"
+                ? "bg-white text-zinc-950 font-semibold shadow-2xs"
+                : "text-zinc-600 hover:text-zinc-950"
             }`}
             onClick={() => setStatusFilter("DONE")}
           >
@@ -337,65 +352,65 @@ export default function FamilyTasksPage() {
         </div>
       </div>
 
-      {/* 分担サマリーバー */}
-      <div className="mt-4 rounded-md border border-ink/10 bg-white p-4 shadow-sm">
-        <h2 className="text-xs font-bold uppercase tracking-wider text-ink/60">
-          タスク分担の偏り状況
-        </h2>
-        <div className="mt-3 flex flex-wrap gap-3">
-          {memberBuckets.buckets?.map((bucket) => {
-            const isMe = currentMember?.id === bucket.member.id;
-            return (
-              <div
-                key={bucket.member.id}
-                className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm ${
-                  isMe ? "border border-moss/30 bg-moss/10" : "bg-cloud"
+      {/* インライン分担サマリーストリップ（カードではなく1行のストリップ） */}
+      <div className="mt-3 flex flex-wrap items-center gap-2 py-1 text-xs">
+        <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-600">
+          メンバー負荷:
+        </span>
+        {memberBuckets.buckets?.map((bucket) => {
+          const isMe = currentMember?.id === bucket.member.id;
+          return (
+            <div
+              key={bucket.member.id}
+              className={`inline-flex items-center gap-1.5 rounded border px-2.5 py-1 text-xs font-medium ${
+                isMe
+                  ? "border-emerald-200 bg-emerald-50 text-emerald-900"
+                  : "border-zinc-200 bg-zinc-50 text-zinc-700"
+              }`}
+            >
+              <UserRound size={12} className={isMe ? "text-emerald-700" : "text-zinc-500"} />
+              <span>{bucket.member.displayName}</span>
+              {isMe ? <span className="text-[10px] text-emerald-700">(自分)</span> : null}
+              <span
+                className={`ml-1 rounded px-1.5 py-0.2 text-[10px] font-bold ${
+                  isMe ? "bg-emerald-700 text-white" : "bg-zinc-200 text-zinc-700"
                 }`}
               >
-                <UserRound size={16} className={isMe ? "text-moss" : "text-ink/60"} />
-                <span className="font-bold">
-                  {bucket.member.displayName} {isMe ? "(あなた)" : ""}
-                </span>
-                <span className="rounded-full bg-ink px-2 py-0.5 text-xs font-bold text-white">
-                  {bucket.todoCount}件
-                </span>
-              </div>
-            );
-          })}
-          {memberBuckets.unassigned?.tasks.length ? (
-            <div className="flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-              <Hand size={16} className="text-amber-600" />
-              <span className="font-bold">担当未設定</span>
-              <span className="rounded-full bg-amber-600 px-2 py-0.5 text-xs font-bold text-white">
-                {memberBuckets.unassigned.todoCount}件
+                {bucket.todoCount}
               </span>
             </div>
-          ) : null}
-        </div>
+          );
+        })}
+        {memberBuckets.unassigned?.tasks.length ? (
+          <div className="inline-flex items-center gap-1.5 rounded border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-900">
+            <Hand size={12} className="text-amber-600" />
+            <span>未担当</span>
+            <span className="ml-1 rounded bg-amber-600 px-1.5 py-0.2 text-[10px] font-bold text-white">
+              {memberBuckets.unassigned.todoCount}
+            </span>
+          </div>
+        ) : null}
       </div>
 
-      {/* 担当者別タスクカラム一覧 */}
-      <div className="mt-6 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      {/* 担当者別カラム（Linear / GitHub Projects 風のボーダー分割カラムボード） */}
+      <div className="mt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {/* 未割り当てカラム */}
         {memberBuckets.unassigned && memberBuckets.unassigned.tasks.length > 0 ? (
-          <section className="flex flex-col rounded-md border-2 border-dashed border-amber-300 bg-amber-50/40 p-4 shadow-sm">
-            <div className="flex items-center justify-between border-b border-amber-200/80 pb-3">
-              <div className="flex items-center gap-2">
-                <span className="grid size-7 place-items-center rounded bg-amber-500 text-white font-bold text-xs">
+          <div className="flex flex-col overflow-hidden rounded-lg border border-amber-200/90 bg-white shadow-2xs">
+            <div className="flex items-center justify-between border-b border-amber-200 bg-amber-50/60 px-3.5 py-2.5">
+              <div className="flex items-center gap-1.5">
+                <span className="grid size-5 place-items-center rounded bg-amber-500 text-white font-bold text-[10px]">
                   ?
                 </span>
-                <h3 className="font-bold text-amber-950">担当未設定</h3>
+                <h3 className="text-xs font-bold text-amber-950">担当未設定</h3>
               </div>
-              <span className="rounded-full bg-amber-500 px-2.5 py-0.5 text-xs font-bold text-white">
-                {memberBuckets.unassigned.tasks.length}件
+              <span className="rounded bg-amber-200/80 px-2 py-0.5 text-[10px] font-bold text-amber-900">
+                {memberBuckets.unassigned.tasks.length} 件
               </span>
             </div>
-            <p className="mt-2 text-xs text-amber-800">
-              誰がやるか決まっていないタスクです。引き受けてみましょう！
-            </p>
-            <div className="mt-4 flex-1 space-y-3">
+            <div className="divide-y divide-zinc-200/80 flex-1">
               {memberBuckets.unassigned.tasks.map((task) => (
-                <TaskCard
+                <TaskRow
                   key={task.id}
                   task={task}
                   members={currentGroup.members}
@@ -407,57 +422,59 @@ export default function FamilyTasksPage() {
                 />
               ))}
             </div>
-          </section>
+          </div>
         ) : null}
 
         {/* 各メンバーのカラム */}
         {memberBuckets.buckets?.map((bucket) => {
           const isMe = currentMember?.id === bucket.member.id;
           return (
-            <section
+            <div
               key={bucket.member.id}
-              className={`flex flex-col rounded-md border bg-white p-4 shadow-sm ${
-                isMe ? "border-moss/40 ring-1 ring-moss/20" : "border-ink/10"
+              className={`flex flex-col overflow-hidden rounded-lg border bg-white shadow-2xs ${
+                isMe ? "border-emerald-300 ring-1 ring-emerald-300/30" : "border-zinc-200"
               }`}
             >
-              <div className="flex items-center justify-between border-b border-ink/10 pb-3">
-                <div className="flex items-center gap-2">
+              <div
+                className={`flex items-center justify-between border-b px-3.5 py-2.5 ${
+                  isMe ? "border-emerald-200 bg-emerald-50/50" : "border-zinc-200 bg-zinc-50/70"
+                }`}
+              >
+                <div className="flex items-center gap-1.5">
                   <div
-                    className={`grid size-7 place-items-center rounded text-white font-bold text-xs ${
-                      isMe ? "bg-moss" : "bg-ink"
+                    className={`grid size-5 place-items-center rounded text-white font-bold text-[10px] ${
+                      isMe ? "bg-emerald-600" : "bg-zinc-700"
                     }`}
                   >
-                    <UserRound size={16} />
+                    <UserRound size={12} />
                   </div>
-                  <div>
-                    <h3 className="font-bold text-ink">
-                      {bucket.member.displayName}
-                      {isMe ? (
-                        <span className="ml-1 text-xs text-moss font-semibold">(あなた)</span>
-                      ) : null}
-                    </h3>
-                  </div>
+                  <h3 className="text-xs font-bold text-zinc-900">
+                    {bucket.member.displayName}
+                    {isMe ? (
+                      <span className="ml-1 text-[11px] font-semibold text-emerald-700">
+                        (自分)
+                      </span>
+                    ) : null}
+                  </h3>
                 </div>
-                <div className="flex items-center gap-1.5 text-xs font-bold">
-                  <span className="rounded-full bg-cloud px-2 py-0.5 text-ink/70">
-                    {bucket.tasks.length}件
-                  </span>
+                <div className="flex items-center gap-1 text-[11px] font-semibold">
+                  <span className="text-zinc-600">計 {bucket.tasks.length}</span>
                   {bucket.todoCount > 0 ? (
-                    <span className="rounded-full bg-moss/20 px-2 py-0.5 text-moss">
-                      未完了 {bucket.todoCount}
+                    <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-emerald-800">
+                      未完 {bucket.todoCount}
                     </span>
                   ) : null}
                 </div>
               </div>
 
-              <div className="mt-4 flex-1 space-y-3">
+              <div className="divide-y divide-zinc-200 flex-1">
                 {bucket.tasks.length === 0 ? (
-                  <div className="rounded-md border border-dashed border-ink/10 p-6 text-center text-xs text-ink/40">
+                  <div className="p-8 text-center text-xs text-zinc-600">
                     現在担当しているタスクはありません
                   </div>
                 ) : (
                   bucket.tasks.map((task) => (
-                    <TaskCard
+                    <TaskRow
                       key={task.id}
                       task={task}
                       members={currentGroup.members}
@@ -470,7 +487,7 @@ export default function FamilyTasksPage() {
                   ))
                 )}
               </div>
-            </section>
+            </div>
           );
         })}
       </div>
@@ -478,7 +495,7 @@ export default function FamilyTasksPage() {
   );
 }
 
-function TaskCard({
+function TaskRow({
   task,
   members,
   currentMember,
@@ -496,40 +513,35 @@ function TaskCard({
   onToggleStatus: () => void;
 }) {
   const isAssignedToMe = currentMember && task.assigneeMemberId === currentMember.id;
+  const isDone = task.status === "DONE";
 
   return (
     <div
-      className={`group rounded-md border p-3.5 transition shadow-xs ${
-        task.status === "DONE"
-          ? "border-ink/10 bg-cloud/40 opacity-70"
-          : "border-ink/10 bg-white hover:border-moss hover:shadow-soft"
+      className={`group p-3 transition hover:bg-zinc-50/70 ${
+        isDone ? "bg-zinc-50/40 opacity-70" : ""
       }`}
     >
-      <div className="flex items-start justify-between gap-2">
+      <div className="flex items-start gap-2.5">
         <button
           type="button"
           onClick={onToggleStatus}
           disabled={isActionLoading}
-          className="mt-0.5 shrink-0 text-ink/40 hover:text-moss transition"
-          title={task.status === "DONE" ? "未完了に戻す" : "完了にする"}
+          className="mt-0.5 shrink-0 text-zinc-400 hover:text-zinc-800 transition"
+          title={isDone ? "未完了に戻す" : "完了にする"}
         >
-          {task.status === "DONE" ? (
-            <CheckCircle2 size={19} className="text-moss" />
-          ) : (
-            <Circle size={19} />
-          )}
+          {isDone ? <CheckCircle2 size={16} className="text-emerald-600" /> : <Circle size={16} />}
         </button>
 
         <div className="min-w-0 flex-1">
           <Link
             href={`/tasks/${task.id}`}
-            className={`font-bold leading-snug hover:underline block text-sm ${
-              task.status === "DONE" ? "line-through text-ink/50" : "text-ink"
+            className={`text-xs font-semibold leading-snug hover:underline block ${
+              isDone ? "line-through text-zinc-400" : "text-zinc-900"
             }`}
           >
             {task.title}
           </Link>
-          <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs">
+          <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[11px]">
             <DuePill dueDate={task.dueDate} />
             <PriorityPill priority={task.priority} />
             <ChildBadge name={task.childName} isWork={isWorkTask(task)} size="sm" />
@@ -538,19 +550,19 @@ function TaskCard({
 
         <Link
           href={`/tasks/${task.id}`}
-          className="shrink-0 text-ink/30 transition hover:text-moss mt-0.5"
+          className="shrink-0 text-zinc-300 group-hover:text-zinc-700 transition"
           title="詳細"
         >
-          <ArrowRight size={16} />
+          <ArrowRight size={14} />
         </Link>
       </div>
 
       {/* 担当操作エリア */}
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-ink/5 pt-2 text-xs">
-        <div className="flex items-center gap-1.5">
-          <span className="text-ink/50">担当:</span>
+      <div className="mt-2.5 flex items-center justify-between gap-2 border-t border-zinc-100 pt-2 text-[11px]">
+        <div className="flex items-center gap-1">
+          <span className="text-zinc-600">担当:</span>
           <select
-            className="rounded border border-ink/15 bg-white px-2 py-0.5 text-xs font-semibold text-ink"
+            className="rounded border border-zinc-200 bg-white px-1.5 py-0.5 text-[11px] font-medium text-zinc-800"
             value={task.assigneeMemberId || "unassigned"}
             disabled={isActionLoading}
             onChange={(e) => onChangeAssignee(e.target.value)}
@@ -569,10 +581,10 @@ function TaskCard({
             type="button"
             onClick={onAssignToMe}
             disabled={isActionLoading}
-            className="inline-flex items-center gap-1 rounded bg-moss/10 px-2 py-1 font-bold text-moss transition hover:bg-moss/20"
+            className="inline-flex items-center gap-1 rounded border border-emerald-200 bg-emerald-50 px-2 py-0.5 font-medium text-emerald-800 transition hover:bg-emerald-100"
           >
-            {isActionLoading ? <Loader2 size={13} className="animate-spin" /> : <Hand size={13} />}
-            私がやる
+            {isActionLoading ? <Loader2 size={11} className="animate-spin" /> : <Hand size={11} />}
+            <span>私がやる</span>
           </button>
         ) : null}
       </div>

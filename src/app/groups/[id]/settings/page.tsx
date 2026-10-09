@@ -61,83 +61,133 @@ export default function GroupSettingsPage() {
   const group = useMemo(() => groups.find((item) => item.id === params.id), [groups, params.id]);
 
   if (!group) {
-    return <section className="mx-auto max-w-5xl px-4 py-12">読み込み中</section>;
+    return (
+      <section className="mx-auto max-w-5xl px-4 py-12 text-xs text-zinc-500">
+        読み込み中...
+      </section>
+    );
   }
 
   return (
-    <section className="mx-auto max-w-5xl px-4 pb-24 pt-8 md:pb-12">
-      <Link
-        href="/groups"
-        className="inline-flex items-center gap-2 text-sm font-semibold text-moss"
-      >
-        <Undo2 size={16} />
-        戻る
-      </Link>
-      <div className="mt-5 flex flex-col justify-between gap-4 md:flex-row md:items-end">
+    <section className="mx-auto max-w-5xl px-4 pb-20 pt-6 sm:px-6 md:pb-12 md:pt-8">
+      {/* ページヘッダー */}
+      <div className="flex flex-col gap-3 border-b border-zinc-200/80 pb-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-sm font-bold text-moss">Group Settings</p>
-          <h1 className="mt-2 text-3xl font-black tracking-normal md:text-5xl">{group.name}</h1>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/groups"
+              className="inline-flex items-center gap-1 text-xs font-semibold text-zinc-600 hover:text-zinc-950 transition"
+            >
+              <Undo2 size={13} />
+              グループ一覧
+            </Link>
+            <span className="text-zinc-300">/</span>
+            <span className="text-xs font-mono text-zinc-500">Settings</span>
+          </div>
+          <h1 className="mt-1 text-xl font-bold tracking-tight text-zinc-950 sm:text-2xl">
+            {group.name} の設定
+          </h1>
         </div>
-        <button className="button-primary" onClick={createInvite}>
-          <Link2 size={18} />
-          招待リンク作成
+        <button type="button" className="button-primary text-xs" onClick={createInvite}>
+          <Link2 size={14} />
+          <span>招待リンクを発行</span>
         </button>
       </div>
 
+      {/* 招待リンク通知 */}
       {inviteUrl ? (
-        <div className="mt-6 rounded-md border border-ink/10 bg-white p-4 shadow-sm">
-          <label className="block text-sm font-semibold" htmlFor="invite">
-            招待リンク
+        <div className="mt-5 rounded-lg border border-emerald-200 bg-emerald-50/60 p-4">
+          <label className="block text-xs font-semibold text-emerald-950" htmlFor="invite">
+            家族を招待するリンク（URLを共有してください）
           </label>
           <div className="mt-2 flex gap-2">
-            <input id="invite" className="field" readOnly value={inviteUrl} />
-            <button className="button-icon shrink-0" onClick={copyInvite} title="コピー">
-              <Copy size={18} />
+            <input id="invite" className="field text-xs bg-white" readOnly value={inviteUrl} />
+            <button
+              type="button"
+              className="button-primary shrink-0 text-xs"
+              onClick={copyInvite}
+              title="コピー"
+            >
+              <Copy size={13} />
+              <span>URLをコピー</span>
             </button>
           </div>
         </div>
       ) : null}
 
-      <div className="mt-7 grid gap-6 lg:grid-cols-2">
-        <section className="rounded-md border border-ink/10 bg-white p-5 shadow-sm">
-          <h2 className="flex items-center gap-2 text-lg font-bold">
-            <Users size={20} />
-            メンバー
-          </h2>
-          <div className="mt-4 grid gap-3">
+      {/* 設定セクション（フラットなボーダー区切りグリッド） */}
+      <div className="mt-6 grid gap-8 lg:grid-cols-2">
+        {/* メンバーセクション */}
+        <div>
+          <div className="flex items-center justify-between pb-2 border-b border-zinc-200">
+            <div className="flex items-center gap-2">
+              <Users size={15} className="text-zinc-500" />
+              <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-600">
+                所属メンバー ({group.members.length})
+              </h2>
+            </div>
+          </div>
+          <div className="mt-3 divide-y divide-zinc-200 rounded-lg border border-zinc-200 bg-white overflow-hidden shadow-2xs">
             {group.members.map((member) => (
-              <div key={member.id} className="rounded-md bg-cloud px-4 py-3">
-                <div className="font-semibold">{member.displayName}</div>
-                <div className="text-sm text-ink/60">{member.role}</div>
+              <div
+                key={member.id}
+                className="flex items-center justify-between p-3.5 hover:bg-zinc-50/50 transition"
+              >
+                <div className="font-semibold text-xs text-zinc-900">{member.displayName}</div>
+                <span className="rounded bg-zinc-100 px-2 py-0.5 text-[11px] font-mono text-zinc-600">
+                  {member.role}
+                </span>
               </div>
             ))}
           </div>
-        </section>
+        </div>
 
-        <section className="rounded-md border border-ink/10 bg-white p-5 shadow-sm">
-          <h2 className="flex items-center gap-2 text-lg font-bold">
-            <Baby size={20} />
-            子ども情報
-          </h2>
-          <div className="mt-4 flex gap-2">
+        {/* 子ども情報セクション */}
+        <div>
+          <div className="flex items-center justify-between pb-2 border-b border-zinc-200">
+            <div className="flex items-center gap-2">
+              <Baby size={15} className="text-zinc-500" />
+              <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-600">
+                登録中の子ども ({group.children.length})
+              </h2>
+            </div>
+          </div>
+
+          <div className="mt-3 flex gap-2">
             <input
-              className="field"
+              className="field text-xs"
               value={childName}
               onChange={(event) => setChildName(event.target.value)}
-              placeholder="名前"
+              placeholder="子どもの名前を追加 (例: 太郎)"
             />
-            <button className="button-icon shrink-0" onClick={addChild} title="追加">
-              <Plus size={18} />
+            <button
+              type="button"
+              className="button-secondary shrink-0 text-xs"
+              onClick={addChild}
+              disabled={!childName.trim()}
+            >
+              <Plus size={14} />
+              <span>追加</span>
             </button>
           </div>
-          <div className="mt-4 grid gap-3">
-            {group.children.map((child) => (
-              <div key={child.id} className="rounded-md bg-cloud px-4 py-3 font-semibold">
-                {child.name}
+
+          <div className="mt-3 divide-y divide-zinc-200 rounded-lg border border-zinc-200 bg-white overflow-hidden shadow-2xs">
+            {group.children.length === 0 ? (
+              <div className="p-6 text-center text-xs text-zinc-500">
+                子どもはまだ登録されていません
               </div>
-            ))}
+            ) : (
+              group.children.map((child) => (
+                <div
+                  key={child.id}
+                  className="p-3.5 text-xs font-semibold text-zinc-900 hover:bg-zinc-50/50 transition"
+                >
+                  {child.name}
+                </div>
+              ))
+            )}
           </div>
-        </section>
+        </div>
       </div>
     </section>
   );
