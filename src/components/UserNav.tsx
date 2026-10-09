@@ -5,6 +5,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import { fetchJsonWithCache, getCachedData } from "@/lib/client-cache";
+
 type UserData = {
   id: string;
   email: string;
@@ -12,54 +14,34 @@ type UserData = {
   image?: string | null;
 };
 
-// モジュールレベルキャッシュ（ページ遷移をまたいで再利用）
-let cachedUser: UserData | null = null;
-let fetchPromise: Promise<UserData | null> | null = null;
-
-async function getCachedUser(): Promise<UserData | null> {
-  if (cachedUser) return cachedUser;
-  if (fetchPromise) return fetchPromise;
-
-  fetchPromise = (async () => {
-    try {
-      const res = await fetch("/api/me");
-      if (res.ok) {
-        const data = await res.json();
-        cachedUser = data.user ?? null;
-        return cachedUser;
-      }
-    } catch (e) {
-      console.error("Failed to fetch user in UserNav", e);
-    } finally {
-      fetchPromise = null;
-    }
-    return null;
-  })();
-
-  return fetchPromise;
-}
-
 export function UserNav() {
   const pathname = usePathname();
-  const [user, setUser] = useState<UserData | null>(cachedUser);
-  const [loading, setLoading] = useState(!cachedUser);
+  const cached = getCachedData<{ user: UserData }>("/api/me");
+  const [user, setUser] = useState<UserData | null>(cached?.user || null);
+  const [loading, setLoading] = useState(!cached?.user);
 
   useEffect(() => {
     if (pathname === "/login") return;
 
-    if (cachedUser) {
-      setUser(cachedUser);
+    const currentCached = getCachedData<{ user: UserData }>("/api/me");
+    if (currentCached?.user) {
+      setUser(currentCached.user);
       setLoading(false);
       return;
     }
 
     let isMounted = true;
-    getCachedUser().then((userData) => {
-      if (isMounted) {
-        setUser(userData);
-        setLoading(false);
-      }
-    });
+    fetchJsonWithCache<{ user: UserData }>("/api/me")
+      .then((data) => {
+        if (isMounted && data?.user) {
+          setUser(data.user);
+          setLoading(false);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to fetch user in UserNav", err);
+        if (isMounted) setLoading(false);
+      });
 
     return () => {
       isMounted = false;

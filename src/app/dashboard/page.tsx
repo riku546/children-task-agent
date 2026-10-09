@@ -4,19 +4,37 @@ import { Plus, RefreshCw, Users } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { TaskList } from "@/components/TaskList";
+import { fetchJsonWithCache, getCachedData } from "@/lib/client-cache";
 import { isSameDate } from "@/lib/date";
 import type { TaskRecord } from "@/lib/types";
 
 export default function DashboardPage() {
-  const [tasks, setTasks] = useState<TaskRecord[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [tasks, setTasks] = useState<TaskRecord[]>(
+    () => getCachedData<{ tasks: TaskRecord[] }>("/api/tasks")?.tasks || []
+  );
+  const [loading, setLoading] = useState(
+    () => !getCachedData<{ tasks: TaskRecord[] }>("/api/tasks")
+  );
 
-  async function load() {
+  async function load(force = false) {
+    if (!force) {
+      const cached = getCachedData<{ tasks: TaskRecord[] }>("/api/tasks");
+      if (cached) {
+        setTasks(cached.tasks || []);
+        setLoading(false);
+        return;
+      }
+    }
+
     setLoading(true);
-    const response = await fetch("/api/tasks", { cache: "no-store" });
-    const data = await response.json();
-    setTasks(data.tasks || []);
-    setLoading(false);
+    try {
+      const data = await fetchJsonWithCache<{ tasks: TaskRecord[] }>("/api/tasks", { force });
+      setTasks(data.tasks || []);
+    } catch (e) {
+      console.error("Failed to load tasks", e);
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => {
@@ -42,7 +60,7 @@ export default function DashboardPage() {
           <h1 className="mt-2 text-3xl font-black tracking-normal md:text-5xl">家族のTODO</h1>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <button className="button-icon" onClick={load} title="更新">
+          <button className="button-icon" onClick={() => load(true)} title="更新">
             <RefreshCw size={18} />
           </button>
           <Link href="/family" className="button-secondary">

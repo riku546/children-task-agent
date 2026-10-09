@@ -3,16 +3,28 @@
 import { Plus, Settings, Users } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { fetchJsonWithCache, getCachedData, invalidateCache } from "@/lib/client-cache";
 import type { GroupRecord } from "@/lib/types";
 
 export default function GroupsPage() {
-  const [groups, setGroups] = useState<GroupRecord[]>([]);
+  const cached = getCachedData<{ groups: GroupRecord[] }>("/api/groups");
+  const [groups, setGroups] = useState<GroupRecord[]>(cached?.groups || []);
   const [name, setName] = useState("わが家");
 
-  async function load() {
-    const response = await fetch("/api/groups", { cache: "no-store" });
-    const data = await response.json();
-    setGroups(data.groups || []);
+  async function load(force = false) {
+    if (!force) {
+      const c = getCachedData<{ groups: GroupRecord[] }>("/api/groups");
+      if (c) {
+        setGroups(c.groups || []);
+        return;
+      }
+    }
+    try {
+      const data = await fetchJsonWithCache<{ groups: GroupRecord[] }>("/api/groups", { force });
+      setGroups(data.groups || []);
+    } catch (e) {
+      console.error("Failed to load groups", e);
+    }
   }
 
   async function create() {
@@ -22,7 +34,9 @@ export default function GroupsPage() {
       body: JSON.stringify({ name })
     });
     setName("");
-    await load();
+    invalidateCache("/api/groups");
+    invalidateCache("/api/me");
+    await load(true);
   }
 
   useEffect(() => {

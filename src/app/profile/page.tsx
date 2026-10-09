@@ -3,6 +3,7 @@
 import { CircleUserRound, LogOut, Save, Undo2, Users } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { fetchJsonWithCache, getCachedData, invalidateCache } from "@/lib/client-cache";
 import { createClient } from "@/lib/supabase/client";
 import type { GroupRecord } from "@/lib/types";
 
@@ -15,20 +16,29 @@ type UserData = {
 };
 
 export default function ProfilePage() {
-  const [user, setUser] = useState<UserData | null>(null);
-  const [groups, setGroups] = useState<GroupRecord[]>([]);
-  const [name, setName] = useState("");
-  const [loading, setLoading] = useState(true);
+  const cachedMe = getCachedData<any>("/api/me");
+  const [user, setUser] = useState<UserData | null>(cachedMe?.user || null);
+  const [groups, setGroups] = useState<GroupRecord[]>(cachedMe?.groups || []);
+  const [name, setName] = useState(cachedMe?.user?.name || "");
+  const [loading, setLoading] = useState(!cachedMe);
   const [saving, setSaving] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
-  async function load() {
+  async function load(force = false) {
+    if (!force) {
+      const c = getCachedData<any>("/api/me");
+      if (c) {
+        setUser(c.user);
+        setName(c.user?.name || "");
+        setGroups(c.groups || []);
+        setLoading(false);
+        return;
+      }
+    }
     setLoading(true);
     try {
-      const res = await fetch("/api/me", { cache: "no-store" });
-      if (!res.ok) throw new Error("ユーザー情報の取得に失敗しました");
-      const data = await res.json();
+      const data = await fetchJsonWithCache<any>("/api/me", { force });
       setUser(data.user);
       setName(data.user?.name || "");
       setGroups(data.groups || []);
@@ -64,6 +74,7 @@ export default function ProfilePage() {
       if (!res.ok) {
         throw new Error(data.error || "更新に失敗しました");
       }
+      invalidateCache("/api/me");
       setMessage({ type: "success", text: "ユーザー情報を更新しました" });
       setUser((prev) => (prev ? { ...prev, name: data.name } : null));
     } catch (err: unknown) {
@@ -77,6 +88,7 @@ export default function ProfilePage() {
   async function handleLogout() {
     if (loggingOut) return;
     setLoggingOut(true);
+    invalidateCache(); // 全キャッシュクリア
 
     try {
       // 1. Supabase browser client signOut

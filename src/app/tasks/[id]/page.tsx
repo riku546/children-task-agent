@@ -5,21 +5,29 @@ import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { DuePill, PriorityPill, StatusPill } from "@/components/StatusPill";
+import { fetchJsonWithCache, getCachedData, invalidateCache } from "@/lib/client-cache";
 import { toDateInputValue } from "@/lib/date";
 import type { Priority, TaskRecord, TaskStatus } from "@/lib/types";
 
 export default function TaskDetailPage() {
   const params = useParams<{ id: string }>();
   const searchParams = useSearchParams();
-  const [task, setTask] = useState<TaskRecord | null>(null);
-  const [form, setForm] = useState<Partial<TaskRecord>>({});
+  const cached = params.id ? getCachedData<{ task: TaskRecord }>(`/api/tasks/${params.id}`) : null;
+  const [task, setTask] = useState<TaskRecord | null>(cached?.task || null);
+  const [form, setForm] = useState<Partial<TaskRecord>>(cached?.task || {});
   const calendarState = searchParams.get("calendar");
 
-  async function load() {
-    const response = await fetch(`/api/tasks/${params.id}`, { cache: "no-store" });
-    const data = await response.json();
-    setTask(data.task);
-    setForm(data.task || {});
+  async function load(force = false) {
+    if (!params.id) return;
+    try {
+      const data = await fetchJsonWithCache<{ task: TaskRecord }>(`/api/tasks/${params.id}`, {
+        force
+      });
+      setTask(data.task);
+      setForm(data.task || {});
+    } catch (e) {
+      console.error("Failed to load task", e);
+    }
   }
 
   async function save(patch?: Partial<TaskRecord>) {
@@ -37,6 +45,7 @@ export default function TaskDetailPage() {
       })
     });
     const data = await response.json();
+    invalidateCache("/api/tasks");
     setTask(data.task);
     setForm(data.task);
   }

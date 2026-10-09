@@ -3,6 +3,7 @@
 import { Camera, FileText, Loader2, Mic, Save, Sparkles, Trash2, Type, Upload } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { type ChangeEvent, useEffect, useMemo, useState } from "react";
+import { fetchJsonWithCache, getCachedData, invalidateCache } from "@/lib/client-cache";
 import type { ExtractionResult, GroupRecord, TodoCandidate } from "@/lib/types";
 
 type InputMode = "text" | "image" | "pdf" | "voice";
@@ -17,8 +18,9 @@ const modes: { id: InputMode; label: string; icon: typeof Type }[] = [
 export default function NewTaskPage() {
   const router = useRouter();
   const [mode, setMode] = useState<InputMode>("text");
-  const [groups, setGroups] = useState<GroupRecord[]>([]);
-  const [groupId, setGroupId] = useState("");
+  const cachedGroups = getCachedData<{ groups: GroupRecord[] }>("/api/groups");
+  const [groups, setGroups] = useState<GroupRecord[]>(cachedGroups?.groups || []);
+  const [groupId, setGroupId] = useState(cachedGroups?.groups?.[0]?.id || "");
   const [confirmedText, setConfirmedText] = useState("明日までに保育園へ雑巾2枚を持っていく");
   const [previewUrl, setPreviewUrl] = useState("");
   const [busyText, setBusyText] = useState("");
@@ -27,13 +29,15 @@ export default function NewTaskPage() {
   const [listening, setListening] = useState(false);
 
   useEffect(() => {
-    fetch("/api/groups", { cache: "no-store" })
-      .then((response) => response.json())
+    fetchJsonWithCache<{ groups: GroupRecord[] }>("/api/groups")
       .then((data) => {
         setGroups(data.groups || []);
-        setGroupId(data.groups?.[0]?.id || "");
-      });
-  }, []);
+        if (!groupId) {
+          setGroupId(data.groups?.[0]?.id || "");
+        }
+      })
+      .catch((e) => console.error("Failed to load groups", e));
+  }, [groupId]);
 
   const selectedGroup = useMemo(
     () => groups.find((group) => group.id === groupId),
@@ -186,6 +190,7 @@ export default function NewTaskPage() {
       })
     });
     const data = await response.json();
+    invalidateCache("/api/tasks");
     const firstTaskId = data.tasks?.[0]?.id;
     router.push(firstTaskId ? `/tasks/${firstTaskId}` : "/dashboard");
   }

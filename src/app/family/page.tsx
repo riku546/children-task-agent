@@ -17,27 +17,46 @@ import {
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { DuePill, PriorityPill, StatusPill } from "@/components/StatusPill";
+import { fetchJsonWithCache, getCachedData, invalidateCache } from "@/lib/client-cache";
 import type { GroupRecord, MemberRecord, TaskRecord } from "@/lib/types";
 
 export default function FamilyTasksPage() {
-  const [groups, setGroups] = useState<GroupRecord[]>([]);
-  const [selectedGroupId, setSelectedGroupId] = useState<string>("");
-  const [tasks, setTasks] = useState<TaskRecord[]>([]);
-  const [currentUser, setCurrentUser] = useState<{ id: string; name: string } | null>(null);
+  const cachedMe = getCachedData<any>("/api/me");
+  const cachedTasks = getCachedData<{ tasks: TaskRecord[] }>("/api/tasks");
+
+  const [groups, setGroups] = useState<GroupRecord[]>(cachedMe?.groups || []);
+  const [selectedGroupId, setSelectedGroupId] = useState<string>(cachedMe?.groups?.[0]?.id || "");
+  const [tasks, setTasks] = useState<TaskRecord[]>(cachedTasks?.tasks || []);
+  const [currentUser, setCurrentUser] = useState<{ id: string; name: string } | null>(
+    cachedMe?.user || null
+  );
   const [selectedChildId, setSelectedChildId] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<"ALL" | "TODO" | "DONE">("TODO");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!cachedMe || !cachedTasks);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
 
-  async function loadData() {
+  async function loadData(force = false) {
+    if (!force) {
+      const me = getCachedData<any>("/api/me");
+      const t = getCachedData<{ tasks: TaskRecord[] }>("/api/tasks");
+      if (me && t) {
+        setGroups(me.groups || []);
+        setCurrentUser(me.user || null);
+        if (me.groups?.length > 0 && !selectedGroupId) {
+          setSelectedGroupId(me.groups[0].id);
+        }
+        setTasks(t.tasks || []);
+        setLoading(false);
+        return;
+      }
+    }
+
     setLoading(true);
     try {
-      const [meRes, tasksRes] = await Promise.all([
-        fetch("/api/me", { cache: "no-store" }),
-        fetch("/api/tasks", { cache: "no-store" })
+      const [meData, tasksData] = await Promise.all([
+        fetchJsonWithCache<any>("/api/me", { force }),
+        fetchJsonWithCache<{ tasks: TaskRecord[] }>("/api/tasks", { force })
       ]);
-      const meData = await meRes.json();
-      const tasksData = await tasksRes.json();
 
       setGroups(meData.groups || []);
       setCurrentUser(meData.user || null);
@@ -46,6 +65,8 @@ export default function FamilyTasksPage() {
         setSelectedGroupId(meData.groups[0].id);
       }
       setTasks(tasksData.tasks || []);
+    } catch (e) {
+      console.error("Failed to load family data", e);
     } finally {
       setLoading(false);
     }
@@ -135,7 +156,8 @@ export default function FamilyTasksPage() {
         body: JSON.stringify({ assigneeMemberId: currentMember.id })
       });
       if (res.ok) {
-        await loadData();
+        invalidateCache("/api/tasks");
+        await loadData(true);
       }
     } finally {
       setActionLoadingId(null);
@@ -154,7 +176,8 @@ export default function FamilyTasksPage() {
         body: JSON.stringify(body)
       });
       if (res.ok) {
-        await loadData();
+        invalidateCache("/api/tasks");
+        await loadData(true);
       }
     } finally {
       setActionLoadingId(null);
@@ -172,7 +195,8 @@ export default function FamilyTasksPage() {
         body: JSON.stringify({ status: nextStatus })
       });
       if (res.ok) {
-        await loadData();
+        invalidateCache("/api/tasks");
+        await loadData(true);
       }
     } finally {
       setActionLoadingId(null);
@@ -212,7 +236,12 @@ export default function FamilyTasksPage() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <button className="button-icon" onClick={loadData} title="更新" disabled={loading}>
+          <button
+            className="button-icon"
+            onClick={() => loadData(true)}
+            title="更新"
+            disabled={loading}
+          >
             <RefreshCw size={18} className={loading ? "animate-spin" : ""} />
           </button>
           <Link href="/tasks/new" className="button-primary">
