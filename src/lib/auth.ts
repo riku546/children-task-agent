@@ -1,4 +1,5 @@
 import type { User } from "@supabase/supabase-js";
+import { headers } from "next/headers";
 import { ensureMemoryGroup, upsertMemoryUser } from "@/lib/memory-store";
 import { prisma, tryDb } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
@@ -139,6 +140,35 @@ export async function syncApplicationUser(user: User) {
 }
 
 export async function ensureCurrentUser() {
+  try {
+    const reqHeaders = await headers();
+    const userId = reqHeaders.get("x-user-id");
+    const userEmail = reqHeaders.get("x-user-email");
+    const userMetaRaw = reqHeaders.get("x-user-meta");
+
+    if (userId && userEmail) {
+      let metadata: Record<string, any> = {};
+      if (userMetaRaw) {
+        try {
+          metadata = JSON.parse(Buffer.from(userMetaRaw, "base64").toString("utf8"));
+        } catch {
+          // ignore parse error
+        }
+      }
+
+      return syncApplicationUser({
+        id: userId,
+        email: userEmail,
+        user_metadata: metadata,
+        app_metadata: {},
+        aud: "authenticated",
+        created_at: ""
+      } as User);
+    }
+  } catch {
+    // headers()が取得できない場合はフォールバック
+  }
+
   const supabase = await createClient();
   const {
     data: { user },

@@ -57,6 +57,27 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(redirectUrl);
   }
 
+  if (auth.user) {
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set("x-user-id", auth.user.id);
+    if (auth.user.email) requestHeaders.set("x-user-email", auth.user.email);
+    requestHeaders.set(
+      "x-user-meta",
+      Buffer.from(JSON.stringify(auth.user.user_metadata || {})).toString("base64")
+    );
+
+    const responseWithHeaders = NextResponse.next({
+      request: {
+        headers: requestHeaders
+      }
+    });
+
+    for (const cookie of auth.response.cookies.getAll()) {
+      responseWithHeaders.cookies.set(cookie);
+    }
+    return responseWithHeaders;
+  }
+
   return auth.response;
 }
 

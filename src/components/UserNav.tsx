@@ -12,30 +12,55 @@ type UserData = {
   image?: string | null;
 };
 
+// モジュールレベルキャッシュ（ページ遷移をまたいで再利用）
+let cachedUser: UserData | null = null;
+let fetchPromise: Promise<UserData | null> | null = null;
+
+async function getCachedUser(): Promise<UserData | null> {
+  if (cachedUser) return cachedUser;
+  if (fetchPromise) return fetchPromise;
+
+  fetchPromise = (async () => {
+    try {
+      const res = await fetch("/api/me");
+      if (res.ok) {
+        const data = await res.json();
+        cachedUser = data.user ?? null;
+        return cachedUser;
+      }
+    } catch (e) {
+      console.error("Failed to fetch user in UserNav", e);
+    } finally {
+      fetchPromise = null;
+    }
+    return null;
+  })();
+
+  return fetchPromise;
+}
+
 export function UserNav() {
   const pathname = usePathname();
-  const [user, setUser] = useState<UserData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<UserData | null>(cachedUser);
+  const [loading, setLoading] = useState(!cachedUser);
 
   useEffect(() => {
-    let isMounted = true;
-    async function fetchUser() {
-      try {
-        const res = await fetch("/api/me", { cache: "no-store" });
-        if (res.ok) {
-          const data = await res.json();
-          if (isMounted) setUser(data.user);
-        }
-      } catch (e) {
-        console.error("Failed to fetch user in UserNav", e);
-      } finally {
-        if (isMounted) setLoading(false);
-      }
+    if (pathname === "/login") return;
+
+    if (cachedUser) {
+      setUser(cachedUser);
+      setLoading(false);
+      return;
     }
 
-    if (pathname !== "/login") {
-      fetchUser();
-    }
+    let isMounted = true;
+    getCachedUser().then((userData) => {
+      if (isMounted) {
+        setUser(userData);
+        setLoading(false);
+      }
+    });
+
     return () => {
       isMounted = false;
     };
