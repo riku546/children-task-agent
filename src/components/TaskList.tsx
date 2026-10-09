@@ -14,6 +14,7 @@ type Props = {
   onAssignToMe?: (taskId: string) => Promise<void> | void;
   onToggleStatus?: (task: TaskRecord) => Promise<void> | void;
   actionLoadingId?: string | null;
+  onThankYou?: (task: TaskRecord) => void;
 };
 
 export function TaskList({
@@ -22,7 +23,8 @@ export function TaskList({
   currentUserId,
   onAssignToMe,
   onToggleStatus,
-  actionLoadingId
+  actionLoadingId,
+  onThankYou
 }: Props) {
   if (tasks.length === 0) {
     return (
@@ -118,6 +120,17 @@ export function TaskList({
                       <span>私がやる</span>
                     </button>
                   ))}
+
+                {onThankYou && task.status !== "DONE" && task.assigneeName && (
+                  <button
+                    type="button"
+                    onClick={() => onThankYou(task)}
+                    className="inline-flex items-center gap-1 rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-[11px] font-bold text-rose-700 shadow-2xs transition hover:bg-rose-100"
+                    title="担当してくれてありがとう！"
+                  >
+                    <span>❤️ ありがとう</span>
+                  </button>
+                )}
               </div>
             </div>
           </div>
