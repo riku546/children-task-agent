@@ -1,8 +1,19 @@
 "use client";
 
-import { Camera, FileText, Loader2, Mic, Save, Sparkles, Trash2, Type, Upload } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { type ChangeEvent, useEffect, useMemo, useState } from "react";
+import {
+  Camera,
+  FileText,
+  Loader2,
+  Mic,
+  Plus,
+  Save,
+  Sparkles,
+  Trash2,
+  Type,
+  Upload
+} from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { type ChangeEvent, Suspense, useEffect, useMemo, useState } from "react";
 import { fetchJsonWithCache, getCachedData, invalidateCache } from "@/lib/client-cache";
 import type { ExtractionResult, GroupRecord, TodoCandidate } from "@/lib/types";
 
@@ -15,8 +26,10 @@ const modes: { id: InputMode; label: string; icon: typeof Type }[] = [
   { id: "voice", label: "音声", icon: Mic }
 ];
 
-export default function NewTaskPage() {
+function NewTaskContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const queryDate = searchParams.get("date") || "";
   const [mode, setMode] = useState<InputMode>("text");
   const cachedGroups = getCachedData<{ groups: GroupRecord[] }>("/api/groups");
   const [groups, setGroups] = useState<GroupRecord[]>(cachedGroups?.groups || []);
@@ -195,6 +208,26 @@ export default function NewTaskPage() {
     router.push(firstTaskId ? `/tasks/${firstTaskId}` : "/dashboard");
   }
 
+  function addManualCandidate() {
+    const newCandidate: TodoCandidate = {
+      title: "",
+      type: "提出物",
+      dueDate: queryDate || null,
+      assigneeSuggestion: "",
+      childName: "",
+      place: "",
+      priority: "medium",
+      notes: ""
+    };
+    setCandidates((current) => [...current, newCandidate]);
+    if (!result) {
+      setResult({
+        summary: "手動作成TODO",
+        tasks: [newCandidate]
+      });
+    }
+  }
+
   function updateCandidate(index: number, patch: Partial<TodoCandidate>) {
     setCandidates((current) =>
       current.map((candidate, currentIndex) =>
@@ -366,8 +399,17 @@ export default function NewTaskPage() {
                       <Field
                         label="種別"
                         value={candidate.type}
+                        list="type-presets"
                         onChange={(value) => updateCandidate(index, { type: value })}
                       />
+                      <datalist id="type-presets">
+                        <option value="提出物" />
+                        <option value="持ち物" />
+                        <option value="行事" />
+                        <option value="集金" />
+                        <option value="仕事・勤務" />
+                        <option value="連絡・手紙" />
+                      </datalist>
                       <Field
                         label="期限"
                         type="date"
@@ -412,8 +454,33 @@ export default function NewTaskPage() {
                   </div>
                 ))}
               </div>
+
+              <div className="mt-4">
+                <button
+                  type="button"
+                  onClick={addManualCandidate}
+                  className="button-secondary text-xs"
+                >
+                  <Plus size={14} />
+                  さらにTODOを1件追加
+                </button>
+              </div>
             </div>
-          ) : null}
+          ) : (
+            <div className="rounded-xl border border-dashed border-ink/20 bg-white p-8 text-center">
+              <p className="text-sm font-semibold text-ink/60">
+                お便りや写真を読み取ってAIで自動抽出するか、手動で直接TODOを作成できます。
+              </p>
+              <button
+                type="button"
+                onClick={addManualCandidate}
+                className="button-secondary mt-4 inline-flex text-xs"
+              >
+                <Plus size={15} />
+                手動でTODOを作成する
+              </button>
+            </div>
+          )}
         </section>
       </div>
     </section>
@@ -424,11 +491,13 @@ function Field({
   label,
   value,
   onChange,
-  type = "text"
+  type = "text",
+  list
 }: {
   label: string;
   value: string;
   type?: string;
+  list?: string;
   onChange: (value: string) => void;
 }) {
   return (
@@ -437,9 +506,25 @@ function Field({
       <input
         className="field mt-1"
         type={type}
+        list={list}
         value={value}
         onChange={(event) => onChange(event.target.value)}
       />
     </label>
+  );
+}
+
+export default function NewTaskPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="mx-auto max-w-6xl px-4 py-16 text-center text-sm font-semibold text-ink/60">
+          <Loader2 className="mx-auto animate-spin text-moss" size={24} />
+          <p className="mt-2">読み込み中...</p>
+        </div>
+      }
+    >
+      <NewTaskContent />
+    </Suspense>
   );
 }

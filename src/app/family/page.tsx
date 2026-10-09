@@ -16,8 +16,11 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { ChildBadge } from "@/components/ChildBadge";
+import { ConflictAlerts } from "@/components/ConflictAlerts";
 import { DuePill, PriorityPill, StatusPill } from "@/components/StatusPill";
 import { fetchJsonWithCache, getCachedData, invalidateCache } from "@/lib/client-cache";
+import { detectAllConflicts, isWorkTask } from "@/lib/conflict-detector";
 import type { GroupRecord, MemberRecord, TaskRecord } from "@/lib/types";
 
 export default function FamilyTasksPage() {
@@ -79,6 +82,10 @@ export default function FamilyTasksPage() {
   const currentGroup = useMemo(() => {
     return groups.find((g) => g.id === selectedGroupId) || groups[0] || null;
   }, [groups, selectedGroupId]);
+
+  const conflicts = useMemo(() => {
+    return detectAllConflicts(tasks);
+  }, [tasks]);
 
   // 現在のユーザーに対応するFamilyMember
   const currentMember = useMemo(() => {
@@ -249,6 +256,11 @@ export default function FamilyTasksPage() {
             新しいTODO
           </Link>
         </div>
+      </div>
+
+      {/* 重複・衝突警告 */}
+      <div className="mt-6">
+        <ConflictAlerts conflicts={conflicts} />
       </div>
 
       {/* フィルター＆グループ選択エリア */}
@@ -520,9 +532,7 @@ function TaskCard({
           <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs">
             <DuePill dueDate={task.dueDate} />
             <PriorityPill priority={task.priority} />
-            {task.childName && task.childName !== "未設定" ? (
-              <span className="rounded bg-cloud px-1.5 py-0.5 text-ink/70">{task.childName}</span>
-            ) : null}
+            <ChildBadge name={task.childName} isWork={isWorkTask(task)} size="sm" />
           </div>
         </div>
 
