@@ -36,7 +36,7 @@ export function ConflictAlerts({ conflicts }: Props) {
 
         <div className="flex items-center gap-2 shrink-0">
           <Link
-            href="/family"
+            href="/dashboard?view=assignee"
             className="text-[11px] font-semibold text-amber-800 hover:text-amber-950"
           >
             分担調整

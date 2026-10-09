@@ -105,7 +105,7 @@ export function FamilyTeamMeter({ tasks }: Props) {
       </div>
 
       <Link
-        href="/family"
+        href="/dashboard?view=assignee"
         className="inline-flex items-center gap-1 text-[11px] font-medium text-zinc-500 hover:text-zinc-900 transition shrink-0"
       >
         <span>分担ボード</span>

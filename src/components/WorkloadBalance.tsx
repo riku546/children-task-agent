@@ -104,8 +104,8 @@ export function WorkloadBalance({ tasks }: Props) {
             ● {analysis.statusText}
           </span>
           <Link
-            href="/family"
-            className="flex items-center gap-0.5 text-xs font-bold text-moss hover:underline"
+            href="/dashboard?view=assignee"
+            className="flex items-center gap-0.5 text-xs font-bold text-moss transition hover:opacity-80"
           >
             詳しく見る
             <ChevronRight size={14} />

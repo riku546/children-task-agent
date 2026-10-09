@@ -11,7 +11,9 @@ import {
   Users
 } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useMemo, useState } from "react";
+import { AssigneeTaskColumns } from "@/components/AssigneeTaskColumns";
 import { CalendarView } from "@/components/CalendarView";
 import { ConflictAlerts } from "@/components/ConflictAlerts";
 import { FamilyTeamMeter } from "@/components/FamilyTeamMeter";
@@ -23,9 +25,12 @@ import { detectAllConflicts } from "@/lib/conflict-detector";
 import { isSameDate } from "@/lib/date";
 import type { GroupRecord, TaskRecord } from "@/lib/types";
 
-type ViewMode = "siblings" | "list" | "calendar";
+type ViewMode = "siblings" | "assignee" | "list" | "calendar";
 
-export default function DashboardPage() {
+function DashboardContent() {
+  const searchParams = useSearchParams();
+  const initialViewParam = searchParams.get("view");
+
   const cachedTasks = getCachedData<{ tasks: TaskRecord[] }>("/api/tasks");
   const cachedMe = getCachedData<any>("/api/me");
 
@@ -37,12 +42,41 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(!cachedTasks);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
 
-  const [viewMode, setViewMode] = useState<ViewMode>("siblings");
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    if (
+      initialViewParam === "assignee" ||
+      initialViewParam === "list" ||
+      initialViewParam === "calendar" ||
+      initialViewParam === "siblings"
+    ) {
+      return initialViewParam;
+    }
+    return "siblings";
+  });
+
   const [calendarSelectedDate, setCalendarSelectedDate] = useState<string | null>(null);
   const [isWorkModalOpen, setIsWorkModalOpen] = useState(false);
   const [thankYouMessage, setThankYouMessage] = useState<string | null>(null);
 
   const currentGroupId = groups[0]?.id || "";
+
+  // URLクエリパラメータとタブ状態の同期
+  function handleViewChange(mode: ViewMode) {
+    setViewMode(mode);
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.set("view", mode);
+      window.history.replaceState(null, "", url.toString());
+    }
+  }
+
+  // URLパラメータが変わった場合に同期
+  useEffect(() => {
+    const view = searchParams.get("view");
+    if (view === "assignee" || view === "list" || view === "calendar" || view === "siblings") {
+      setViewMode(view);
+    }
+  }, [searchParams]);
 
   async function load(force = false) {
     if (!force) {
@@ -77,12 +111,12 @@ export default function DashboardPage() {
     load();
   }, []);
 
-  // 重複・衝突の自動解析（機能2 ＆ 機能4）
+  // 重複・衝突の自動解析
   const conflicts = useMemo(() => {
     return detectAllConflicts(tasks);
   }, [tasks]);
 
-  // 機能3: 「私がやる」ボタン処理
+  // 「私がやる」ボタン処理
   async function assignToMe(taskId: string) {
     if (!currentUser) return;
     setActionLoadingId(taskId);
@@ -175,14 +209,14 @@ export default function DashboardPage() {
         <div>
           <div className="flex items-center gap-2.5">
             <h1 className="text-lg font-bold tracking-tight text-zinc-950 sm:text-xl">
-              家族のTODO
+              タスク管理
             </h1>
             <span className="rounded bg-zinc-100 px-2 py-0.5 font-mono text-xs font-medium text-zinc-600">
               未完了 {openTasks.length}件
             </span>
           </div>
           <p className="mt-0.5 text-xs text-zinc-500">
-            お便りから抽出されたタスクと提出期限の一元管理
+            お便りから抽出されたタスクと提出期限・分担の一元管理
           </p>
         </div>
 
@@ -213,11 +247,6 @@ export default function DashboardPage() {
             <span>仕事の予定</span>
           </button>
 
-          <Link href="/family" className="button-secondary">
-            <Users size={14} />
-            <span>チーム分担</span>
-          </Link>
-
           <Link href="/tasks/new" className="button-secondary">
             <Plus size={14} />
             <span>新規タスク</span>
@@ -229,7 +258,7 @@ export default function DashboardPage() {
       <ConflictAlerts
         conflicts={conflicts}
         onSelectDate={(dateKey) => {
-          setViewMode("calendar");
+          handleViewChange("calendar");
           setCalendarSelectedDate(dateKey);
         }}
       />
@@ -239,11 +268,11 @@ export default function DashboardPage() {
 
       {/* 3. ツールバー（表示切り替えタブ ＋ ステータスカウント） */}
       <div className="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-1">
-        {/* セグメントコントロール */}
+        {/* セグメントコントロール（4つの表示切り替え） */}
         <div className="flex items-center rounded-lg border border-zinc-200 bg-zinc-100/80 p-0.5">
           <button
             type="button"
-            onClick={() => setViewMode("siblings")}
+            onClick={() => handleViewChange("siblings")}
             className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition ${
               viewMode === "siblings"
                 ? "bg-white text-zinc-950 shadow-2xs"
@@ -256,7 +285,20 @@ export default function DashboardPage() {
 
           <button
             type="button"
-            onClick={() => setViewMode("list")}
+            onClick={() => handleViewChange("assignee")}
+            className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition ${
+              viewMode === "assignee"
+                ? "bg-white text-zinc-950 shadow-2xs"
+                : "text-zinc-600 hover:text-zinc-900"
+            }`}
+          >
+            <Users size={13} />
+            <span>担当者別</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleViewChange("list")}
             className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition ${
               viewMode === "list"
                 ? "bg-white text-zinc-950 shadow-2xs"
@@ -269,7 +311,7 @@ export default function DashboardPage() {
 
           <button
             type="button"
-            onClick={() => setViewMode("calendar")}
+            onClick={() => handleViewChange("calendar")}
             className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition ${
               viewMode === "calendar"
                 ? "bg-white text-zinc-950 shadow-2xs"
@@ -295,7 +337,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* 4. メインビューコンテンツ（カードではなくフラットなデータビュー） */}
+      {/* 4. メインビューコンテンツ */}
       <div className="mt-4">
         {viewMode === "calendar" ? (
           <CalendarView
@@ -303,6 +345,14 @@ export default function DashboardPage() {
             conflicts={conflicts}
             selectedDate={calendarSelectedDate}
             onSelectDate={setCalendarSelectedDate}
+          />
+        ) : viewMode === "assignee" ? (
+          /* 担当者別（チーム分担）ボード */
+          <AssigneeTaskColumns
+            tasks={tasks}
+            currentGroup={groups[0]}
+            currentUserId={currentUser?.id}
+            onRefresh={() => load(true)}
           />
         ) : viewMode === "siblings" ? (
           /* きょうだい別グルーピングテーブル */
@@ -382,7 +432,7 @@ export default function DashboardPage() {
               />
             </div>
 
-            {/* 完了済み（折りたたみ表示可能） */}
+            {/* 完了済み */}
             {doneTasks.length > 0 && (
               <div className="pt-4">
                 <div className="flex items-center justify-between border-b border-zinc-200 pb-1.5 text-xs font-bold text-zinc-400">
@@ -420,5 +470,19 @@ export default function DashboardPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="mx-auto max-w-5xl px-4 py-16 text-center text-xs text-zinc-400">
+          読み込み中...
+        </div>
+      }
+    >
+      <DashboardContent />
+    </Suspense>
   );
 }

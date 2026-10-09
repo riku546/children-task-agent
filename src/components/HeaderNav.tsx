@@ -1,14 +1,13 @@
 "use client";
 
-import { CheckSquare, Home, Layers, Users } from "lucide-react";
+import { CheckSquare, Sparkles, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const appNavItems = [
-  { href: "/dashboard", label: "ダッシュボード", icon: Home },
-  { href: "/family", label: "チーム分担", icon: Users },
-  { href: "/tasks/new", label: "スキャン・追加", icon: CheckSquare },
-  { href: "/groups", label: "設定", icon: Layers }
+  { href: "/dashboard", label: "タスク管理", icon: CheckSquare },
+  { href: "/tasks/new", label: "お便り取込", icon: Sparkles },
+  { href: "/groups", label: "家族・グループ", icon: Users }
 ];
 
 export function HeaderNav() {
@@ -19,7 +18,7 @@ export function HeaderNav() {
     return (
       <nav className="hidden items-center gap-2 md:flex">
         <Link href="/dashboard" className="button-secondary text-xs">
-          ダッシュボードへ
+          タスク管理へ
         </Link>
       </nav>
     );
@@ -29,7 +28,9 @@ export function HeaderNav() {
     <nav className="hidden items-center gap-1 md:flex">
       {appNavItems.map((item) => {
         const Icon = item.icon;
-        const isActive = pathname === item.href;
+        // /dashboard または /tasks/* などでパスの先頭一致または完全一致を判定
+        const isActive =
+          pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
         return (
           <Link
             key={item.href + item.label}
