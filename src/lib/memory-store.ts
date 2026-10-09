@@ -1,4 +1,11 @@
-import type { ChildRecord, GroupRecord, MemberRecord, Priority, TaskRecord, TaskStatus } from "@/lib/types";
+import type {
+  ChildRecord,
+  GroupRecord,
+  MemberRecord,
+  Priority,
+  TaskRecord,
+  TaskStatus
+} from "@/lib/types";
 
 type UserRecord = {
   id: string;
@@ -12,21 +19,38 @@ type MemoryStore = {
   users: UserRecord[];
   groups: GroupRecord[];
   tasks: TaskRecord[];
-  invites: { id: string; groupId: string; token: string; expiresAt: string; usedAt: string | null; createdAt: string }[];
-  extractions: { id: string; groupId: string; inputType: string; confirmedText: string; rawJson: unknown; createdById: string; createdAt: string }[];
+  invites: {
+    id: string;
+    groupId: string;
+    token: string;
+    expiresAt: string;
+    usedAt: string | null;
+    createdAt: string;
+  }[];
+  extractions: {
+    id: string;
+    groupId: string;
+    inputType: string;
+    confirmedText: string;
+    rawJson: unknown;
+    createdById: string;
+    createdAt: string;
+  }[];
 };
 
 const globalForStore = globalThis as unknown as { childcareTaskAgentStore?: MemoryStore };
 
-export const memoryStore: MemoryStore =
-  globalForStore.childcareTaskAgentStore ??
-  (globalForStore.childcareTaskAgentStore = {
+if (!globalForStore.childcareTaskAgentStore) {
+  globalForStore.childcareTaskAgentStore = {
     users: [],
     groups: [],
     tasks: [],
     invites: [],
     extractions: []
-  });
+  };
+}
+
+export const memoryStore: MemoryStore = globalForStore.childcareTaskAgentStore;
 
 export function createId(prefix: string) {
   return `${prefix}_${Math.random().toString(36).slice(2, 10)}_${Date.now().toString(36)}`;

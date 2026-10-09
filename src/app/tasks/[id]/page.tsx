@@ -1,12 +1,12 @@
 "use client";
 
+import { CalendarPlus, CheckCircle2, Save, Undo2 } from "lucide-react";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { CalendarPlus, CheckCircle2, Save, Undo2 } from "lucide-react";
-import type { Priority, TaskRecord, TaskStatus } from "@/lib/types";
-import { toDateInputValue } from "@/lib/date";
 import { DuePill, PriorityPill, StatusPill } from "@/components/StatusPill";
+import { toDateInputValue } from "@/lib/date";
+import type { Priority, TaskRecord, TaskStatus } from "@/lib/types";
 
 export default function TaskDetailPage() {
   const params = useParams<{ id: string }>();
@@ -57,7 +57,10 @@ export default function TaskDetailPage() {
 
   return (
     <section className="mx-auto max-w-4xl px-4 pb-24 pt-8 md:pb-12">
-      <Link href="/dashboard" className="inline-flex items-center gap-2 text-sm font-semibold text-moss">
+      <Link
+        href="/dashboard"
+        className="inline-flex items-center gap-2 text-sm font-semibold text-moss"
+      >
         <Undo2 size={16} />
         戻る
       </Link>
@@ -72,21 +75,47 @@ export default function TaskDetailPage() {
             </div>
             <h1 className="mt-4 text-2xl font-black tracking-normal md:text-4xl">{task.title}</h1>
           </div>
-          <button className={task.status === "DONE" ? "button-secondary" : "button-primary"} onClick={toggleDone}>
+          <button
+            className={task.status === "DONE" ? "button-secondary" : "button-primary"}
+            onClick={toggleDone}
+          >
             <CheckCircle2 size={18} />
             {task.status === "DONE" ? "未完了に戻す" : "完了"}
           </button>
         </div>
 
-        {calendarState ? <div className="mt-5 rounded-md bg-mint px-4 py-3 text-sm font-semibold text-moss">カレンダー連携: {calendarState}</div> : null}
+        {calendarState ? (
+          <div className="mt-5 rounded-md bg-mint px-4 py-3 text-sm font-semibold text-moss">
+            カレンダー連携: {calendarState}
+          </div>
+        ) : null}
 
         <div className="mt-6 grid gap-4 md:grid-cols-2">
-          <Field label="タイトル" value={form.title || ""} onChange={(value) => setForm((current) => ({ ...current, title: value }))} />
-          <Field label="種別" value={form.type || ""} onChange={(value) => setForm((current) => ({ ...current, type: value }))} />
-          <Field label="期限" type="date" value={toDateInputValue(form.dueDate)} onChange={(value) => setForm((current) => ({ ...current, dueDate: value }))} />
+          <Field
+            label="タイトル"
+            value={form.title || ""}
+            onChange={(value) => setForm((current) => ({ ...current, title: value }))}
+          />
+          <Field
+            label="種別"
+            value={form.type || ""}
+            onChange={(value) => setForm((current) => ({ ...current, type: value }))}
+          />
+          <Field
+            label="期限"
+            type="date"
+            value={toDateInputValue(form.dueDate)}
+            onChange={(value) => setForm((current) => ({ ...current, dueDate: value }))}
+          />
           <label className="block text-sm font-semibold">
             重要度
-            <select className="field mt-1" value={form.priority || "medium"} onChange={(event) => setForm((current) => ({ ...current, priority: event.target.value as Priority }))}>
+            <select
+              className="field mt-1"
+              value={form.priority || "medium"}
+              onChange={(event) =>
+                setForm((current) => ({ ...current, priority: event.target.value as Priority }))
+              }
+            >
               <option value="low">低</option>
               <option value="medium">中</option>
               <option value="high">高</option>
@@ -96,7 +125,13 @@ export default function TaskDetailPage() {
 
         <label className="mt-4 block text-sm font-semibold">
           説明
-          <textarea className="field mt-1 min-h-28" value={form.description || ""} onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))} />
+          <textarea
+            className="field mt-1 min-h-28"
+            value={form.description || ""}
+            onChange={(event) =>
+              setForm((current) => ({ ...current, description: event.target.value }))
+            }
+          />
         </label>
 
         <div className="mt-5 flex flex-wrap gap-2">
@@ -121,11 +156,26 @@ export default function TaskDetailPage() {
   );
 }
 
-function Field({ label, value, onChange, type = "text" }: { label: string; value: string; type?: string; onChange: (value: string) => void }) {
+function Field({
+  label,
+  value,
+  onChange,
+  type = "text"
+}: {
+  label: string;
+  value: string;
+  type?: string;
+  onChange: (value: string) => void;
+}) {
   return (
     <label className="block text-sm font-semibold">
       {label}
-      <input className="field mt-1" type={type} value={value} onChange={(event) => onChange(event.target.value)} />
+      <input
+        className="field mt-1"
+        type={type}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+      />
     </label>
   );
 }

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { ensureCurrentUser } from "@/lib/auth";
-import { listGroups } from "@/lib/repository";
 import { prisma, tryDb } from "@/lib/prisma";
+import { listGroups } from "@/lib/repository";
 import { createClient } from "@/lib/supabase/server";
 
 export async function GET() {

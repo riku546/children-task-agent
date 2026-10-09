@@ -1,5 +1,5 @@
-import { prisma, tryDb } from "@/lib/prisma";
 import { createId, memoryStore, nowIso, toMemoryTask } from "@/lib/memory-store";
+import { prisma, tryDb } from "@/lib/prisma";
 import type { ChildRecord, GroupRecord, Priority, TaskRecord, TaskStatus } from "@/lib/types";
 
 type UserLike = {
@@ -18,7 +18,9 @@ export async function listGroups(user: UserLike): Promise<GroupRecord[]> {
   );
 
   if (dbGroups) return dbGroups.map(mapGroup);
-  return memoryStore.groups.filter((group) => group.members.some((member) => member.userId === user.id));
+  return memoryStore.groups.filter((group) =>
+    group.members.some((member) => member.userId === user.id)
+  );
 }
 
 export async function createGroup(user: UserLike, name: string): Promise<GroupRecord> {
@@ -138,7 +140,11 @@ export async function listTasks(user: UserLike): Promise<TaskRecord[]> {
   if (dbTasks) return dbTasks.map(mapTask);
   return memoryStore.tasks
     .filter((task) => groupIds.includes(task.groupId))
-    .sort((a, b) => (a.status === b.status ? (a.dueDate || "").localeCompare(b.dueDate || "") : a.status.localeCompare(b.status)));
+    .sort((a, b) =>
+      a.status === b.status
+        ? (a.dueDate || "").localeCompare(b.dueDate || "")
+        : a.status.localeCompare(b.status)
+    );
 }
 
 export async function getTask(user: UserLike, taskId: string): Promise<TaskRecord | null> {
@@ -151,7 +157,9 @@ export async function getTask(user: UserLike, taskId: string): Promise<TaskRecor
   );
 
   if (dbTask) return mapTask(dbTask);
-  return memoryStore.tasks.find((task) => task.id === taskId && groupIds.includes(task.groupId)) ?? null;
+  return (
+    memoryStore.tasks.find((task) => task.id === taskId && groupIds.includes(task.groupId)) ?? null
+  );
 }
 
 export async function createTasks(
@@ -227,6 +235,7 @@ export async function updateTask(
     description: string | null;
     type: string;
     dueDate: string | null;
+    assigneeMemberId: string | null;
     priority: Priority;
     status: TaskStatus;
     googleEventId: string | null;
@@ -242,7 +251,9 @@ export async function updateTask(
         title: input.title,
         description: input.description,
         type: input.type,
-        dueDate: input.dueDate === undefined ? undefined : input.dueDate ? new Date(input.dueDate) : null,
+        dueDate:
+          input.dueDate === undefined ? undefined : input.dueDate ? new Date(input.dueDate) : null,
+        assigneeMemberId: input.assigneeMemberId !== undefined ? input.assigneeMemberId : undefined,
         priority: input.priority,
         status: input.status,
         googleEventId: input.googleEventId
@@ -255,8 +266,19 @@ export async function updateTask(
 
   const memoryTask = memoryStore.tasks.find((task) => task.id === taskId);
   if (!memoryTask) return null;
+  let newAssigneeName = memoryTask.assigneeName;
+  if (input.assigneeMemberId !== undefined) {
+    if (input.assigneeMemberId === null) {
+      newAssigneeName = null;
+    } else {
+      const group = memoryStore.groups.find((g) => g.id === memoryTask.groupId);
+      const member = group?.members.find((m) => m.id === input.assigneeMemberId);
+      newAssigneeName = member?.displayName ?? null;
+    }
+  }
   Object.assign(memoryTask, {
     ...input,
+    assigneeName: newAssigneeName,
     dueDate: input.dueDate === undefined ? memoryTask.dueDate : input.dueDate,
     updatedAt: nowIso()
   });
@@ -353,5 +375,12 @@ function matchChild(group: GroupRecord, childName?: string | null) {
 
 function matchMember(group: GroupRecord, assigneeName?: string | null) {
   if (!assigneeName) return group.members[0] ?? null;
-  return group.members.find((member) => member.displayName.includes(assigneeName) || assigneeName.includes(member.displayName)) ?? group.members[0] ?? null;
+  return (
+    group.members.find(
+      (member) =>
+        member.displayName.includes(assigneeName) || assigneeName.includes(member.displayName)
+    ) ??
+    group.members[0] ??
+    null
+  );
 }

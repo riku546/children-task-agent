@@ -1,7 +1,7 @@
-import { CalendarDays, CheckCircle2, Circle, Flag } from "lucide-react";
 import { clsx } from "clsx";
-import type { Priority, TaskStatus } from "@/lib/types";
+import { CalendarDays, CheckCircle2, Circle, Flag } from "lucide-react";
 import { formatDateJa } from "@/lib/date";
+import type { Priority, TaskStatus } from "@/lib/types";
 
 export function PriorityPill({ priority }: { priority: Priority }) {
   const label = priority === "high" ? "高" : priority === "low" ? "低" : "中";
@@ -22,7 +22,12 @@ export function PriorityPill({ priority }: { priority: Priority }) {
 
 export function StatusPill({ status }: { status: TaskStatus }) {
   return (
-    <span className={clsx("inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-semibold", status === "DONE" ? "bg-mint text-moss" : "bg-white text-ink")}>
+    <span
+      className={clsx(
+        "inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-semibold",
+        status === "DONE" ? "bg-mint text-moss" : "bg-white text-ink"
+      )}
+    >
       {status === "DONE" ? <CheckCircle2 size={13} /> : <Circle size={13} />}
       {status === "DONE" ? "完了" : "未完了"}
     </span>

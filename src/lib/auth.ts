@@ -1,6 +1,6 @@
 import type { User } from "@supabase/supabase-js";
-import { prisma, tryDb } from "@/lib/prisma";
 import { ensureMemoryGroup, upsertMemoryUser } from "@/lib/memory-store";
+import { prisma, tryDb } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
 
 export class UnauthorizedError extends Error {
@@ -28,8 +28,21 @@ export async function syncApplicationUser(user: User) {
   const dbUser = await tryDb(() =>
     prisma.user.upsert({
       where: { email },
-      update: { name, image: typeof user.user_metadata?.avatar_url === "string" ? user.user_metadata.avatar_url : undefined },
-      create: { email, name, image: typeof user.user_metadata?.avatar_url === "string" ? user.user_metadata.avatar_url : undefined }
+      update: {
+        name,
+        image:
+          typeof user.user_metadata?.avatar_url === "string"
+            ? user.user_metadata.avatar_url
+            : undefined
+      },
+      create: {
+        email,
+        name,
+        image:
+          typeof user.user_metadata?.avatar_url === "string"
+            ? user.user_metadata.avatar_url
+            : undefined
+      }
     })
   );
 

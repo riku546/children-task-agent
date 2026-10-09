@@ -16,7 +16,9 @@ export async function GET(request: Request) {
   if (!clientId || !redirectUri) {
     const demoEventId = `demo_calendar_${task.id}`;
     await updateTask(user, task.id, { googleEventId: demoEventId });
-    return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/tasks/${task.id}?calendar=demo`);
+    return NextResponse.redirect(
+      `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/tasks/${task.id}?calendar=demo`
+    );
   }
 
   const authUrl = new URL("https://accounts.google.com/o/oauth2/v2/auth");

@@ -36,7 +36,10 @@ export async function POST(request: Request) {
   }
 
   if (!data.user) {
-    return NextResponse.json({ error: "登録後のユーザー情報を確認できませんでした" }, { status: 401 });
+    return NextResponse.json(
+      { error: "登録後のユーザー情報を確認できませんでした" },
+      { status: 401 }
+    );
   }
 
   const user = await syncApplicationUser(data.user);

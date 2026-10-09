@@ -26,25 +26,32 @@ export async function GET(request: Request) {
     })
   });
 
-  if (!tokenResponse.ok) return NextResponse.redirect(`${appUrl}/tasks/${task.id}?calendar=token_error`);
+  if (!tokenResponse.ok)
+    return NextResponse.redirect(`${appUrl}/tasks/${task.id}?calendar=token_error`);
   const token = await tokenResponse.json();
 
-  const startDate = task.dueDate ? task.dueDate.slice(0, 10) : new Date().toISOString().slice(0, 10);
-  const eventResponse = await fetch("https://www.googleapis.com/calendar/v3/calendars/primary/events", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token.access_token}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      summary: task.title,
-      description: task.description || task.sourceText || "",
-      start: { date: startDate },
-      end: { date: startDate }
-    })
-  });
+  const startDate = task.dueDate
+    ? task.dueDate.slice(0, 10)
+    : new Date().toISOString().slice(0, 10);
+  const eventResponse = await fetch(
+    "https://www.googleapis.com/calendar/v3/calendars/primary/events",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token.access_token}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        summary: task.title,
+        description: task.description || task.sourceText || "",
+        start: { date: startDate },
+        end: { date: startDate }
+      })
+    }
+  );
 
-  if (!eventResponse.ok) return NextResponse.redirect(`${appUrl}/tasks/${task.id}?calendar=event_error`);
+  if (!eventResponse.ok)
+    return NextResponse.redirect(`${appUrl}/tasks/${task.id}?calendar=event_error`);
   const event = await eventResponse.json();
   await updateTask(user, task.id, { googleEventId: event.id });
   return NextResponse.redirect(`${appUrl}/tasks/${task.id}?calendar=added`);

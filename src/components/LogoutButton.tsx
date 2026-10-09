@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { usePathname } from "next/navigation";
 import { LogOut } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 export function LogoutButton() {

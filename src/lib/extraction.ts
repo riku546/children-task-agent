@@ -16,13 +16,14 @@ const candidateSchema = z.object({
 
 const extractionSchema = z.object({
   summary: z.string().catch("連絡内容からTODO候補を作成しました"),
+  extractedText: z.string().optional(),
   tasks: z.array(candidateSchema).min(1)
 });
 
 export function normalizeExtraction(input: unknown): ExtractionResult {
   const parsed = extractionSchema.safeParse(input);
   if (parsed.success) return parsed.data;
-  return createFallbackExtraction(String(input || ""));
+  return createFallbackExtraction(typeof input === "string" ? input : JSON.stringify(input || ""));
 }
 
 export function createFallbackExtraction(text: string): ExtractionResult {
@@ -45,23 +46,71 @@ export function createFallbackExtraction(text: string): ExtractionResult {
 
   return {
     summary: normalized ? normalized.slice(0, 80) : "入力内容を確認してTODO候補を作成してください",
+    extractedText: normalized,
     tasks: [candidate]
   };
 }
 
-export async function extractWithOpenRouter(text: string) {
+export type ExtractInput =
+  | string
+  | {
+      text?: string;
+      imageUrl?: string;
+    };
+
+export async function extractWithOpenRouter(input: ExtractInput) {
+  const text = typeof input === "string" ? input : input.text || "";
+  const imageUrl = typeof input === "object" ? input.imageUrl : undefined;
+
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) return createFallbackExtraction(text);
 
-  const prompt = [
-    "あなたは育児事務を支援するTODO抽出エンジンです。",
-    "ユーザー確認済みテキストだけを入力として扱い、元ファイルや確認前テキストは存在しない前提です。",
-    "出力はJSONのみ。summaryとtasksを返してください。",
-    "tasksの各要素は title,type,dueDate,assigneeSuggestion,childName,place,priority,notes を持ちます。",
-    "dueDateはYYYY-MM-DDまたはnull。priorityはlow/medium/high。",
-    "",
-    `確認済みテキスト:\n${text}`
+  const systemInstructions = [
+    "あなたは園や学校のお便り・連絡から家庭のTODOを抽出する育児タスク支援AIです。",
+    "画像またはテキストから、必要なタスク（提出物、持ち物、集金、行事、受診など）を漏れなく具体的に抽出してください。",
+    "出力は必ずJSON形式のみとし、マークダウンのコードブロック等は含めないでください。",
+    "スキーマ形式:",
+    "{",
+    '  "summary": "連絡全体の要約（1行）",',
+    '  "extractedText": "画像または入力から読み取った全文章テキスト",',
+    '  "tasks": [',
+    "    {",
+    '      "title": "タスク名（例: 雑巾2枚を持参する）",',
+    '      "type": "提出 / 持参 / 支払い / 予約 / 参加 / 確認",',
+    '      "dueDate": "YYYY-MM-DD または null",',
+    '      "assigneeSuggestion": "担当の提案（例: お母さん、お父さん、保護者）",',
+    '      "childName": "対象の子どもの名前（不明なら未設定）",',
+    '      "place": "保育園 / 学校 / 児童館 などの場所（不明なら空文字）",',
+    '      "priority": "low / medium / high",',
+    '      "notes": "補足説明や詳細メモ"',
+    "    }",
+    "  ]",
+    "}"
   ].join("\n");
+
+  const userContent: any[] = [];
+  if (text) {
+    userContent.push({
+      type: "text",
+      text: `入力テキスト:\n${text}`
+    });
+  } else if (!imageUrl) {
+    userContent.push({
+      type: "text",
+      text: "連絡内容からTODOを抽出してください。"
+    });
+  }
+
+  if (imageUrl) {
+    userContent.push({
+      type: "image_url",
+      image_url: {
+        url: imageUrl
+      }
+    });
+  }
+
+  const model = process.env.OPENROUTER_MODEL || "google/gemini-2.5-flash";
 
   const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
     method: "POST",
@@ -72,8 +121,23 @@ export async function extractWithOpenRouter(text: string) {
       "X-Title": "Childcare Task Agent"
     },
     body: JSON.stringify({
-      model: process.env.OPENROUTER_MODEL || "openai/gpt-4.1-mini",
-      messages: [{ role: "user", content: prompt }],
+      model,
+      // openrouter-security-setting-guide.md 準拠:
+      // ZDR（Zero Data Retention）を強制し、データ学習を拒否
+      provider: {
+        data_collection: "deny",
+        zdr: true
+      },
+      messages: [
+        { role: "system", content: systemInstructions },
+        {
+          role: "user",
+          content:
+            userContent.length === 1 && userContent[0].type === "text"
+              ? userContent[0].text
+              : userContent
+        }
+      ],
       response_format: { type: "json_object" }
     })
   });
@@ -101,7 +165,7 @@ function inferDueDate(text: string) {
   if (/明日/.test(text)) return makeDate(1);
   if (/明後日/.test(text)) return makeDate(2);
 
-  const match = text.match(/(\d{1,2})[\/月](\d{1,2})日?/);
+  const match = text.match(/(\d{1,2})[/月](\d{1,2})日?/);
   if (!match) return null;
   const year = today.getFullYear();
   const month = match[1].padStart(2, "0");

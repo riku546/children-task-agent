@@ -17,7 +17,10 @@ export async function POST(request: Request) {
   });
 
   if (error || !data.user) {
-    return NextResponse.json({ error: "メールアドレスまたはパスワードが正しくありません" }, { status: 401 });
+    return NextResponse.json(
+      { error: "メールアドレスまたはパスワードが正しくありません" },
+      { status: 401 }
+    );
   }
 
   const user = await syncApplicationUser(data.user);

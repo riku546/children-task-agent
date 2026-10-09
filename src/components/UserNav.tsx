@@ -1,9 +1,9 @@
 "use client";
 
+import { CircleUserRound } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { CircleUserRound } from "lucide-react";
 
 type UserData = {
   id: string;

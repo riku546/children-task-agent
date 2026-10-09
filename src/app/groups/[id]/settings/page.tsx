@@ -1,9 +1,9 @@
 "use client";
 
+import { Baby, Copy, Link2, Plus, Undo2, Users } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { Baby, Copy, Link2, Plus, Undo2, Users } from "lucide-react";
 import type { GroupRecord } from "@/lib/types";
 
 export default function GroupSettingsPage() {
@@ -52,7 +52,10 @@ export default function GroupSettingsPage() {
 
   return (
     <section className="mx-auto max-w-5xl px-4 pb-24 pt-8 md:pb-12">
-      <Link href="/groups" className="inline-flex items-center gap-2 text-sm font-semibold text-moss">
+      <Link
+        href="/groups"
+        className="inline-flex items-center gap-2 text-sm font-semibold text-moss"
+      >
         <Undo2 size={16} />
         戻る
       </Link>
@@ -103,7 +106,12 @@ export default function GroupSettingsPage() {
             子ども情報
           </h2>
           <div className="mt-4 flex gap-2">
-            <input className="field" value={childName} onChange={(event) => setChildName(event.target.value)} placeholder="名前" />
+            <input
+              className="field"
+              value={childName}
+              onChange={(event) => setChildName(event.target.value)}
+              placeholder="名前"
+            />
             <button className="button-icon shrink-0" onClick={addChild} title="追加">
               <Plus size={18} />
             </button>

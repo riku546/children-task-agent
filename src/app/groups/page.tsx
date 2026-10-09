@@ -1,8 +1,8 @@
 "use client";
 
+import { Plus, Settings, Users } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Plus, Settings, Users } from "lucide-react";
 import type { GroupRecord } from "@/lib/types";
 
 export default function GroupsPage() {
@@ -40,7 +40,12 @@ export default function GroupsPage() {
           <label className="mt-4 block text-sm font-semibold" htmlFor="group-name">
             グループ名
           </label>
-          <input id="group-name" className="field mt-2" value={name} onChange={(event) => setName(event.target.value)} />
+          <input
+            id="group-name"
+            className="field mt-2"
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+          />
           <button className="button-primary mt-4 w-full" onClick={create} disabled={!name.trim()}>
             <Plus size={18} />
             作成
@@ -51,7 +56,11 @@ export default function GroupsPage() {
           <h2 className="mb-3 text-lg font-bold">一覧</h2>
           <div className="grid gap-3">
             {groups.map((group) => (
-              <Link key={group.id} href={`/groups/${group.id}/settings`} className="rounded-md border border-ink/10 bg-white p-4 shadow-sm transition hover:border-moss hover:shadow-soft">
+              <Link
+                key={group.id}
+                href={`/groups/${group.id}/settings`}
+                className="rounded-md border border-ink/10 bg-white p-4 shadow-sm transition hover:border-moss hover:shadow-soft"
+              >
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <div className="flex items-center gap-2 text-lg font-bold">

@@ -1,8 +1,8 @@
 "use client";
 
+import { CircleUserRound, LogOut, Save, Undo2, Users } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { CircleUserRound, LogOut, Save, Undo2, Users } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import type { GroupRecord } from "@/lib/types";
 
@@ -112,7 +112,10 @@ export default function ProfilePage() {
 
   return (
     <section className="mx-auto max-w-2xl px-4 pb-24 pt-8 md:pb-12">
-      <Link href="/dashboard" className="inline-flex items-center gap-2 text-sm font-semibold text-moss">
+      <Link
+        href="/dashboard"
+        className="inline-flex items-center gap-2 text-sm font-semibold text-moss"
+      >
         <Undo2 size={16} />
         ダッシュボードへ戻る
       </Link>
@@ -133,7 +136,10 @@ export default function ProfilePage() {
       )}
 
       {/* ユーザー情報登録・編集フォーム */}
-      <form onSubmit={handleSave} className="mt-6 rounded-md border border-ink/10 bg-white p-6 shadow-sm">
+      <form
+        onSubmit={handleSave}
+        className="mt-6 rounded-md border border-ink/10 bg-white p-6 shadow-sm"
+      >
         <div className="flex items-center gap-4">
           {user?.image ? (
             <img
@@ -171,8 +177,11 @@ export default function ProfilePage() {
         </div>
 
         <div className="mt-6">
-          <label className="block text-sm font-semibold text-ink">メールアドレス</label>
+          <label htmlFor="email" className="block text-sm font-semibold text-ink">
+            メールアドレス
+          </label>
           <input
+            id="email"
             className="field mt-2 bg-cloud text-ink/70 cursor-not-allowed"
             value={user?.email || ""}
             readOnly
@@ -200,14 +209,20 @@ export default function ProfilePage() {
             <p className="text-sm text-ink/60">参加中のグループはありません。</p>
           ) : (
             groups.map((g) => (
-              <div key={g.id} className="flex items-center justify-between rounded-md bg-cloud px-4 py-3">
+              <div
+                key={g.id}
+                className="flex items-center justify-between rounded-md bg-cloud px-4 py-3"
+              >
                 <div>
                   <div className="font-semibold text-ink">{g.name}</div>
                   <div className="text-xs text-ink/60">
                     メンバー {g.members.length}人 / 子ども {g.children.length}人
                   </div>
                 </div>
-                <Link href={`/groups/${g.id}/settings`} className="text-xs font-semibold text-moss hover:underline">
+                <Link
+                  href={`/groups/${g.id}/settings`}
+                  className="text-xs font-semibold text-moss hover:underline"
+                >
                   設定
                 </Link>
               </div>
@@ -219,9 +234,7 @@ export default function ProfilePage() {
       {/* セッション管理・ログアウト */}
       <div className="mt-6 rounded-md border border-red-100 bg-red-50/40 p-6 shadow-sm">
         <h2 className="text-base font-bold text-ink">アカウント操作</h2>
-        <p className="mt-1 text-xs text-ink/65">
-          現在ログインしている端末からサインアウトします。
-        </p>
+        <p className="mt-1 text-xs text-ink/65">現在ログインしている端末からサインアウトします。</p>
         <div className="mt-4">
           <button
             type="button"

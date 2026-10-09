@@ -1,15 +1,19 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { updateSession } from "@/lib/supabase/proxy";
 
 const protectedPagePrefixes = ["/dashboard", "/groups", "/tasks", "/profile"];
 const publicAuthPrefixes = ["/login", "/auth/callback", "/api/auth"];
 
 function isPublicAuthPath(pathname: string) {
-  return publicAuthPrefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
+  return publicAuthPrefixes.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
+  );
 }
 
 function isProtectedPage(pathname: string) {
-  return protectedPagePrefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
+  return protectedPagePrefixes.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
+  );
 }
 
 function isProtectedApi(pathname: string) {
@@ -17,7 +21,7 @@ function isProtectedApi(pathname: string) {
 }
 
 export async function proxy(request: NextRequest) {
-  let auth;
+  let auth: Awaited<ReturnType<typeof updateSession>> | undefined;
   try {
     auth = await updateSession(request);
   } catch (error) {

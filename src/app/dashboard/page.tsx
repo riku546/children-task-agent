@@ -1,8 +1,8 @@
 "use client";
 
+import { Plus, RefreshCw, Users } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { Plus, RefreshCw } from "lucide-react";
 import { TaskList } from "@/components/TaskList";
 import { isSameDate } from "@/lib/date";
 import type { TaskRecord } from "@/lib/types";
@@ -23,8 +23,14 @@ export default function DashboardPage() {
     load();
   }, []);
 
-  const todayTasks = useMemo(() => tasks.filter((task) => task.status !== "DONE" && isSameDate(task.dueDate, 0)), [tasks]);
-  const tomorrowTasks = useMemo(() => tasks.filter((task) => task.status !== "DONE" && isSameDate(task.dueDate, 1)), [tasks]);
+  const todayTasks = useMemo(
+    () => tasks.filter((task) => task.status !== "DONE" && isSameDate(task.dueDate, 0)),
+    [tasks]
+  );
+  const tomorrowTasks = useMemo(
+    () => tasks.filter((task) => task.status !== "DONE" && isSameDate(task.dueDate, 1)),
+    [tasks]
+  );
   const openTasks = useMemo(() => tasks.filter((task) => task.status !== "DONE"), [tasks]);
   const doneCount = tasks.filter((task) => task.status === "DONE").length;
 
@@ -35,10 +41,14 @@ export default function DashboardPage() {
           <p className="text-sm font-bold text-moss">Dashboard</p>
           <h1 className="mt-2 text-3xl font-black tracking-normal md:text-5xl">家族のTODO</h1>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button className="button-icon" onClick={load} title="更新">
             <RefreshCw size={18} />
           </button>
+          <Link href="/family" className="button-secondary">
+            <Users size={18} />
+            家族の分担
+          </Link>
           <Link href="/tasks/new" className="button-primary">
             <Plus size={18} />
             新規作成
@@ -55,11 +65,17 @@ export default function DashboardPage() {
       <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_1fr]">
         <section>
           <h2 className="mb-3 text-lg font-bold">今日のTODO</h2>
-          <TaskList tasks={todayTasks} emptyText={loading ? "読み込み中" : "今日のTODOはありません"} />
+          <TaskList
+            tasks={todayTasks}
+            emptyText={loading ? "読み込み中" : "今日のTODOはありません"}
+          />
         </section>
         <section>
           <h2 className="mb-3 text-lg font-bold">明日のTODO</h2>
-          <TaskList tasks={tomorrowTasks} emptyText={loading ? "読み込み中" : "明日のTODOはありません"} />
+          <TaskList
+            tasks={tomorrowTasks}
+            emptyText={loading ? "読み込み中" : "明日のTODOはありません"}
+          />
         </section>
       </div>
 

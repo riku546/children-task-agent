@@ -8,6 +8,7 @@ const updateSchema = z.object({
   description: z.string().nullable().optional(),
   type: z.string().optional(),
   dueDate: z.string().nullable().optional(),
+  assigneeMemberId: z.string().nullable().optional(),
   priority: z.enum(["low", "medium", "high"]).optional(),
   status: z.enum(["TODO", "DONE"]).optional(),
   googleEventId: z.string().nullable().optional()

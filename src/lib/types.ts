@@ -60,5 +60,6 @@ export type TodoCandidate = {
 
 export type ExtractionResult = {
   summary: string;
+  extractedText?: string;
   tasks: TodoCandidate[];
 };
