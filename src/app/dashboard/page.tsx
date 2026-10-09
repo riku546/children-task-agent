@@ -200,10 +200,12 @@ export default function DashboardPage() {
       {/* 4. きょうだい別の予定・持ち物タイムライン（二人目の壁打破） */}
       <SiblingTaskTimeline
         tasks={tasks}
+        group={groups[0]}
         onAssignToMe={assignToMe}
         onToggleStatus={toggleStatus}
         actionLoadingId={actionLoadingId}
         onThankYou={handleThankYou}
+        onChildAdded={() => load(true)}
       />
 
       {/* 5. 表示切り替え（ToDoリスト ↔ 月間カレンダー） */}
