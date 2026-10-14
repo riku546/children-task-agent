@@ -76,40 +76,40 @@ export function QuickWorkScheduleModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs animate-in fade-in">
-      <div className="w-full max-w-md rounded-2xl border border-ink/10 bg-white p-6 shadow-xl animate-in zoom-in-95">
-        <div className="flex items-center justify-between border-b border-ink/10 pb-3">
+      <div className="w-full max-w-md rounded-lg border border-zinc-200 bg-white p-5 shadow-lg animate-in zoom-in-95">
+        <div className="flex items-center justify-between border-b border-zinc-200 pb-3">
           <div className="flex items-center gap-2">
-            <span className="grid size-8 place-items-center rounded-lg bg-slate-100 text-slate-800">
-              <Briefcase size={18} />
+            <span className="grid size-7 place-items-center rounded bg-zinc-100 text-zinc-700">
+              <Briefcase size={15} />
             </span>
             <div>
-              <h2 className="text-base font-black text-ink">仕事の予定を追加</h2>
-              <p className="text-xs text-ink/60">園・学校の行事との衝突を検知します</p>
+              <h2 className="text-sm font-bold text-zinc-950">仕事の予定を追加</h2>
+              <p className="text-[11px] text-zinc-500">園・学校の行事との衝突を検知します</p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="grid size-7 place-items-center rounded-full text-ink/50 hover:bg-cloud hover:text-ink"
+            className="grid size-6 place-items-center rounded text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 transition"
           >
-            <X size={18} />
+            <X size={15} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+        <form onSubmit={handleSubmit} className="mt-4 space-y-3.5">
           {/* クイック選択チップ */}
           <div>
-            <p className="block text-xs font-bold text-ink/70">よくある仕事の予定</p>
+            <p className="block text-xs font-semibold text-zinc-700">よくある仕事の予定</p>
             <div className="mt-1.5 flex flex-wrap gap-1.5">
               {PRESET_WORK_TITLES.map((preset) => (
                 <button
                   key={preset}
                   type="button"
                   onClick={() => setTitle(preset)}
-                  className={`rounded-full px-2.5 py-1 text-xs font-semibold transition ${
+                  className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition ${
                     title === preset
-                      ? "bg-slate-800 text-white shadow-2xs"
-                      : "border border-ink/15 bg-cloud/50 text-ink/80 hover:bg-cloud"
+                      ? "bg-zinc-900 text-white shadow-2xs"
+                      : "border border-zinc-200 bg-zinc-50 text-zinc-600 hover:bg-zinc-100"
                   }`}
                 >
                   {preset}
@@ -118,41 +118,41 @@ export function QuickWorkScheduleModal({
             </div>
           </div>
 
-          <label className="block text-xs font-bold text-ink/80">
+          <label className="block text-xs font-semibold text-zinc-700">
             予定名・勤務内容
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="field mt-1 text-sm font-normal"
+              className="field mt-1 text-xs font-normal"
               placeholder="例: 出張、夜間残業、終日外出など"
               required
             />
           </label>
 
-          <label className="block text-xs font-bold text-ink/80">
+          <label className="block text-xs font-semibold text-zinc-700">
             日付
             <input
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="field mt-1 text-sm font-normal"
+              className="field mt-1 text-xs font-normal"
               required
             />
           </label>
 
-          <label className="block text-xs font-bold text-ink/80">
+          <label className="block text-xs font-semibold text-zinc-700">
             詳細メモ（任意）
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="field mt-1 text-sm font-normal"
+              className="field mt-1 text-xs font-normal"
               rows={2}
               placeholder="例: 18時以降連絡がつきにくい、など"
             />
           </label>
 
-          <div className="flex items-center justify-end gap-2 pt-2">
+          <div className="flex items-center justify-end gap-2 pt-2 border-t border-zinc-100">
             <button type="button" onClick={onClose} className="button-secondary text-xs">
               キャンセル
             </button>
@@ -161,8 +161,8 @@ export function QuickWorkScheduleModal({
               disabled={loading || !title.trim() || !date}
               className="button-primary text-xs"
             >
-              {loading ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
-              登録する
+              {loading ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />}
+              <span>登録する</span>
             </button>
           </div>
         </form>

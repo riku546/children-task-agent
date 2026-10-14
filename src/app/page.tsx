@@ -1,23 +1,13 @@
 "use client";
 
-import {
-  ArrowRight,
-  Baby,
-  Camera,
-  CheckCircle2,
-  Heart,
-  Loader2,
-  ShieldCheck,
-  Sparkles,
-  Users
-} from "lucide-react";
+import { ArrowRight, Layers, Loader2, Lock } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { getCachedData } from "@/lib/client-cache";
 
 function GoogleIcon() {
   return (
-    <svg className="size-5 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
+    <svg className="size-4 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
       <title>Google</title>
       <path
         fill="#4285F4"
@@ -45,7 +35,6 @@ export default function HomePage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
-    // ログイン状態の確認（キャッシュまたはAPI）
     const cached = getCachedData<{ user: any }>("/api/me");
     if (cached?.user) {
       setIsLoggedIn(true);
@@ -77,44 +66,40 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-sand text-ink">
+    <div className="min-h-screen bg-white text-zinc-900">
       {/* ヒーローセクション */}
-      <section className="relative overflow-hidden border-b border-ink/10 bg-gradient-to-b from-mint/20 via-sand to-sand px-4 pb-20 pt-12 md:pb-28 md:pt-20">
-        <div className="pointer-events-none absolute -left-20 top-0 size-96 rounded-full bg-mint/30 blur-3xl" />
-        <div className="pointer-events-none absolute right-0 top-1/4 size-80 rounded-full bg-amber-100/40 blur-3xl" />
-
-        <div className="relative mx-auto max-w-5xl text-center">
-          {/* キャッチバッジ */}
-          <div className="inline-flex items-center gap-2 rounded-full border border-moss/30 bg-white/90 px-4 py-1.5 text-xs font-bold text-moss shadow-2xs backdrop-blur-xs">
-            <Sparkles size={14} className="text-moss" />
-            <span>名もなき育児・お便りのストレスから解放</span>
+      <section className="relative border-b border-zinc-200 px-4 pb-16 pt-16 sm:px-6 md:pb-24 md:pt-20">
+        <div className="mx-auto max-w-4xl text-center">
+          {/* バッジ */}
+          <div className="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs text-zinc-600">
+            <span className="flex size-1.5 rounded-full bg-emerald-500" />
+            <span className="font-medium text-zinc-900">v0.2 Beta</span>
+            <span className="text-zinc-300">/</span>
+            <span>マルチモーダルAIによるお便り自動構造化</span>
           </div>
 
-          {/* メインキャッチコピー */}
-          <h1 className="mt-6 text-3xl font-black leading-tight tracking-tight text-ink sm:text-5xl md:text-6xl">
-            園や学校のお便りをパシャリ。
+          {/* メイン見出し */}
+          <h1 className="mt-6 text-3xl font-extrabold tracking-tight text-zinc-950 sm:text-5xl md:text-6xl">
+            お便りをパシャリ。
             <br />
-            AIが<span className="text-moss">TODO・持ち物</span>を自動分解して
+            AIがTODO・持ち物を分解し、
             <br className="hidden sm:inline" />
-            家族にシェア
+            家族でシェア。
           </h1>
 
-          {/* サブコピー */}
-          <p className="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-ink/75 sm:text-lg">
-            冷蔵庫にお便りを何枚も貼る必要も、パートナーに「これ読んでおいて」と頼む必要もありません。
-            スマホで撮影するだけで提出期限・持ち物・集金をAIが瞬時に整理。
-            きょうだい別管理と夫婦のチーム分担で、育児負担を劇的に減らします。
+          {/* サブリード文 */}
+          <p className="mx-auto mt-5 max-w-2xl text-sm leading-relaxed text-zinc-600 sm:text-base">
+            プリントを冷蔵庫に貼る必要も、手作業での転記も不要です。
+            撮影した画像やPDFから提出期日・持ち物・集金を瞬時にタスク化。
+            きょうだい別管理とチーム育児をサポートします。
           </p>
 
-          {/* CTAエリア */}
-          <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
+          {/* CTAボタン群 */}
+          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             {isLoggedIn ? (
-              <Link
-                href="/dashboard"
-                className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-moss px-8 py-3.5 text-base font-bold text-white shadow-md transition hover:bg-moss/90 hover:shadow-lg focus-ring active:scale-98 sm:w-auto"
-              >
-                <span>ダッシュボードを開く</span>
-                <ArrowRight size={18} />
+              <Link href="/dashboard" className="button-primary min-h-10 px-5 text-xs sm:w-auto">
+                <span>ホームを開く</span>
+                <ArrowRight size={14} />
               </Link>
             ) : (
               <>
@@ -122,96 +107,72 @@ export default function HomePage() {
                   type="button"
                   onClick={loginWithGoogle}
                   disabled={loading}
-                  className="flex min-h-12 w-full items-center justify-center gap-3 rounded-xl border border-ink/20 bg-white px-7 py-3.5 text-base font-bold text-ink shadow-sm transition hover:bg-cloud hover:border-ink/30 focus-ring disabled:opacity-60 active:scale-98 sm:w-auto"
+                  className="button-primary min-h-10 px-5 text-xs sm:w-auto"
                 >
                   {loading ? (
-                    <Loader2 size={18} className="animate-spin text-moss" />
+                    <Loader2 size={14} className="animate-spin text-zinc-400" />
                   ) : (
                     <GoogleIcon />
                   )}
-                  <span>{loading ? "Googleへ移動中..." : "Googleで今すぐ始める（無料）"}</span>
+                  <span>{loading ? "認証中..." : "Googleアカウントで始める"}</span>
                 </button>
 
                 <Link
                   href="/dashboard"
-                  className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-ink/15 bg-white/70 px-6 py-3.5 text-base font-bold text-ink/80 transition hover:bg-white hover:text-ink focus-ring sm:w-auto"
+                  className="button-secondary min-h-10 px-4 text-xs sm:w-auto"
                 >
-                  <span>アプリ画面を見る</span>
+                  <span>デモを試す</span>
+                  <ArrowRight size={13} className="text-zinc-400" />
                 </Link>
               </>
             )}
           </div>
 
-          {error && <p className="mt-4 text-xs font-semibold text-red-600">{error}</p>}
+          {error && <p className="mt-3 text-xs font-semibold text-rose-600">{error}</p>}
 
-          <p className="mt-3 text-xs text-ink/50">
-            登録不要のデモ機能も利用可能 • Googleアカウントで安全にログイン
-          </p>
+          <div className="mt-4 flex items-center justify-center gap-6 text-[11px] text-zinc-500 font-mono">
+            <span>ZDR準拠（データ即時破棄）</span>
+            <span>•</span>
+            <span>無料・登録不要デモあり</span>
+          </div>
 
-          {/* ビジュアルプレビュー風カード */}
-          <div className="relative mx-auto mt-14 max-w-4xl overflow-hidden rounded-2xl border border-ink/10 bg-white p-4 shadow-xl sm:p-6 md:p-8">
-            <div className="flex items-center justify-between border-b border-ink/10 pb-4">
-              <div className="flex items-center gap-2">
-                <span className="size-3 rounded-full bg-rose-400" />
-                <span className="size-3 rounded-full bg-amber-400" />
-                <span className="size-3 rounded-full bg-emerald-400" />
-                <span className="ml-2 text-xs font-bold text-ink/60">
-                  育児タスクAI ダッシュボード
-                </span>
-              </div>
-              <span className="rounded-full bg-mint px-2.5 py-0.5 text-xs font-bold text-moss">
-                AI自動解析デモ
-              </span>
+          {/* インラインUIプレビュー（浮いたカードではなく、1本のボーダー枠内に収まる） */}
+          <div className="mt-12 border border-zinc-200 bg-zinc-50/50 text-left">
+            <div className="flex items-center justify-between border-b border-zinc-200 px-3 py-1.5 text-[11px] font-mono text-zinc-500 bg-white">
+              <span>app.childcare-task.agent / inbox</span>
+              <span>⌘K</span>
             </div>
 
-            <div className="mt-6 grid gap-4 text-left sm:grid-cols-3">
-              {/* ステップ1 */}
-              <div className="rounded-xl border border-ink/10 bg-cloud/50 p-4">
-                <div className="flex items-center gap-2 text-moss">
-                  <Camera size={18} />
-                  <span className="text-xs font-bold">1. お便りをパシャリ</span>
+            <div className="divide-y divide-zinc-200 bg-white">
+              <div className="flex items-center justify-between p-3 text-xs">
+                <div className="flex items-center gap-2.5 truncate">
+                  <span className="size-3.5 rounded border border-zinc-300 shrink-0" />
+                  <span className="font-medium text-zinc-900 truncate">
+                    遠足用のお弁当と水筒の準備
+                  </span>
+                  <span className="rounded bg-zinc-100 px-1.5 py-0.5 text-[10px] text-zinc-600">
+                    太郎（小1）
+                  </span>
                 </div>
-                <p className="mt-2 text-xs font-medium text-ink/70">
-                  「5月の遠足について.pdf」やプリントの写真をアップロード
-                </p>
-                <div className="mt-3 rounded-md bg-white p-2.5 text-[11px] text-ink/60 shadow-2xs">
-                  📄 園外保育のお願い：5月15日(木) お弁当・水筒・敷物持参...
-                </div>
-              </div>
-
-              {/* ステップ2 */}
-              <div className="rounded-xl border border-moss/30 bg-mint/20 p-4">
-                <div className="flex items-center gap-2 text-moss">
-                  <Sparkles size={18} />
-                  <span className="text-xs font-bold">2. AIが自動でタスク分解</span>
-                </div>
-                <p className="mt-2 text-xs font-medium text-ink/70">
-                  期日・持ち物・対象のお子さんを自動で抽出
-                </p>
-                <div className="mt-3 space-y-1.5">
-                  <div className="rounded-md bg-white p-2 text-[11px] font-bold text-ink shadow-2xs">
-                    🍱 お弁当の準備 <span className="text-[10px] text-moss">5/15 期限</span>
-                  </div>
-                  <div className="rounded-md bg-white p-2 text-[11px] font-bold text-ink shadow-2xs">
-                    🎒 水筒とレジャーシートを用意
-                  </div>
+                <div className="flex items-center gap-3 text-[11px] font-mono text-zinc-500 shrink-0">
+                  <span>5/15 期限</span>
+                  <span className="font-sans font-medium text-zinc-700">担当: パパ</span>
                 </div>
               </div>
 
-              {/* ステップ3 */}
-              <div className="rounded-xl border border-ink/10 bg-cloud/50 p-4">
-                <div className="flex items-center gap-2 text-violet-700">
-                  <Users size={18} />
-                  <span className="text-xs font-bold">3. 夫婦・家族でチーム分担</span>
+              <div className="flex items-center justify-between p-3 text-xs">
+                <div className="flex items-center gap-2.5 truncate">
+                  <span className="size-3.5 rounded border border-zinc-300 shrink-0" />
+                  <span className="font-medium text-zinc-900 truncate">
+                    集金袋（教材費 ¥2,400）の提出
+                  </span>
+                  <span className="rounded bg-zinc-100 px-1.5 py-0.5 text-[10px] text-zinc-600">
+                    花子（年少）
+                  </span>
                 </div>
-                <p className="mt-2 text-xs font-medium text-ink/70">
-                  「私がやる」ワンタップで引き受け。ありがとうリアクションも
-                </p>
-                <div className="mt-3 rounded-md bg-white p-2.5 text-[11px] shadow-2xs">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-ink">担当: パパ</span>
-                    <span className="text-rose-500 font-bold">❤️ ありがとう!</span>
-                  </div>
+                <div className="flex items-center gap-3 text-[11px] font-mono text-zinc-500 shrink-0">
+                  <span>5/18 期限</span>
+                  <span className="font-sans font-medium text-amber-600">担当未定</span>
                 </div>
               </div>
             </div>
@@ -219,215 +180,88 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 課題提起セクション */}
-      <section className="border-b border-ink/10 bg-white px-4 py-16 md:py-24">
-        <div className="mx-auto max-w-4xl text-center">
-          <span className="rounded-full bg-rose-100 px-3 py-1 text-xs font-bold text-rose-800">
-            こんなお悩みありませんか？
-          </span>
-          <h2 className="mt-4 text-2xl font-black text-ink sm:text-3xl md:text-4xl">
-            「お便りを読む・共有する」という
-            <br className="hidden sm:inline" />
-            名もなき育児の大きな負担
-          </h2>
-
-          <div className="mt-12 grid gap-6 sm:grid-cols-3 text-left">
-            <div className="rounded-2xl border border-ink/10 bg-sand/60 p-6">
-              <span className="text-2xl">📑</span>
-              <h3 className="mt-3 text-base font-bold text-ink">紙のお便りが多すぎて埋もれる</h3>
-              <p className="mt-2 text-xs leading-relaxed text-ink/70">
-                園だより、学年通信、給食だより、PTA...
-                毎日届く大量のプリントを冷蔵庫に貼り、結局提出日を直前に思い出すストレス。
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-ink/10 bg-sand/60 p-6">
-              <span className="text-2xl">👶</span>
-              <h3 className="mt-3 text-base font-bold text-ink">きょうだいで情報がごちゃ混ぜ</h3>
-              <p className="mt-2 text-xs leading-relaxed text-ink/70">
-                「上の子の集金はいつ？」「下の子のエプロンは今日？」きょうだいが増えるほど予定が錯綜し、「二人目の壁」に直面。
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-ink/10 bg-sand/60 p-6">
-              <span className="text-2xl">💬</span>
-              <h3 className="mt-3 text-base font-bold text-ink">パートナーへの情報共有が負担</h3>
-              <p className="mt-2 text-xs leading-relaxed text-ink/70">
-                「プリント読んどいて」「来週水曜午前中あけておいて」と頼む側の精神的コストが高く、結局1人でタスクを抱え込んでしまう。
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 3つのコアバリュー */}
-      <section className="border-b border-ink/10 bg-sand px-4 py-16 md:py-24">
-        <div className="mx-auto max-w-5xl">
+      {/* 3つのコア機能（カードではなく、1本のボーダーで美しく分割されたマトリクス） */}
+      <section className="border-b border-zinc-200 bg-white px-4 py-16 sm:px-6 md:py-20">
+        <div className="mx-auto max-w-4xl">
           <div className="text-center">
-            <span className="rounded-full bg-mint px-3 py-1 text-xs font-bold text-moss">
-              育児タスクAIの3つの特徴
-            </span>
-            <h2 className="mt-4 text-2xl font-black text-ink sm:text-3xl md:text-4xl">
-              「家族みんなで動ける仕組み」をつくる
+            <p className="text-xs font-mono uppercase tracking-wider text-zinc-400">
+              Core Capabilities
+            </p>
+            <h2 className="mt-2 text-xl font-bold tracking-tight text-zinc-950 sm:text-2xl">
+              育児のタスク管理を、モダンSaaSの体験に
             </h2>
           </div>
 
-          <div className="mt-14 space-y-12">
-            {/* 特徴1 */}
-            <div className="grid gap-8 rounded-2xl border border-ink/10 bg-white p-6 sm:p-8 md:grid-cols-2 md:items-center">
-              <div>
-                <span className="inline-flex size-10 items-center justify-center rounded-xl bg-mint text-moss font-bold">
-                  01
-                </span>
-                <h3 className="mt-4 text-xl font-black text-ink sm:text-2xl">
-                  スマホで撮るだけ。1秒でお便りをTODO化
-                </h3>
-                <p className="mt-3 text-sm leading-relaxed text-ink/75">
-                  写真、PDF、音声入力に対応。最新のマルチモーダルAIが、長文のお便りから「誰が」「いつまでに」「何を用意するか」を瞬時に抽出してタスク化します。もう全文をじっくり読む必要はありません。
-                </p>
-                <ul className="mt-4 space-y-2 text-xs font-semibold text-ink/80">
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 size={16} className="text-moss shrink-0" />
-                    写真・画像・スキャンPDF・音声から一発抽出
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 size={16} className="text-moss shrink-0" />
-                    持ち物、提出物、集金、行事日程を自動タグ付け
-                  </li>
-                </ul>
-              </div>
-              <div className="rounded-xl border border-moss/20 bg-gradient-to-br from-mint/30 to-cloud p-6 text-center">
-                <Camera size={48} className="mx-auto text-moss opacity-80" />
-                <p className="mt-3 text-sm font-bold text-ink">お便りスキャン画面</p>
-                <p className="mt-1 text-xs text-ink/60">ボタン1つでカメラ起動・ファイル読み込み</p>
-              </div>
+          <div className="mt-12 border-t border-b border-zinc-200 divide-y sm:divide-y-0 sm:divide-x divide-zinc-200 grid sm:grid-cols-3">
+            {/* 01 */}
+            <div className="py-6 sm:px-6 first:pl-0 last:pr-0">
+              <span className="font-mono text-[11px] text-zinc-400">01 / INGESTION</span>
+              <h3 className="mt-1.5 text-xs font-bold text-zinc-900">マルチモーダル高速スキャン</h3>
+              <p className="mt-1.5 text-xs leading-relaxed text-zinc-500">
+                写真、PDF、音声に対応。Gemini
+                VLMがお便りの文脈を解析し、日付・持ち物・集金を正確に抽出。
+              </p>
             </div>
 
-            {/* 特徴2 */}
-            <div className="grid gap-8 rounded-2xl border border-ink/10 bg-white p-6 sm:p-8 md:grid-cols-2 md:items-center">
-              <div className="order-2 md:order-1 rounded-xl border border-violet-200 bg-gradient-to-br from-violet-50 to-cloud p-6 text-center">
-                <Baby size={48} className="mx-auto text-violet-600 opacity-80" />
-                <p className="mt-3 text-sm font-bold text-ink">きょうだい別専用レーン</p>
-                <p className="mt-1 text-xs text-ink/60">子どもごとに持ち物・予定をクリアに分離</p>
-              </div>
-              <div className="order-1 md:order-2">
-                <span className="inline-flex size-10 items-center justify-center rounded-xl bg-violet-100 text-violet-800 font-bold">
-                  02
-                </span>
-                <h3 className="mt-4 text-xl font-black text-ink sm:text-2xl">
-                  きょうだい別タイムラインで「二人目の壁」を打破
-                </h3>
-                <p className="mt-3 text-sm leading-relaxed text-ink/75">
-                  兄弟・姉妹それぞれの予定と持ち物を色分けレーンで管理。同日の行事重なりや、親の仕事（残業・出張）との衝突もAIが自動検知してアラートを出します。ダブルブッキングの不安がゼロに。
-                </p>
-                <ul className="mt-4 space-y-2 text-xs font-semibold text-ink/80">
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 size={16} className="text-violet-700 shrink-0" />
-                    子ども別の個別レーンで持ち物の混同を防止
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 size={16} className="text-violet-700 shrink-0" />
-                    仕事の予定×育児イベントの衝突を事前検知
-                  </li>
-                </ul>
-              </div>
+            {/* 02 */}
+            <div className="py-6 sm:px-6">
+              <span className="font-mono text-[11px] text-zinc-400">02 / MULTI-CHILD</span>
+              <h3 className="mt-1.5 text-xs font-bold text-zinc-900">きょうだい別マルチレーン</h3>
+              <p className="mt-1.5 text-xs leading-relaxed text-zinc-500">
+                お子さんごとにレーンを分離。誰の提出物かを明確にし、同日行事の重複や親の仕事との衝突を検知。
+              </p>
             </div>
 
-            {/* 特徴3 */}
-            <div className="grid gap-8 rounded-2xl border border-ink/10 bg-white p-6 sm:p-8 md:grid-cols-2 md:items-center">
-              <div>
-                <span className="inline-flex size-10 items-center justify-center rounded-xl bg-amber-100 text-amber-800 font-bold">
-                  03
-                </span>
-                <h3 className="mt-4 text-xl font-black text-ink sm:text-2xl">
-                  家族でのToDo分担と見える化。助け合いのチーム育児へ
-                </h3>
-                <p className="mt-3 text-sm leading-relaxed text-ink/75">
-                  「私がやる」ボタンで自発的にタスクを引き受け可能。担当状況の偏りをスコアで可視化し、タスクをやってくれたパートナーに「ありがとう❤️」を贈るリアクション機能で、円滑な夫婦コミュニケーションを支援します。
-                </p>
-                <ul className="mt-4 space-y-2 text-xs font-semibold text-ink/80">
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 size={16} className="text-amber-700 shrink-0" />
-                    ワンタップで担当を引き受け・分担
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 size={16} className="text-amber-700 shrink-0" />
-                    「ありがとう❤️」で感謝を循環させるチーム育児
-                  </li>
-                </ul>
-              </div>
-              <div className="rounded-xl border border-amber-200 bg-gradient-to-br from-amber-50 to-cloud p-6 text-center">
-                <Heart size={48} className="mx-auto text-rose-500 opacity-80" />
-                <p className="mt-3 text-sm font-bold text-ink">チーム育児スコア</p>
-                <p className="mt-1 text-xs text-ink/60">偏りをなくし、夫婦の協働を促進</p>
-              </div>
+            {/* 03 */}
+            <div className="py-6 sm:px-6 last:pr-0">
+              <span className="font-mono text-[11px] text-zinc-400">03 / TEAM WORKLOAD</span>
+              <h3 className="mt-1.5 text-xs font-bold text-zinc-900">
+                ワークロード可視化と引き受け
+              </h3>
+              <p className="mt-1.5 text-xs leading-relaxed text-zinc-500">
+                「私がやる」ワンタップ分担と、家族のタスク比率メーター。特定の人への育児負荷の偏りを防止。
+              </p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* プライバシー＆セキュリティ */}
-      <section className="border-b border-ink/10 bg-white px-4 py-16">
-        <div className="mx-auto max-w-3xl rounded-2xl border border-moss/30 bg-mint/20 p-8 text-center sm:p-10">
-          <div className="mx-auto grid size-12 place-items-center rounded-2xl bg-white text-moss shadow-xs">
-            <ShieldCheck size={26} />
+      {/* プライバシーセクション（インライン） */}
+      <section className="border-b border-zinc-200 bg-zinc-50/50 px-4 py-12 sm:px-6">
+        <div className="mx-auto flex max-w-4xl flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
+          <div>
+            <p className="text-xs font-mono uppercase tracking-wider text-zinc-400">Security</p>
+            <h3 className="mt-1 text-sm font-bold text-zinc-900">
+              Zero Data Retention（データ学習なし）
+            </h3>
+            <p className="mt-1 text-xs text-zinc-500 max-w-xl">
+              お子さんの名前やお便りデータは、AI推論完了後に即座に破棄されます。モデルの学習には一切使用されません。
+            </p>
           </div>
-          <h2 className="mt-4 text-xl font-black text-ink sm:text-2xl">
-            お子さんとご家庭のプライバシーを最優先に保護
-          </h2>
-          <p className="mt-3 text-xs leading-relaxed text-ink/75 sm:text-sm">
-            お便りやお子さんの名前などの機微情報は、AI推論完了後に即座に破棄されます（Zero Data
-            Retention準拠）。
-            AIモデルの学習データとして使用・保存されることは一切ありません。安心してお使いいただけます。
-          </p>
-        </div>
-      </section>
-
-      {/* フッターCTA */}
-      <section className="bg-sand px-4 py-16 text-center md:py-20">
-        <div className="mx-auto max-w-2xl">
-          <h2 className="text-2xl font-black text-ink sm:text-4xl">
-            今日から、名もなき育児をチーム育児へ。
-          </h2>
-          <p className="mt-3 text-sm text-ink/70">
-            Googleアカウントがあれば、10秒で今すぐ始められます。
-          </p>
-
-          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <button
-              type="button"
-              onClick={loginWithGoogle}
-              disabled={loading}
-              className="flex min-h-12 w-full items-center justify-center gap-3 rounded-xl border border-ink/20 bg-white px-8 py-3.5 text-base font-bold text-ink shadow-sm transition hover:bg-cloud hover:border-ink/30 focus-ring disabled:opacity-60 active:scale-98 sm:w-auto"
-            >
-              {loading ? <Loader2 size={18} className="animate-spin text-moss" /> : <GoogleIcon />}
-              <span>Googleで無料登録・ログイン</span>
-            </button>
-
-            <Link
-              href="/dashboard"
-              className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-moss px-7 py-3.5 text-base font-bold text-white shadow-md transition hover:bg-moss/90 focus-ring sm:w-auto"
-            >
-              <span>ダッシュボードを開く</span>
-              <ArrowRight size={16} />
-            </Link>
-          </div>
+          <span className="inline-flex items-center gap-1.5 border border-zinc-200 bg-white px-2.5 py-1 font-mono text-[11px] text-zinc-600 shrink-0">
+            <Lock size={11} className="text-emerald-600" />
+            ZDR Compliant
+          </span>
         </div>
       </section>
 
       {/* フッター */}
-      <footer className="border-t border-ink/10 bg-white px-4 py-8 text-center text-xs text-ink/60">
-        <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-4 sm:flex-row">
-          <p className="font-bold text-ink">育児タスクAI (Childcare Task Agent)</p>
-          <div className="flex items-center gap-4">
-            <Link href="/dashboard" className="hover:text-ink">
-              ダッシュボード
+      <footer className="bg-white px-4 py-8 text-xs text-zinc-500 sm:px-6">
+        <div className="mx-auto flex max-w-4xl flex-col items-center justify-between gap-4 sm:flex-row">
+          <div className="flex items-center gap-2 font-semibold text-zinc-800">
+            <Layers size={14} />
+            <span>育児タスクAI</span>
+          </div>
+          <div className="flex items-center gap-6">
+            <Link href="/dashboard" className="hover:text-zinc-900 transition">
+              ホーム
             </Link>
-            <Link href="/login" className="hover:text-ink">
+            <Link href="/login" className="hover:text-zinc-900 transition">
               ログイン
             </Link>
+            <span className="text-zinc-300">|</span>
+            <span>© 2026 Childcare Task Agent.</span>
           </div>
-          <p>© 2026 Childcare Task Agent. All rights reserved.</p>
         </div>
       </footer>
     </div>

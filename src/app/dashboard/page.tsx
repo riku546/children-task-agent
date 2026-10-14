@@ -1,22 +1,25 @@
 "use client";
 
 import {
+  ArrowUpRight,
   Briefcase,
   CalendarDays,
   Camera,
-  Heart,
+  Layers,
   ListTodo,
-  Plus,
+  MoreHorizontal,
   RefreshCw,
-  Upload,
-  Users
+  Type
 } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { CalendarView } from "@/components/CalendarView";
 import { ConflictAlerts } from "@/components/ConflictAlerts";
-import { FamilyTeamMeter } from "@/components/FamilyTeamMeter";
+import { PageHeader } from "@/components/PageHeader";
+import { PageShell } from "@/components/PageShell";
 import { QuickWorkScheduleModal } from "@/components/QuickWorkScheduleModal";
+import { SegmentedControl } from "@/components/SegmentedControl";
 import { SiblingTaskTimeline } from "@/components/SiblingTaskTimeline";
 import { TaskList } from "@/components/TaskList";
 import { fetchJsonWithCache, getCachedData, invalidateCache } from "@/lib/client-cache";
@@ -24,11 +27,30 @@ import { detectAllConflicts } from "@/lib/conflict-detector";
 import { isSameDate } from "@/lib/date";
 import type { GroupRecord, TaskRecord } from "@/lib/types";
 
-type ViewMode = "list" | "calendar";
+type ViewMode = "list" | "siblings" | "calendar";
 
-export default function DashboardPage() {
+const homeSegments = [
+  { id: "list" as const, label: "期限", icon: ListTodo },
+  { id: "siblings" as const, label: "子ども", icon: Layers },
+  { id: "calendar" as const, label: "カレンダー", icon: CalendarDays }
+];
+
+function parseViewMode(raw: string | null): ViewMode {
+  if (raw === "siblings" || raw === "calendar" || raw === "list") {
+    return raw;
+  }
+  return "list";
+}
+
+function DashboardContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const initialViewParam = searchParams.get("view");
+
   const cachedTasks = getCachedData<{ tasks: TaskRecord[] }>("/api/tasks");
-  const cachedMe = getCachedData<any>("/api/me");
+  const cachedMe = getCachedData<{ user?: { id: string; name: string }; groups?: GroupRecord[] }>(
+    "/api/me"
+  );
 
   const [tasks, setTasks] = useState<TaskRecord[]>(cachedTasks?.tasks || []);
   const [currentUser, setCurrentUser] = useState<{ id: string; name: string } | null>(
@@ -38,17 +60,38 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(!cachedTasks);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
 
-  const [viewMode, setViewMode] = useState<ViewMode>("list");
+  const [viewMode, setViewMode] = useState<ViewMode>(() => parseViewMode(initialViewParam));
+
   const [calendarSelectedDate, setCalendarSelectedDate] = useState<string | null>(null);
   const [isWorkModalOpen, setIsWorkModalOpen] = useState(false);
   const [thankYouMessage, setThankYouMessage] = useState<string | null>(null);
 
   const currentGroupId = groups[0]?.id || "";
 
+  useEffect(() => {
+    const view = searchParams.get("view");
+    if (view === "assignee") {
+      router.replace("/team");
+      return;
+    }
+    setViewMode(parseViewMode(view));
+  }, [searchParams, router]);
+
+  function handleViewChange(mode: ViewMode) {
+    setViewMode(mode);
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.set("view", mode);
+      window.history.replaceState(null, "", url.toString());
+    }
+  }
+
   async function load(force = false) {
     if (!force) {
       const t = getCachedData<{ tasks: TaskRecord[] }>("/api/tasks");
-      const me = getCachedData<any>("/api/me");
+      const me = getCachedData<{ user?: { id: string; name: string }; groups?: GroupRecord[] }>(
+        "/api/me"
+      );
       if (t && me) {
         setTasks(t.tasks || []);
         setCurrentUser(me.user || null);
@@ -62,7 +105,10 @@ export default function DashboardPage() {
     try {
       const [tasksData, meData] = await Promise.all([
         fetchJsonWithCache<{ tasks: TaskRecord[] }>("/api/tasks", { force }),
-        fetchJsonWithCache<any>("/api/me", { force })
+        fetchJsonWithCache<{ user?: { id: string; name: string }; groups?: GroupRecord[] }>(
+          "/api/me",
+          { force }
+        )
       ]);
       setTasks(tasksData.tasks || []);
       setCurrentUser(meData.user || null);
@@ -78,12 +124,8 @@ export default function DashboardPage() {
     load();
   }, []);
 
-  // 重複・衝突の自動解析（機能2 ＆ 機能4）
-  const conflicts = useMemo(() => {
-    return detectAllConflicts(tasks);
-  }, [tasks]);
+  const conflicts = useMemo(() => detectAllConflicts(tasks), [tasks]);
 
-  // 機能3: 「私がやる」ボタン処理
   async function assignToMe(taskId: string) {
     if (!currentUser) return;
     setActionLoadingId(taskId);
@@ -100,41 +142,49 @@ export default function DashboardPage() {
       });
       if (res.ok) {
         invalidateCache("/api/tasks");
-        await load(true);
+        setTasks((prev) =>
+          prev.map((t) =>
+            t.id === taskId
+              ? {
+                  ...t,
+                  assigneeMemberId: member?.id || null,
+                  assigneeName: currentUser.name
+                }
+              : t
+          )
+        );
       }
+    } catch (err) {
+      console.error("Failed to assign to me", err);
     } finally {
       setActionLoadingId(null);
     }
   }
 
-  // ステータストグル処理
   async function toggleStatus(task: TaskRecord) {
     setActionLoadingId(task.id);
+    const newStatus = task.status === "DONE" ? "TODO" : "DONE";
     try {
-      const nextStatus = task.status === "DONE" ? "TODO" : "DONE";
       const res = await fetch(`/api/tasks/${task.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: nextStatus })
+        body: JSON.stringify({ status: newStatus })
       });
       if (res.ok) {
         invalidateCache("/api/tasks");
-        await load(true);
+        setTasks((prev) => prev.map((t) => (t.id === task.id ? { ...t, status: newStatus } : t)));
       }
+    } catch (err) {
+      console.error("Failed to toggle task status", err);
     } finally {
       setActionLoadingId(null);
     }
   }
 
-  // 「ありがとう❤️」リアクション処理
   function handleThankYou(task: TaskRecord) {
     const assignee = task.assigneeName || "パートナー";
-    setThankYouMessage(
-      `❤️ ${assignee} さんに「ありがとう！」を伝えました！チーム育児スコアがアップしました ✨`
-    );
-    setTimeout(() => {
-      setThankYouMessage(null);
-    }, 3500);
+    setThankYouMessage(`❤️ ${assignee} さんに「ありがとう！」を伝えました`);
+    setTimeout(() => setThankYouMessage(null), 3000);
   }
 
   const todayTasks = useMemo(
@@ -145,219 +195,235 @@ export default function DashboardPage() {
     () => tasks.filter((task) => task.status !== "DONE" && isSameDate(task.dueDate, 1)),
     [tasks]
   );
+  const upcomingTasks = useMemo(
+    () =>
+      tasks.filter(
+        (task) =>
+          task.status !== "DONE" && !isSameDate(task.dueDate, 0) && !isSameDate(task.dueDate, 1)
+      ),
+    [tasks]
+  );
   const openTasks = useMemo(() => tasks.filter((task) => task.status !== "DONE"), [tasks]);
-  const doneCount = tasks.filter((task) => task.status === "DONE").length;
+  const doneTasks = useMemo(() => tasks.filter((task) => task.status === "DONE"), [tasks]);
+  const doneCount = doneTasks.length;
 
-  return (
-    <section className="mx-auto max-w-6xl px-4 pb-24 pt-8 md:pb-12">
-      {/* ページヘッダー */}
-      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
-        <div>
-          <p className="text-xs font-bold tracking-wide uppercase text-moss">
-            Childcare Task Agent
-          </p>
-          <h1 className="mt-1 text-2xl font-black tracking-normal sm:text-3xl md:text-4xl">
-            家族のTODO
-          </h1>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            className="button-icon"
-            onClick={() => load(true)}
-            title="更新"
-            disabled={loading}
-          >
-            <RefreshCw size={18} className={loading ? "animate-spin" : ""} />
-          </button>
-
-          <Link href="/tasks/new" className="button-primary text-xs sm:text-sm">
-            <Camera size={16} />
-            お便りをスキャン
-          </Link>
-
-          <button
-            type="button"
-            onClick={() => setIsWorkModalOpen(true)}
-            className="button-secondary text-xs sm:text-sm"
-            title="残業や出張など、仕事の予定を追加して衝突を検知"
-          >
-            <Briefcase size={16} />
-            仕事の予定
-          </button>
-
-          <Link href="/family" className="button-secondary text-xs sm:text-sm">
-            <Users size={16} />
-            家族の分担
-          </Link>
-
-          <Link href="/tasks/new" className="button-secondary text-xs sm:text-sm">
-            <Plus size={16} />
-            手動登録
-          </Link>
-        </div>
-      </div>
-
-      {/* 1. お便り・プリントのスキャン（実務用クイックバー） */}
-      <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 rounded-2xl border border-moss/20 bg-gradient-to-r from-mint/25 via-white to-cloud p-4 sm:p-5 shadow-2xs">
-        <div className="flex items-center gap-3">
-          <span className="grid size-11 place-items-center rounded-xl bg-moss text-white shadow-xs shrink-0">
-            <Camera size={22} />
-          </span>
-          <div>
-            <h2 className="text-sm font-bold text-ink">お便り・プリントからTODOを作成</h2>
-            <p className="text-xs text-ink/65">
-              写真撮影・PDF・画像からAIが提出物や持ち物を自動抽出します
-            </p>
+  const listSections = (
+    <div className="space-y-6">
+      <div>
+        <div className="flex items-center justify-between border-b border-zinc-200 pb-2 text-sm font-bold text-zinc-900">
+          <div className="flex items-center gap-2">
+            <span>今日のTODO</span>
+            <span className="font-mono text-xs text-zinc-400">({todayTasks.length})</span>
           </div>
         </div>
-        <div className="flex w-full sm:w-auto items-center gap-2 shrink-0">
-          <Link
-            href="/tasks/new"
-            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 rounded-xl bg-moss px-4 py-2.5 text-xs font-bold text-white shadow-xs transition hover:bg-moss/90 focus-ring"
-          >
-            <Camera size={15} />
-            <span>撮影・スキャン</span>
-          </Link>
-          <Link
-            href="/tasks/new"
-            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 rounded-xl border border-ink/15 bg-white px-3.5 py-2.5 text-xs font-bold text-ink shadow-2xs transition hover:bg-cloud focus-ring"
-          >
-            <Upload size={15} className="text-ink/60" />
-            <span>画像・PDF選択</span>
-          </Link>
-        </div>
+        <TaskList
+          tasks={todayTasks}
+          emptyText="今日のTODOはありません"
+          currentUserId={currentUser?.id}
+          onAssignToMe={assignToMe}
+          onToggleStatus={toggleStatus}
+          actionLoadingId={actionLoadingId}
+          onThankYou={handleThankYou}
+        />
       </div>
 
-      {/* 2. チーム育児メーター（夫婦の協働スコア・偏り解消） */}
-      <FamilyTeamMeter tasks={tasks} />
+      {tomorrowTasks.length > 0 && (
+        <div>
+          <div className="flex items-center justify-between border-b border-zinc-200 pb-2 text-sm font-bold text-zinc-900">
+            <div className="flex items-center gap-2">
+              <span>明日のTODO</span>
+              <span className="font-mono text-xs text-zinc-400">({tomorrowTasks.length})</span>
+            </div>
+          </div>
+          <TaskList
+            tasks={tomorrowTasks}
+            emptyText="明日のTODOはありません"
+            currentUserId={currentUser?.id}
+            onAssignToMe={assignToMe}
+            onToggleStatus={toggleStatus}
+            actionLoadingId={actionLoadingId}
+            onThankYou={handleThankYou}
+          />
+        </div>
+      )}
 
-      {/* 3. 予定の重複・衝突アラート（きょうだい重複・仕事衝突） */}
+      <div>
+        <div className="flex items-center justify-between border-b border-zinc-200 pb-2 text-sm font-bold text-zinc-900">
+          <div className="flex items-center gap-2">
+            <span>今後のTODO</span>
+            <span className="font-mono text-xs text-zinc-400">({upcomingTasks.length})</span>
+          </div>
+        </div>
+        <TaskList
+          tasks={upcomingTasks}
+          emptyText="今後予定されているTODOはありません"
+          currentUserId={currentUser?.id}
+          onAssignToMe={assignToMe}
+          onToggleStatus={toggleStatus}
+          actionLoadingId={actionLoadingId}
+          onThankYou={handleThankYou}
+        />
+      </div>
+
+      {doneTasks.length > 0 && (
+        <div className="pt-4">
+          <div className="flex items-center justify-between border-b border-zinc-200 pb-2 text-sm font-bold text-zinc-400">
+            <div className="flex items-center gap-2">
+              <span>完了済み</span>
+              <span className="font-mono text-xs">({doneCount})</span>
+            </div>
+          </div>
+          <TaskList
+            tasks={doneTasks}
+            emptyText=""
+            currentUserId={currentUser?.id}
+            onAssignToMe={assignToMe}
+            onToggleStatus={toggleStatus}
+            actionLoadingId={actionLoadingId}
+          />
+        </div>
+      )}
+    </div>
+  );
+
+  return (
+    <PageShell>
+      <PageHeader
+        title="ホーム"
+        description="今日やることと提出期限を確認します"
+        badge={
+          <span className="rounded bg-zinc-100 px-2 py-0.5 font-mono text-xs font-semibold text-zinc-700">
+            未完了 {openTasks.length}件
+          </span>
+        }
+        actions={
+          <>
+            <Link href="/tasks/new" className="button-primary">
+              <Camera size={15} />
+              <span>お便りを取込</span>
+            </Link>
+            <details className="relative group">
+              <summary className="button-icon cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+                <MoreHorizontal size={15} />
+              </summary>
+              <div className="absolute right-0 z-20 mt-1 min-w-[11rem] rounded-lg border border-zinc-200 bg-white py-1 shadow-lg">
+                <button
+                  type="button"
+                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-50"
+                  onClick={() => load(true)}
+                  disabled={loading}
+                >
+                  <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
+                  最新に更新
+                </button>
+                <button
+                  type="button"
+                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-50"
+                  onClick={() => setIsWorkModalOpen(true)}
+                >
+                  <Briefcase size={14} />
+                  仕事の予定
+                </button>
+                <Link
+                  href="/tasks/new"
+                  className="flex w-full items-center gap-2 px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-50"
+                  onClick={(e) => {
+                    const details = e.currentTarget.closest("details") as HTMLDetailsElement | null;
+                    if (details) details.open = false;
+                  }}
+                >
+                  <Type size={14} />
+                  手動でタスク追加
+                </Link>
+              </div>
+            </details>
+          </>
+        }
+      />
+
       <ConflictAlerts
         conflicts={conflicts}
         onSelectDate={(dateKey) => {
-          setViewMode("calendar");
+          handleViewChange("calendar");
           setCalendarSelectedDate(dateKey);
         }}
       />
 
-      {/* 4. きょうだい別の予定・持ち物タイムライン（二人目の壁打破） */}
-      <SiblingTaskTimeline
-        tasks={tasks}
-        group={groups[0]}
-        onAssignToMe={assignToMe}
-        onToggleStatus={toggleStatus}
-        actionLoadingId={actionLoadingId}
-        onThankYou={handleThankYou}
-        onChildAdded={() => load(true)}
-      />
-
-      {/* 5. 表示切り替え（ToDoリスト ↔ 月間カレンダー） */}
-      <div className="mt-10 mb-4 flex items-center justify-between border-b border-ink/10 pb-3">
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setViewMode("list")}
-            className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-bold transition ${
-              viewMode === "list"
-                ? "bg-moss text-white shadow-2xs"
-                : "text-ink/70 hover:bg-cloud hover:text-ink"
-            }`}
-          >
-            <ListTodo size={17} />
-            期限別リスト ({openTasks.length})
-          </button>
-          <button
-            type="button"
-            onClick={() => setViewMode("calendar")}
-            className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-bold transition ${
-              viewMode === "calendar"
-                ? "bg-moss text-white shadow-2xs"
-                : "text-ink/70 hover:bg-cloud hover:text-ink"
-            }`}
-          >
-            <CalendarDays size={17} />
-            カレンダー表示（月間）
-          </button>
-        </div>
-
-        <div className="hidden sm:flex items-center gap-2 text-xs font-semibold text-ink/60">
-          <span>今日: {todayTasks.length}件</span>
-          <span>明日: {tomorrowTasks.length}件</span>
-          <span>完了: {doneCount}件</span>
-        </div>
+      <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <SegmentedControl value={viewMode} onChange={handleViewChange} segments={homeSegments} />
+        <Link
+          href="/team"
+          className="inline-flex items-center gap-1 text-sm font-semibold text-zinc-600 hover:text-zinc-950 transition shrink-0"
+        >
+          <span>分担ボード</span>
+          <ArrowUpRight size={14} />
+        </Link>
       </div>
 
-      {/* ビューコンテンツ */}
-      {viewMode === "calendar" ? (
-        <CalendarView
-          tasks={tasks}
-          conflicts={conflicts}
-          selectedDate={calendarSelectedDate}
-          onSelectDate={setCalendarSelectedDate}
-        />
-      ) : (
-        <div className="space-y-8">
-          <div className="grid gap-8 lg:grid-cols-[1fr_1fr]">
-            <section>
-              <h2 className="mb-3 text-lg font-bold">今日のTODO ({todayTasks.length})</h2>
-              <TaskList
-                tasks={todayTasks}
-                emptyText={loading ? "読み込み中" : "今日のTODOはありません 🎉"}
-                currentUserId={currentUser?.id}
-                onAssignToMe={assignToMe}
-                onToggleStatus={toggleStatus}
-                actionLoadingId={actionLoadingId}
-                onThankYou={handleThankYou}
-              />
-            </section>
-            <section>
-              <h2 className="mb-3 text-lg font-bold">明日のTODO ({tomorrowTasks.length})</h2>
-              <TaskList
-                tasks={tomorrowTasks}
-                emptyText={loading ? "読み込み中" : "明日のTODOはありません"}
-                currentUserId={currentUser?.id}
-                onAssignToMe={assignToMe}
-                onToggleStatus={toggleStatus}
-                actionLoadingId={actionLoadingId}
-                onThankYou={handleThankYou}
-              />
-            </section>
-          </div>
-
-          <section>
-            <h2 className="mb-3 text-lg font-bold">すべての未完了TODO ({openTasks.length})</h2>
-            <TaskList
-              tasks={openTasks}
-              emptyText={loading ? "読み込み中" : "未完了のTODOはありません"}
-              currentUserId={currentUser?.id}
-              onAssignToMe={assignToMe}
-              onToggleStatus={toggleStatus}
-              actionLoadingId={actionLoadingId}
-              onThankYou={handleThankYou}
-            />
-          </section>
+      {viewMode === "list" && (
+        <div className="mt-2 flex items-center gap-4 text-sm font-mono text-zinc-600">
+          <span>
+            今日: <strong className="text-zinc-950">{todayTasks.length}</strong>
+          </span>
+          <span>
+            明日: <strong className="text-zinc-950">{tomorrowTasks.length}</strong>
+          </span>
+          <span>
+            完了: <strong className="text-zinc-950">{doneCount}</strong>
+          </span>
         </div>
       )}
 
-      {/* 仕事予定クイック登録モーダル */}
+      <div className="mt-4">
+        {viewMode === "calendar" ? (
+          <CalendarView
+            tasks={tasks}
+            conflicts={conflicts}
+            selectedDate={calendarSelectedDate}
+            onSelectDate={setCalendarSelectedDate}
+          />
+        ) : viewMode === "siblings" ? (
+          <SiblingTaskTimeline
+            tasks={tasks}
+            group={groups[0]}
+            currentUserId={currentUser?.id}
+            onAssignToMe={assignToMe}
+            onToggleStatus={toggleStatus}
+            actionLoadingId={actionLoadingId}
+            onThankYou={handleThankYou}
+            onChildAdded={() => load(true)}
+          />
+        ) : (
+          listSections
+        )}
+      </div>
+
       <QuickWorkScheduleModal
         isOpen={isWorkModalOpen}
         onClose={() => setIsWorkModalOpen(false)}
         groupId={currentGroupId}
-        defaultDate={calendarSelectedDate}
         onSuccess={() => load(true)}
       />
 
-      {/* 「ありがとう」トースト演出 */}
       {thankYouMessage && (
-        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 transform rounded-full border border-rose-200 bg-white px-5 py-3 text-sm font-black text-rose-800 shadow-xl animate-in slide-in-from-bottom-4">
-          <div className="flex items-center gap-2">
-            <Heart size={18} className="fill-rose-500 text-rose-500 animate-bounce" />
-            <span>{thankYouMessage}</span>
-          </div>
+        <div className="fixed bottom-20 right-4 z-50 rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white shadow-soft md:bottom-6 md:right-6">
+          {thankYouMessage}
         </div>
       )}
-    </section>
+    </PageShell>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense
+      fallback={
+        <PageShell>
+          <p className="py-16 text-center text-sm text-zinc-400">読み込み中...</p>
+        </PageShell>
+      }
+    >
+      <DashboardContent />
+    </Suspense>
   );
 }

@@ -106,49 +106,54 @@ export function CalendarView({
   }, [currentMonthDate]);
 
   function prevMonth() {
-    setCurrentMonthDate(
-      new Date(currentMonthDate.getFullYear(), currentMonthDate.getMonth() - 1, 1)
-    );
+    setCurrentMonthDate((d) => new Date(d.getFullYear(), d.getMonth() - 1, 1));
   }
 
   function nextMonth() {
-    setCurrentMonthDate(
-      new Date(currentMonthDate.getFullYear(), currentMonthDate.getMonth() + 1, 1)
-    );
+    setCurrentMonthDate((d) => new Date(d.getFullYear(), d.getMonth() + 1, 1));
   }
 
   function goToday() {
     const now = new Date();
     setCurrentMonthDate(new Date(now.getFullYear(), now.getMonth(), 1));
-    handleDateClick(toDateInputValue(now));
+    const todayKey = toDateInputValue(now);
+    handleDateClick(todayKey);
   }
 
   function handleDateClick(dateKey: string) {
+    const next = selectedDate === dateKey ? null : dateKey;
     if (onSelectDate) {
-      onSelectDate(dateKey === selectedDate ? null : dateKey);
+      onSelectDate(next);
     } else {
-      setInternalSelectedDate(dateKey === selectedDate ? null : dateKey);
+      setInternalSelectedDate(next);
     }
   }
 
-  const selectedDateTasks = useMemo(() => {
-    if (!selectedDate) return [];
-    return tasks.filter((t) => t.dueDate && toDateInputValue(t.dueDate) === selectedDate);
-  }, [tasks, selectedDate]);
+  const selectedDateTasks = selectedDate ? tasksByDate.get(selectedDate) || [] : [];
+  const selectedDateConflicts = selectedDate
+    ? [
+        ...conflicts.siblingConflicts.filter((c) => c.dateKey === selectedDate),
+        ...conflicts.workConflicts.filter((c) => c.dateKey === selectedDate)
+      ]
+    : [];
+
+  const year = currentMonthDate.getFullYear();
+  const month = currentMonthDate.getMonth() + 1;
 
   return (
     <div className="space-y-4">
-      {/* カレンダー上部ツールバー */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-ink/10 bg-white p-3.5 shadow-xs">
+      {/* ツールバー: 年月切り替え ＋ 子どもフィルター */}
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-200 pb-3">
+        {/* 年月移動 */}
         <div className="flex items-center gap-2">
-          <h2 className="text-xl font-black text-ink">
-            {currentMonthDate.getFullYear()}年 {currentMonthDate.getMonth() + 1}月
+          <h2 className="text-base font-bold tracking-tight text-zinc-950 sm:text-lg">
+            {year}年 {month}月
           </h2>
-          <div className="flex items-center rounded-lg border border-ink/15 bg-cloud p-0.5">
+          <div className="flex items-center rounded-md border border-zinc-200 bg-zinc-100/80 p-0.5">
             <button
               type="button"
               onClick={prevMonth}
-              className="grid size-7 place-items-center rounded text-ink/70 hover:bg-white hover:text-ink"
+              className="grid size-7 place-items-center rounded text-zinc-600 hover:bg-white hover:text-zinc-950 transition"
               title="前月"
             >
               <ChevronLeft size={16} />
@@ -156,7 +161,7 @@ export function CalendarView({
             <button
               type="button"
               onClick={nextMonth}
-              className="grid size-7 place-items-center rounded text-ink/70 hover:bg-white hover:text-ink"
+              className="grid size-7 place-items-center rounded text-zinc-600 hover:bg-white hover:text-zinc-950 transition"
               title="翌月"
             >
               <ChevronRight size={16} />
@@ -165,7 +170,7 @@ export function CalendarView({
           <button
             type="button"
             onClick={goToday}
-            className="rounded-md border border-ink/15 bg-white px-2.5 py-1 text-xs font-bold text-ink hover:bg-cloud"
+            className="rounded border border-zinc-200 bg-white px-2.5 py-1 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition"
           >
             今月
           </button>
@@ -173,17 +178,17 @@ export function CalendarView({
 
         {/* きょうだい・仕事フィルター */}
         <div className="flex flex-wrap items-center gap-1.5">
-          <span className="flex items-center gap-1 text-xs font-bold text-ink/60">
+          <span className="flex items-center gap-1 text-sm font-semibold text-zinc-600">
             <Filter size={13} />
             表示:
           </span>
           <button
             type="button"
             onClick={() => setSelectedChild("all")}
-            className={`rounded-full px-2.5 py-1 text-xs font-bold transition ${
+            className={`rounded-full px-3 py-1 text-sm font-medium transition ${
               selectedChild === "all"
-                ? "bg-moss text-white shadow-xs"
-                : "border border-ink/15 bg-white text-ink/70 hover:bg-cloud"
+                ? "bg-zinc-900 text-white shadow-2xs"
+                : "border border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50"
             }`}
           >
             全員
@@ -196,48 +201,48 @@ export function CalendarView({
                 key={name}
                 type="button"
                 onClick={() => setSelectedChild(name)}
-                className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold transition ${
+                className={`flex items-center gap-1 rounded-full px-3 py-1 text-sm font-medium transition ${
                   isSelected
-                    ? `${theme.badgeBg} ${theme.badgeText} border ${theme.border} ring-2 ring-moss/30`
-                    : "border border-ink/15 bg-white text-ink/70 hover:bg-cloud"
+                    ? "bg-zinc-900 text-white shadow-2xs"
+                    : "border border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50"
                 }`}
               >
                 <span className={`size-1.5 rounded-full ${theme.dotColor}`} />
-                {name}
+                <span>{name}</span>
               </button>
             );
           })}
           <button
             type="button"
             onClick={() => setSelectedChild("work")}
-            className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold transition ${
+            className={`flex items-center gap-1 rounded-full px-3 py-1 text-sm font-medium transition ${
               selectedChild === "work"
-                ? "bg-slate-700 text-white"
-                : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                ? "bg-zinc-900 text-white shadow-2xs"
+                : "border border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50"
             }`}
           >
-            <Briefcase size={12} />
+            <Briefcase size={13} />
             仕事
           </button>
         </div>
       </div>
 
       {/* カレンダーグリッド本体 */}
-      <div className="overflow-hidden rounded-xl border border-ink/10 bg-white shadow-xs">
+      <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-2xs">
         {/* 曜日ヘッダー */}
-        <div className="grid grid-cols-7 border-b border-ink/10 bg-cloud text-center text-xs font-bold text-ink/70">
-          <span className="py-2 text-rose-600">日</span>
+        <div className="grid grid-cols-7 border-b border-zinc-200 bg-zinc-50 text-center text-sm font-medium text-zinc-600">
+          <span className="py-2 text-rose-600 font-semibold">日</span>
           <span className="py-2">月</span>
           <span className="py-2">火</span>
           <span className="py-2">水</span>
           <span className="py-2">木</span>
           <span className="py-2">金</span>
-          <span className="py-2 text-sky-600">土</span>
+          <span className="py-2 text-sky-600 font-semibold">土</span>
         </div>
 
         {/* 日付セル */}
-        <div className="grid grid-cols-7 divide-x divide-y divide-ink/10">
-          {calendarDays.map((day, _idx) => {
+        <div className="grid grid-cols-7 divide-x divide-y divide-zinc-200">
+          {calendarDays.map((day) => {
             const dayTasks = tasksByDate.get(day.dateKey) || [];
             const hasConflict = conflictDateKeys.has(day.dateKey);
             const isSelected = selectedDate === day.dateKey;
@@ -248,21 +253,23 @@ export function CalendarView({
                 type="button"
                 key={day.dateKey}
                 onClick={() => handleDateClick(day.dateKey)}
-                className={`group relative min-h-[96px] p-1.5 transition text-left cursor-pointer md:min-h-[110px] ${
-                  !day.isCurrentMonth ? "bg-cloud/40 text-ink/30" : "bg-white hover:bg-cloud/50"
-                } ${isSelected ? "ring-2 ring-moss ring-inset bg-mint/10" : ""}`}
+                className={`group relative min-h-[100px] p-2 transition text-left cursor-pointer md:min-h-[116px] ${
+                  !day.isCurrentMonth
+                    ? "bg-zinc-50/40 text-zinc-300"
+                    : "bg-white hover:bg-zinc-50/70"
+                } ${isSelected ? "ring-2 ring-emerald-500 ring-inset bg-emerald-50/20" : ""}`}
               >
                 {/* 日付ヘッダー */}
                 <div className="flex items-center justify-between">
                   <span
-                    className={`inline-grid size-6 place-items-center rounded-full text-xs font-bold ${
+                    className={`inline-grid size-6 place-items-center rounded-full text-sm font-semibold ${
                       day.isToday
-                        ? "bg-moss text-white shadow-xs"
+                        ? "bg-zinc-950 text-white font-bold"
                         : dayOfWeek === 0
                           ? "text-rose-600"
                           : dayOfWeek === 6
                             ? "text-sky-600"
-                            : "text-ink/80"
+                            : "text-zinc-700"
                     }`}
                   >
                     {day.date.getDate()}
@@ -271,7 +278,7 @@ export function CalendarView({
                   {/* 重複・衝突アイコン */}
                   {hasConflict && (
                     <span
-                      className="flex items-center gap-0.5 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-black text-amber-800"
+                      className="flex items-center gap-0.5 rounded-full bg-amber-100 px-1.5 py-0.5 text-xs font-bold text-amber-800"
                       title="予定の重複・衝突あり"
                     >
                       <AlertTriangle size={11} className="text-amber-600" />
@@ -281,7 +288,7 @@ export function CalendarView({
                 </div>
 
                 {/* タスク一覧（子ども色分けバッジ付き） */}
-                <div className="mt-1 space-y-1">
+                <div className="mt-1.5 space-y-1">
                   {dayTasks.slice(0, 3).map((task) => {
                     const isWork = isWorkTask(task);
                     const theme = isWork ? WORK_THEME : getChildTheme(task.childName);
@@ -289,7 +296,7 @@ export function CalendarView({
                     return (
                       <div
                         key={task.id}
-                        className={`flex items-center gap-1 truncate rounded px-1.5 py-0.5 text-[11px] font-semibold ${theme.badgeBg} ${theme.badgeText} ${
+                        className={`flex items-center gap-1.5 truncate rounded px-1.5 py-0.5 text-xs font-medium ${theme.badgeBg} ${theme.badgeText} ${
                           task.status === "DONE" ? "line-through opacity-50" : ""
                         }`}
                         title={`${task.childName ? `[${task.childName}] ` : ""}${task.title}`}
@@ -300,7 +307,7 @@ export function CalendarView({
                     );
                   })}
                   {dayTasks.length > 3 && (
-                    <p className="text-[10px] font-bold text-ink/50 pl-1">
+                    <p className="text-xs font-semibold text-zinc-400 pl-1">
                       +{dayTasks.length - 3} 件
                     </p>
                   )}
@@ -313,64 +320,79 @@ export function CalendarView({
 
       {/* 選択した日の詳細パネル（展開時） */}
       {selectedDate && (
-        <section className="rounded-xl border border-moss/30 bg-mint/10 p-4 shadow-sm animate-in fade-in">
-          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-moss/20 pb-3">
+        <section className="rounded-lg border border-zinc-200 bg-zinc-50/50 p-4 shadow-2xs">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-200 pb-3">
             <div>
-              <p className="text-xs font-bold text-moss uppercase tracking-wider">選択した日</p>
-              <h3 className="text-lg font-black text-ink">{formatDateJa(selectedDate)}</h3>
+              <p className="text-xs font-bold uppercase tracking-wider text-zinc-500">選択した日</p>
+              <h3 className="text-base font-bold text-zinc-950">{formatDateJa(selectedDate)}</h3>
             </div>
             <div className="flex items-center gap-2">
-              <Link
-                href={`/tasks/new?date=${selectedDate}`}
-                className="button-primary text-xs py-1.5 px-3"
-              >
+              <Link href={`/tasks/new?date=${selectedDate}`} className="button-primary text-sm">
                 <Plus size={14} />
-                この日にTODOを追加
+                <span>この日にTODOを追加</span>
               </Link>
               <button
                 type="button"
                 onClick={() => handleDateClick(selectedDate)}
-                className="rounded-md border border-ink/15 bg-white px-2.5 py-1 text-xs font-bold text-ink/70 hover:bg-cloud"
+                className="button-secondary text-sm"
               >
                 閉じる
               </button>
             </div>
           </div>
 
+          {/* 衝突の警告 */}
+          {selectedDateConflicts.length > 0 && (
+            <div className="mt-3 rounded border border-amber-200 bg-amber-50/80 p-3 text-sm text-amber-950">
+              <div className="flex items-center gap-1.5 font-bold">
+                <AlertTriangle size={14} className="text-amber-600" />
+                <span>この日に重複・衝突が検出されています</span>
+              </div>
+              <ul className="mt-1.5 space-y-1 pl-5 list-disc text-xs text-amber-900">
+                {selectedDateConflicts.map((c, i) => (
+                  <li key={`${c.dateKey}-${i}`}>{c.summary}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* その日のタスクリスト */}
           <div className="mt-3">
             {selectedDateTasks.length === 0 ? (
-              <p className="py-4 text-center text-xs font-semibold text-ink/50">
-                この日のタスクはありません
+              <p className="py-4 text-center text-sm text-zinc-500">
+                この日の予定・TODOはありません
               </p>
             ) : (
-              <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3">
-                {selectedDateTasks.map((task) => {
-                  const isWork = isWorkTask(task);
-                  return (
-                    <Link
-                      key={task.id}
-                      href={`/tasks/${task.id}`}
-                      className="group block rounded-lg border border-ink/10 bg-white p-3 shadow-2xs transition hover:border-moss hover:shadow-xs"
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <ChildBadge name={task.childName} isWork={isWork} size="sm" />
-                        <span className="text-[11px] font-semibold text-ink/50">
-                          {task.assigneeName ? `担当: ${task.assigneeName}` : "担当未定"}
-                        </span>
-                      </div>
-                      <p
-                        className={`mt-2 font-bold text-ink group-hover:text-moss ${
-                          task.status === "DONE" ? "line-through opacity-50" : ""
+              <div className="divide-y divide-zinc-200 rounded border border-zinc-200 bg-white overflow-hidden shadow-2xs">
+                {selectedDateTasks.map((task) => (
+                  <div
+                    key={task.id}
+                    className="flex items-center justify-between gap-3 p-3 text-sm"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <ChildBadge name={task.childName} isWork={isWorkTask(task)} size="sm" />
+                      <Link
+                        href={`/tasks/${task.id}`}
+                        className={`font-semibold hover:text-emerald-700 transition truncate ${
+                          task.status === "DONE" ? "line-through text-zinc-400" : "text-zinc-900"
                         }`}
                       >
                         {task.title}
-                      </p>
-                      {task.description && (
-                        <p className="mt-1 line-clamp-1 text-xs text-ink/60">{task.description}</p>
-                      )}
-                    </Link>
-                  );
-                })}
+                      </Link>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-xs text-zinc-500">
+                        {task.assigneeName || "担当未定"}
+                      </span>
+                      <Link
+                        href={`/tasks/${task.id}`}
+                        className="button-secondary text-xs py-1 px-2"
+                      >
+                        詳細
+                      </Link>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>
