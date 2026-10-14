@@ -1,15 +1,15 @@
 "use client";
 
-import { ArrowUpRight } from "lucide-react";
-import Link from "next/link";
 import { useMemo } from "react";
 import type { TaskRecord } from "@/lib/types";
 
 type Props = {
   tasks: TaskRecord[];
+  /** team: 分担画面用（リンクなし） */
+  variant?: "inline" | "team";
 };
 
-export function FamilyTeamMeter({ tasks }: Props) {
+export function FamilyTeamMeter({ tasks, variant = "inline" }: Props) {
   const analysis = useMemo(() => {
     const todoTasks = tasks.filter((t) => t.status !== "DONE");
     const doneTasks = tasks.filter((t) => t.status === "DONE");
@@ -51,13 +51,17 @@ export function FamilyTeamMeter({ tasks }: Props) {
 
   if (tasks.length === 0 || analysis.totalTodo === 0) return null;
 
+  const borderClass =
+    variant === "team" ? "rounded-lg border border-zinc-200 bg-zinc-50/50 px-3.5" : "";
+
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-200/70 py-2.5 text-sm text-zinc-600">
-      {/* 担当者内訳プログレスバー（インライン） */}
+    <div
+      className={`flex flex-wrap items-center justify-between gap-3 py-2.5 text-sm text-zinc-600 ${borderClass} ${
+        variant === "inline" ? "border-b border-zinc-200/70" : ""
+      }`}
+    >
       <div className="flex items-center gap-3 min-w-0 flex-1">
-        <span className="font-mono text-xs uppercase tracking-wider text-zinc-400 shrink-0">
-          Workload
-        </span>
+        <span className="shrink-0 text-xs font-semibold text-zinc-500">担当の内訳</span>
 
         <div className="flex h-2.5 w-32 sm:w-48 overflow-hidden rounded-full bg-zinc-100 shrink-0">
           {analysis.members.map((m, idx) => {
@@ -103,14 +107,6 @@ export function FamilyTeamMeter({ tasks }: Props) {
           )}
         </div>
       </div>
-
-      <Link
-        href="/dashboard?view=assignee"
-        className="inline-flex items-center gap-1 text-xs font-medium text-zinc-500 hover:text-zinc-900 transition shrink-0"
-      >
-        <span>分担ボード</span>
-        <ArrowUpRight size={13} />
-      </Link>
     </div>
   );
 }

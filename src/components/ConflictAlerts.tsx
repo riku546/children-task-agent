@@ -36,10 +36,10 @@ export function ConflictAlerts({ conflicts }: Props) {
 
         <div className="flex items-center gap-2.5 shrink-0">
           <Link
-            href="/dashboard?view=assignee"
+            href="/team"
             className="text-xs font-semibold text-amber-800 hover:text-amber-950 transition"
           >
-            分担調整
+            分担へ
           </Link>
           <button
             type="button"

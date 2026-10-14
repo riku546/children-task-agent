@@ -14,6 +14,8 @@ import {
 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { type ChangeEvent, Suspense, useEffect, useMemo, useState } from "react";
+import { PageHeader } from "@/components/PageHeader";
+import { PageShell } from "@/components/PageShell";
 import { fetchJsonWithCache, getCachedData, invalidateCache } from "@/lib/client-cache";
 import type { ExtractionResult, GroupRecord, TodoCandidate } from "@/lib/types";
 
@@ -30,7 +32,7 @@ function NewTaskContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const queryDate = searchParams.get("date") || "";
-  const [mode, setMode] = useState<InputMode>("text");
+  const [mode, setMode] = useState<InputMode>("image");
   const cachedGroups = getCachedData<{ groups: GroupRecord[] }>("/api/groups");
   const [groups, setGroups] = useState<GroupRecord[]>(cachedGroups?.groups || []);
   const [groupId, setGroupId] = useState(cachedGroups?.groups?.[0]?.id || "");
@@ -237,50 +239,16 @@ function NewTaskContent() {
   }
 
   return (
-    <section className="mx-auto max-w-6xl px-4 pb-20 pt-6 sm:px-6 md:pb-12 md:pt-8">
-      {/* ページヘッダー（無駄なボーダー下線を排除） */}
-      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between pb-2">
-        <div>
-          <h1 className="text-xl font-bold tracking-tight text-zinc-950 sm:text-2xl">
-            お便り・連絡からTODO作成
-          </h1>
-          <p className="mt-1 text-sm text-zinc-600">
-            写真やPDFを取り込むとAIが持ち物や提出物を自動抽出します
-          </p>
-        </div>
-      </div>
+    <PageShell width="wide">
+      <PageHeader
+        title="取込"
+        description="お便りの写真やファイルから、家族共有のTODOを作成します"
+      />
 
-      {/* フラットなワークスペース（カードコンテナを完全撤廃し、ページ上に直接2カラム展開） */}
       <div className="mt-6 grid gap-8 lg:grid-cols-[320px_1fr] items-start">
-        {/* 左カラム: 入力ソース */}
         <div className="space-y-5">
           <div>
-            <span className="text-sm font-bold uppercase tracking-wider text-zinc-600">
-              1. ソースの選択・取り込み
-            </span>
-          </div>
-
-          {/* 入力モード切替タブ */}
-          <div className="grid grid-cols-4 gap-1 rounded bg-zinc-200/60 p-0.5">
-            {modes.map((item) => {
-              const Icon = item.icon;
-              const isActive = mode === item.id;
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  className={`flex items-center justify-center gap-1.5 rounded py-2 text-sm font-medium transition ${
-                    isActive
-                      ? "bg-white text-zinc-900 font-semibold shadow-2xs"
-                      : "text-zinc-600 hover:text-zinc-900"
-                  }`}
-                  onClick={() => setMode(item.id)}
-                >
-                  <Icon size={15} />
-                  <span>{item.label}</span>
-                </button>
-              );
-            })}
+            <span className="text-sm font-bold text-zinc-700">1. お便りを取り込む</span>
           </div>
 
           {/* グループ選択 */}
@@ -302,10 +270,9 @@ function NewTaskContent() {
             </select>
           </div>
 
-          {/* ファイル取込・音声入力ボタン群 */}
           <div className="grid gap-2">
-            <label className="button-secondary cursor-pointer justify-start">
-              <Camera size={14} className="text-zinc-500" />
+            <label className="button-primary cursor-pointer justify-start">
+              <Camera size={14} />
               <span>写真を撮影</span>
               <input
                 className="hidden"
@@ -320,19 +287,57 @@ function NewTaskContent() {
               <span>画像ファイルを選択</span>
               <input className="hidden" type="file" accept="image/*" onChange={handleImage} />
             </label>
-            <label className="button-secondary cursor-pointer justify-start">
-              <FileText size={14} className="text-zinc-500" />
-              <span>PDFを選択 (複数ページ対応)</span>
-              <input className="hidden" type="file" accept="application/pdf" onChange={handlePdf} />
-            </label>
-            <button type="button" className="button-secondary justify-start" onClick={startVoice}>
-              <Mic
-                size={14}
-                className={listening ? "text-rose-500 animate-pulse" : "text-zinc-500"}
-              />
-              <span>{listening ? "聞き取り中..." : "音声で入力"}</span>
-            </button>
           </div>
+
+          <details className="rounded-lg border border-zinc-200 bg-zinc-50/50 px-3 py-2">
+            <summary className="cursor-pointer text-sm font-semibold text-zinc-700">
+              別の入力方法（テキスト・PDF・音声）
+            </summary>
+            <div className="mt-3 space-y-3">
+              <div className="grid grid-cols-2 gap-1 rounded bg-zinc-200/60 p-0.5 sm:grid-cols-4">
+                {modes.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = mode === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      className={`flex items-center justify-center gap-1 rounded py-2 text-xs font-medium transition sm:text-sm ${
+                        isActive
+                          ? "bg-white font-semibold text-zinc-900 shadow-2xs"
+                          : "text-zinc-600 hover:text-zinc-900"
+                      }`}
+                      onClick={() => setMode(item.id)}
+                    >
+                      <Icon size={14} />
+                      <span>{item.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              <label className="button-secondary w-full cursor-pointer justify-start">
+                <FileText size={14} className="text-zinc-500" />
+                <span>PDFを選択</span>
+                <input
+                  className="hidden"
+                  type="file"
+                  accept="application/pdf"
+                  onChange={handlePdf}
+                />
+              </label>
+              <button
+                type="button"
+                className="button-secondary w-full justify-start"
+                onClick={startVoice}
+              >
+                <Mic
+                  size={14}
+                  className={listening ? "text-rose-500 animate-pulse" : "text-zinc-500"}
+                />
+                <span>{listening ? "聞き取り中..." : "音声で入力"}</span>
+              </button>
+            </div>
+          </details>
 
           {/* プレビューエリア（カードで囲まず画像と削除ボタンのみすっきり表示） */}
           {previewUrl ? (
@@ -555,7 +560,7 @@ function NewTaskContent() {
           )}
         </div>
       </div>
-    </section>
+    </PageShell>
   );
 }
 
@@ -590,10 +595,12 @@ export default function NewTaskPage() {
   return (
     <Suspense
       fallback={
-        <div className="mx-auto max-w-6xl px-4 py-16 text-center text-xs font-semibold text-zinc-500">
-          <Loader2 className="mx-auto animate-spin text-emerald-600" size={20} />
-          <p className="mt-2">読み込み中...</p>
-        </div>
+        <PageShell width="wide">
+          <div className="py-16 text-center text-xs font-semibold text-zinc-500">
+            <Loader2 className="mx-auto animate-spin text-emerald-600" size={20} />
+            <p className="mt-2">読み込み中...</p>
+          </div>
+        </PageShell>
       }
     >
       <NewTaskContent />

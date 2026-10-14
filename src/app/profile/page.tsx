@@ -131,7 +131,7 @@ export default function ProfilePage() {
           className="inline-flex items-center gap-1 text-xs font-semibold text-zinc-600 hover:text-zinc-950 transition"
         >
           <Undo2 size={13} />
-          ダッシュボードへ戻る
+          ホームへ戻る
         </Link>
         <h1 className="mt-2 text-xl font-bold tracking-tight text-zinc-950 sm:text-2xl">
           アカウント設定

@@ -74,7 +74,7 @@ export default function TaskDetailPage() {
             className="inline-flex items-center gap-1.5 text-sm font-semibold text-zinc-600 hover:text-zinc-950 transition"
           >
             <Undo2 size={14} />
-            タスク管理
+            ホーム
           </Link>
           <span className="text-zinc-300">/</span>
           <span className="font-mono text-xs text-zinc-500">{task.id.slice(0, 8)}</span>

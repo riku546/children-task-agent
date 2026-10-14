@@ -1,23 +1,25 @@
 "use client";
 
 import {
+  ArrowUpRight,
   Briefcase,
   CalendarDays,
   Camera,
   Layers,
   ListTodo,
-  Plus,
+  MoreHorizontal,
   RefreshCw,
-  Users
+  Type
 } from "lucide-react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
-import { AssigneeTaskColumns } from "@/components/AssigneeTaskColumns";
 import { CalendarView } from "@/components/CalendarView";
 import { ConflictAlerts } from "@/components/ConflictAlerts";
-import { FamilyTeamMeter } from "@/components/FamilyTeamMeter";
+import { PageHeader } from "@/components/PageHeader";
+import { PageShell } from "@/components/PageShell";
 import { QuickWorkScheduleModal } from "@/components/QuickWorkScheduleModal";
+import { SegmentedControl } from "@/components/SegmentedControl";
 import { SiblingTaskTimeline } from "@/components/SiblingTaskTimeline";
 import { TaskList } from "@/components/TaskList";
 import { fetchJsonWithCache, getCachedData, invalidateCache } from "@/lib/client-cache";
@@ -25,14 +27,30 @@ import { detectAllConflicts } from "@/lib/conflict-detector";
 import { isSameDate } from "@/lib/date";
 import type { GroupRecord, TaskRecord } from "@/lib/types";
 
-type ViewMode = "siblings" | "assignee" | "list" | "calendar";
+type ViewMode = "list" | "siblings" | "calendar";
+
+const homeSegments = [
+  { id: "list" as const, label: "期限", icon: ListTodo },
+  { id: "siblings" as const, label: "子ども", icon: Layers },
+  { id: "calendar" as const, label: "カレンダー", icon: CalendarDays }
+];
+
+function parseViewMode(raw: string | null): ViewMode {
+  if (raw === "siblings" || raw === "calendar" || raw === "list") {
+    return raw;
+  }
+  return "list";
+}
 
 function DashboardContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const initialViewParam = searchParams.get("view");
 
   const cachedTasks = getCachedData<{ tasks: TaskRecord[] }>("/api/tasks");
-  const cachedMe = getCachedData<any>("/api/me");
+  const cachedMe = getCachedData<{ user?: { id: string; name: string }; groups?: GroupRecord[] }>(
+    "/api/me"
+  );
 
   const [tasks, setTasks] = useState<TaskRecord[]>(cachedTasks?.tasks || []);
   const [currentUser, setCurrentUser] = useState<{ id: string; name: string } | null>(
@@ -42,17 +60,7 @@ function DashboardContent() {
   const [loading, setLoading] = useState(!cachedTasks);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
 
-  const [viewMode, setViewMode] = useState<ViewMode>(() => {
-    if (
-      initialViewParam === "assignee" ||
-      initialViewParam === "list" ||
-      initialViewParam === "calendar" ||
-      initialViewParam === "siblings"
-    ) {
-      return initialViewParam;
-    }
-    return "siblings";
-  });
+  const [viewMode, setViewMode] = useState<ViewMode>(() => parseViewMode(initialViewParam));
 
   const [calendarSelectedDate, setCalendarSelectedDate] = useState<string | null>(null);
   const [isWorkModalOpen, setIsWorkModalOpen] = useState(false);
@@ -60,7 +68,15 @@ function DashboardContent() {
 
   const currentGroupId = groups[0]?.id || "";
 
-  // URLクエリパラメータとタブ状態の同期
+  useEffect(() => {
+    const view = searchParams.get("view");
+    if (view === "assignee") {
+      router.replace("/team");
+      return;
+    }
+    setViewMode(parseViewMode(view));
+  }, [searchParams, router]);
+
   function handleViewChange(mode: ViewMode) {
     setViewMode(mode);
     if (typeof window !== "undefined") {
@@ -70,18 +86,12 @@ function DashboardContent() {
     }
   }
 
-  // URLパラメータが変わった場合に同期
-  useEffect(() => {
-    const view = searchParams.get("view");
-    if (view === "assignee" || view === "list" || view === "calendar" || view === "siblings") {
-      setViewMode(view);
-    }
-  }, [searchParams]);
-
   async function load(force = false) {
     if (!force) {
       const t = getCachedData<{ tasks: TaskRecord[] }>("/api/tasks");
-      const me = getCachedData<any>("/api/me");
+      const me = getCachedData<{ user?: { id: string; name: string }; groups?: GroupRecord[] }>(
+        "/api/me"
+      );
       if (t && me) {
         setTasks(t.tasks || []);
         setCurrentUser(me.user || null);
@@ -95,7 +105,10 @@ function DashboardContent() {
     try {
       const [tasksData, meData] = await Promise.all([
         fetchJsonWithCache<{ tasks: TaskRecord[] }>("/api/tasks", { force }),
-        fetchJsonWithCache<any>("/api/me", { force })
+        fetchJsonWithCache<{ user?: { id: string; name: string }; groups?: GroupRecord[] }>(
+          "/api/me",
+          { force }
+        )
       ]);
       setTasks(tasksData.tasks || []);
       setCurrentUser(meData.user || null);
@@ -111,12 +124,8 @@ function DashboardContent() {
     load();
   }, []);
 
-  // 重複・衝突の自動解析
-  const conflicts = useMemo(() => {
-    return detectAllConflicts(tasks);
-  }, [tasks]);
+  const conflicts = useMemo(() => detectAllConflicts(tasks), [tasks]);
 
-  // 「私がやる」ボタン処理
   async function assignToMe(taskId: string) {
     if (!currentUser) return;
     setActionLoadingId(taskId);
@@ -152,7 +161,6 @@ function DashboardContent() {
     }
   }
 
-  // ステータストグル処理
   async function toggleStatus(task: TaskRecord) {
     setActionLoadingId(task.id);
     const newStatus = task.status === "DONE" ? "TODO" : "DONE";
@@ -173,13 +181,10 @@ function DashboardContent() {
     }
   }
 
-  // 「ありがとう」リアクション処理
   function handleThankYou(task: TaskRecord) {
     const assignee = task.assigneeName || "パートナー";
     setThankYouMessage(`❤️ ${assignee} さんに「ありがとう！」を伝えました`);
-    setTimeout(() => {
-      setThankYouMessage(null);
-    }, 3000);
+    setTimeout(() => setThankYouMessage(null), 3000);
   }
 
   const todayTasks = useMemo(
@@ -202,59 +207,140 @@ function DashboardContent() {
   const doneTasks = useMemo(() => tasks.filter((task) => task.status === "DONE"), [tasks]);
   const doneCount = doneTasks.length;
 
-  return (
-    <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 md:py-8">
-      {/* ページヘッダー */}
-      <div className="flex flex-col justify-between gap-4 border-b border-zinc-200 pb-4 md:flex-row md:items-center">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <h1 className="text-xl font-bold tracking-tight text-zinc-950 sm:text-2xl">
-              タスク管理
-            </h1>
-            <span className="rounded bg-zinc-100 px-2 py-0.5 font-mono text-xs font-semibold text-zinc-700">
-              未完了 {openTasks.length}件
-            </span>
+  const listSections = (
+    <div className="space-y-6">
+      <div>
+        <div className="flex items-center justify-between border-b border-zinc-200 pb-2 text-sm font-bold text-zinc-900">
+          <div className="flex items-center gap-2">
+            <span>今日のTODO</span>
+            <span className="font-mono text-xs text-zinc-400">({todayTasks.length})</span>
           </div>
-          <p className="mt-1 text-sm text-zinc-600">
-            お便りから抽出されたタスクと提出期限・分担の一元管理
-          </p>
         </div>
-
-        {/* コマンドバー・ボタングループ */}
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            className="button-icon"
-            onClick={() => load(true)}
-            title="最新情報に更新"
-            disabled={loading}
-          >
-            <RefreshCw size={15} className={loading ? "animate-spin" : ""} />
-          </button>
-
-          <Link href="/tasks/new" className="button-primary">
-            <Camera size={15} />
-            <span>お便りをスキャン</span>
-          </Link>
-
-          <button
-            type="button"
-            onClick={() => setIsWorkModalOpen(true)}
-            className="button-secondary"
-            title="残業や出張など、仕事の予定を追加して衝突を検知"
-          >
-            <Briefcase size={15} />
-            <span>仕事の予定</span>
-          </button>
-
-          <Link href="/tasks/new" className="button-secondary">
-            <Plus size={15} />
-            <span>新規タスク</span>
-          </Link>
-        </div>
+        <TaskList
+          tasks={todayTasks}
+          emptyText="今日のTODOはありません"
+          currentUserId={currentUser?.id}
+          onAssignToMe={assignToMe}
+          onToggleStatus={toggleStatus}
+          actionLoadingId={actionLoadingId}
+          onThankYou={handleThankYou}
+        />
       </div>
 
-      {/* 1. 予定の重複・衝突アラート */}
+      {tomorrowTasks.length > 0 && (
+        <div>
+          <div className="flex items-center justify-between border-b border-zinc-200 pb-2 text-sm font-bold text-zinc-900">
+            <div className="flex items-center gap-2">
+              <span>明日のTODO</span>
+              <span className="font-mono text-xs text-zinc-400">({tomorrowTasks.length})</span>
+            </div>
+          </div>
+          <TaskList
+            tasks={tomorrowTasks}
+            emptyText="明日のTODOはありません"
+            currentUserId={currentUser?.id}
+            onAssignToMe={assignToMe}
+            onToggleStatus={toggleStatus}
+            actionLoadingId={actionLoadingId}
+            onThankYou={handleThankYou}
+          />
+        </div>
+      )}
+
+      <div>
+        <div className="flex items-center justify-between border-b border-zinc-200 pb-2 text-sm font-bold text-zinc-900">
+          <div className="flex items-center gap-2">
+            <span>今後のTODO</span>
+            <span className="font-mono text-xs text-zinc-400">({upcomingTasks.length})</span>
+          </div>
+        </div>
+        <TaskList
+          tasks={upcomingTasks}
+          emptyText="今後予定されているTODOはありません"
+          currentUserId={currentUser?.id}
+          onAssignToMe={assignToMe}
+          onToggleStatus={toggleStatus}
+          actionLoadingId={actionLoadingId}
+          onThankYou={handleThankYou}
+        />
+      </div>
+
+      {doneTasks.length > 0 && (
+        <div className="pt-4">
+          <div className="flex items-center justify-between border-b border-zinc-200 pb-2 text-sm font-bold text-zinc-400">
+            <div className="flex items-center gap-2">
+              <span>完了済み</span>
+              <span className="font-mono text-xs">({doneCount})</span>
+            </div>
+          </div>
+          <TaskList
+            tasks={doneTasks}
+            emptyText=""
+            currentUserId={currentUser?.id}
+            onAssignToMe={assignToMe}
+            onToggleStatus={toggleStatus}
+            actionLoadingId={actionLoadingId}
+          />
+        </div>
+      )}
+    </div>
+  );
+
+  return (
+    <PageShell>
+      <PageHeader
+        title="ホーム"
+        description="今日やることと提出期限を確認します"
+        badge={
+          <span className="rounded bg-zinc-100 px-2 py-0.5 font-mono text-xs font-semibold text-zinc-700">
+            未完了 {openTasks.length}件
+          </span>
+        }
+        actions={
+          <>
+            <Link href="/tasks/new" className="button-primary">
+              <Camera size={15} />
+              <span>お便りを取込</span>
+            </Link>
+            <details className="relative group">
+              <summary className="button-icon cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+                <MoreHorizontal size={15} />
+              </summary>
+              <div className="absolute right-0 z-20 mt-1 min-w-[11rem] rounded-lg border border-zinc-200 bg-white py-1 shadow-lg">
+                <button
+                  type="button"
+                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-50"
+                  onClick={() => load(true)}
+                  disabled={loading}
+                >
+                  <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
+                  最新に更新
+                </button>
+                <button
+                  type="button"
+                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-50"
+                  onClick={() => setIsWorkModalOpen(true)}
+                >
+                  <Briefcase size={14} />
+                  仕事の予定
+                </button>
+                <Link
+                  href="/tasks/new"
+                  className="flex w-full items-center gap-2 px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-50"
+                  onClick={(e) => {
+                    const details = e.currentTarget.closest("details") as HTMLDetailsElement | null;
+                    if (details) details.open = false;
+                  }}
+                >
+                  <Type size={14} />
+                  手動でタスク追加
+                </Link>
+              </div>
+            </details>
+          </>
+        }
+      />
+
       <ConflictAlerts
         conflicts={conflicts}
         onSelectDate={(dateKey) => {
@@ -263,68 +349,19 @@ function DashboardContent() {
         }}
       />
 
-      {/* 2. ワークロード分析ストリップ */}
-      <FamilyTeamMeter tasks={tasks} />
+      <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <SegmentedControl value={viewMode} onChange={handleViewChange} segments={homeSegments} />
+        <Link
+          href="/team"
+          className="inline-flex items-center gap-1 text-sm font-semibold text-zinc-600 hover:text-zinc-950 transition shrink-0"
+        >
+          <span>分担ボード</span>
+          <ArrowUpRight size={14} />
+        </Link>
+      </div>
 
-      {/* 3. ツールバー（表示切り替えタブ ＋ ステータスカウント） */}
-      <div className="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-1">
-        {/* セグメントコントロール（4つの表示切り替え） */}
-        <div className="flex items-center rounded-lg border border-zinc-200 bg-zinc-100/80 p-0.5">
-          <button
-            type="button"
-            onClick={() => handleViewChange("siblings")}
-            className={`flex items-center gap-1.5 rounded-md px-3.5 py-1.5 text-sm font-semibold transition ${
-              viewMode === "siblings"
-                ? "bg-white text-zinc-950 shadow-2xs"
-                : "text-zinc-600 hover:text-zinc-900"
-            }`}
-          >
-            <Layers size={15} />
-            <span>きょうだい別</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => handleViewChange("assignee")}
-            className={`flex items-center gap-1.5 rounded-md px-3.5 py-1.5 text-sm font-semibold transition ${
-              viewMode === "assignee"
-                ? "bg-white text-zinc-950 shadow-2xs"
-                : "text-zinc-600 hover:text-zinc-900"
-            }`}
-          >
-            <Users size={15} />
-            <span>担当者別</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => handleViewChange("list")}
-            className={`flex items-center gap-1.5 rounded-md px-3.5 py-1.5 text-sm font-semibold transition ${
-              viewMode === "list"
-                ? "bg-white text-zinc-950 shadow-2xs"
-                : "text-zinc-600 hover:text-zinc-900"
-            }`}
-          >
-            <ListTodo size={15} />
-            <span>期限別</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => handleViewChange("calendar")}
-            className={`flex items-center gap-1.5 rounded-md px-3.5 py-1.5 text-sm font-semibold transition ${
-              viewMode === "calendar"
-                ? "bg-white text-zinc-950 shadow-2xs"
-                : "text-zinc-600 hover:text-zinc-900"
-            }`}
-          >
-            <CalendarDays size={15} />
-            <span>カレンダー</span>
-          </button>
-        </div>
-
-        {/* サマリーカウンター */}
-        <div className="flex items-center gap-4 text-sm font-mono text-zinc-600">
+      {viewMode === "list" && (
+        <div className="mt-2 flex items-center gap-4 text-sm font-mono text-zinc-600">
           <span>
             今日: <strong className="text-zinc-950">{todayTasks.length}</strong>
           </span>
@@ -335,9 +372,8 @@ function DashboardContent() {
             完了: <strong className="text-zinc-950">{doneCount}</strong>
           </span>
         </div>
-      </div>
+      )}
 
-      {/* 4. メインビューコンテンツ */}
       <div className="mt-4">
         {viewMode === "calendar" ? (
           <CalendarView
@@ -346,16 +382,7 @@ function DashboardContent() {
             selectedDate={calendarSelectedDate}
             onSelectDate={setCalendarSelectedDate}
           />
-        ) : viewMode === "assignee" ? (
-          /* 担当者別（チーム分担）ボード */
-          <AssigneeTaskColumns
-            tasks={tasks}
-            currentGroup={groups[0]}
-            currentUserId={currentUser?.id}
-            onRefresh={() => load(true)}
-          />
         ) : viewMode === "siblings" ? (
-          /* きょうだい別グルーピングテーブル */
           <SiblingTaskTimeline
             tasks={tasks}
             group={groups[0]}
@@ -367,93 +394,10 @@ function DashboardContent() {
             onChildAdded={() => load(true)}
           />
         ) : (
-          /* 期限別フラットテーブル */
-          <div className="space-y-6">
-            {/* 今日 */}
-            <div>
-              <div className="flex items-center justify-between border-b border-zinc-200 pb-2 text-sm font-bold text-zinc-900">
-                <div className="flex items-center gap-2">
-                  <span>今日のTODO</span>
-                  <span className="font-mono text-xs text-zinc-400">({todayTasks.length})</span>
-                </div>
-              </div>
-              <TaskList
-                tasks={todayTasks}
-                emptyText="今日のTODOはありません"
-                currentUserId={currentUser?.id}
-                onAssignToMe={assignToMe}
-                onToggleStatus={toggleStatus}
-                actionLoadingId={actionLoadingId}
-                onThankYou={handleThankYou}
-              />
-            </div>
-
-            {/* 明日 */}
-            {tomorrowTasks.length > 0 && (
-              <div>
-                <div className="flex items-center justify-between border-b border-zinc-200 pb-2 text-sm font-bold text-zinc-900">
-                  <div className="flex items-center gap-2">
-                    <span>明日のTODO</span>
-                    <span className="font-mono text-xs text-zinc-400">
-                      ({tomorrowTasks.length})
-                    </span>
-                  </div>
-                </div>
-                <TaskList
-                  tasks={tomorrowTasks}
-                  emptyText="明日のTODOはありません"
-                  currentUserId={currentUser?.id}
-                  onAssignToMe={assignToMe}
-                  onToggleStatus={toggleStatus}
-                  actionLoadingId={actionLoadingId}
-                  onThankYou={handleThankYou}
-                />
-              </div>
-            )}
-
-            {/* 今後 */}
-            <div>
-              <div className="flex items-center justify-between border-b border-zinc-200 pb-2 text-sm font-bold text-zinc-900">
-                <div className="flex items-center gap-2">
-                  <span>今後のTODO</span>
-                  <span className="font-mono text-xs text-zinc-400">({upcomingTasks.length})</span>
-                </div>
-              </div>
-              <TaskList
-                tasks={upcomingTasks}
-                emptyText="今後予定されているTODOはありません"
-                currentUserId={currentUser?.id}
-                onAssignToMe={assignToMe}
-                onToggleStatus={toggleStatus}
-                actionLoadingId={actionLoadingId}
-                onThankYou={handleThankYou}
-              />
-            </div>
-
-            {/* 完了済み */}
-            {doneTasks.length > 0 && (
-              <div className="pt-4">
-                <div className="flex items-center justify-between border-b border-zinc-200 pb-2 text-sm font-bold text-zinc-400">
-                  <div className="flex items-center gap-2">
-                    <span>完了済み</span>
-                    <span className="font-mono text-xs">({doneCount})</span>
-                  </div>
-                </div>
-                <TaskList
-                  tasks={doneTasks}
-                  emptyText=""
-                  currentUserId={currentUser?.id}
-                  onAssignToMe={assignToMe}
-                  onToggleStatus={toggleStatus}
-                  actionLoadingId={actionLoadingId}
-                />
-              </div>
-            )}
-          </div>
+          listSections
         )}
       </div>
 
-      {/* 仕事予定モーダル */}
       <QuickWorkScheduleModal
         isOpen={isWorkModalOpen}
         onClose={() => setIsWorkModalOpen(false)}
@@ -461,13 +405,12 @@ function DashboardContent() {
         onSuccess={() => load(true)}
       />
 
-      {/* トースト通知 */}
       {thankYouMessage && (
-        <div className="fixed bottom-6 right-6 z-50 rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white shadow-soft animate-in fade-in slide-in-from-bottom-2">
+        <div className="fixed bottom-20 right-4 z-50 rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white shadow-soft md:bottom-6 md:right-6">
           {thankYouMessage}
         </div>
       )}
-    </div>
+    </PageShell>
   );
 }
 
@@ -475,9 +418,9 @@ export default function DashboardPage() {
   return (
     <Suspense
       fallback={
-        <div className="mx-auto max-w-5xl px-4 py-16 text-center text-sm text-zinc-400">
-          読み込み中...
-        </div>
+        <PageShell>
+          <p className="py-16 text-center text-sm text-zinc-400">読み込み中...</p>
+        </PageShell>
       }
     >
       <DashboardContent />

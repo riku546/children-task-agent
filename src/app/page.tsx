@@ -98,7 +98,7 @@ export default function HomePage() {
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             {isLoggedIn ? (
               <Link href="/dashboard" className="button-primary min-h-10 px-5 text-xs sm:w-auto">
-                <span>ダッシュボードを開く</span>
+                <span>ホームを開く</span>
                 <ArrowRight size={14} />
               </Link>
             ) : (
@@ -254,7 +254,7 @@ export default function HomePage() {
           </div>
           <div className="flex items-center gap-6">
             <Link href="/dashboard" className="hover:text-zinc-900 transition">
-              ダッシュボード
+              ホーム
             </Link>
             <Link href="/login" className="hover:text-zinc-900 transition">
               ログイン

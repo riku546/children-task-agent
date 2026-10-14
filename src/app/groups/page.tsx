@@ -3,6 +3,8 @@
 import { Plus, Settings, Users } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { PageHeader } from "@/components/PageHeader";
+import { PageShell } from "@/components/PageShell";
 import { fetchJsonWithCache, getCachedData, invalidateCache } from "@/lib/client-cache";
 import type { GroupRecord } from "@/lib/types";
 
@@ -44,14 +46,8 @@ export default function GroupsPage() {
   }, []);
 
   return (
-    <section className="mx-auto max-w-5xl px-4 pb-20 pt-6 sm:px-6 md:pb-12 md:pt-8">
-      {/* ページヘッダー */}
-      <div className="pb-2">
-        <h1 className="text-xl font-bold tracking-tight text-zinc-950 sm:text-2xl">
-          家族グループ管理
-        </h1>
-        <p className="mt-1 text-sm text-zinc-600">タスクを共有する家族グループを作成・管理します</p>
-      </div>
+    <PageShell>
+      <PageHeader title="家族" description="グループ・メンバー・お子さんの登録と招待を管理します" />
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[320px_1fr]">
         {/* グループ作成サイドパネル */}
@@ -122,6 +118,6 @@ export default function GroupsPage() {
           </div>
         </div>
       </div>
-    </section>
+    </PageShell>
   );
 }
