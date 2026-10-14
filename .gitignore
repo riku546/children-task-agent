@@ -8,3 +8,6 @@ coverage
 .DS_Store
 next-env.d.ts
 *.tsbuildinfo
+
+# Cursor: ローカルの Agent 承認・サンドボックス設定（リポジトリには含めない）
+.cursor/

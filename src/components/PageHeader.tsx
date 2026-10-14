@@ -9,7 +9,7 @@ type Props = {
 
 export function PageHeader({ title, description, badge, actions }: Props) {
   return (
-    <div className="flex flex-col justify-between gap-4 border-b border-zinc-200 pb-4 md:flex-row md:items-center">
+    <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
       <div>
         <div className="flex flex-wrap items-center gap-2.5">
           <h1 className="text-xl font-bold tracking-tight text-zinc-950 sm:text-2xl">{title}</h1>
