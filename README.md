@@ -39,6 +39,35 @@ Googleログインを使う場合は、Supabase Dashboard の Authentication Pro
 http://localhost:3000/auth/callback
 ```
 
+## CI（GitHub Actions）
+
+`main` / `master` への PR、および `feature/**` への push で、GitHub Actions の **CI** ワークフローが走ります。
+
+| ステップ | コマンド | 内容 |
+| :--- | :--- | :--- |
+| Prisma | `npm run prisma:generate` | クライアント生成 |
+| Lint / Format | `npm run lint` | Biome |
+| 型チェック | `npm run typecheck` | `tsc --noEmit` |
+| ビルド | `npm run build` | Next.js 本番ビルド（DB 不要） |
+
+ローカルで同じ内容をまとめて実行する場合:
+
+```bash
+npm run ci
+```
+
+設定ファイル: [`.github/workflows/ci.yml`](.github/workflows/ci.yml)
+
+### Vercel デプロイを CI 通過後に限定する
+
+Vercel は push 直後にビルドを始めるため、**Git のコミットチェック**で CI 成功を待つ設定を推奨します。
+
+1. **Vercel** → 対象プロジェクト → **Settings** → **Git** → **Deploy Hooks / Git Commit Checks**（表示名はプランで多少異なります）
+2. 必須チェックに **`Lint, Typecheck & Build`**（ワークフロー `CI` のジョブ名）を追加
+3. **GitHub** → リポジトリ **Settings** → **Branches** → `main` のブランチ保護ルールで、同じステータスチェックを必須にするとマージも CI 後に限定できます
+
+プレビュー／本番どちらのデプロイも、指定したチェックが green になるまで Vercel は進めません。
+
 ## 画面
 
 - `/login`: メールアドレス/パスワードログイン、新規登録、Googleログイン
