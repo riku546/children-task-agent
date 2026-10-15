@@ -114,3 +114,14 @@ npm run prisma:push       # スキーマをDBへ反映
 
 ### ③ モバイルファーストUI
 - ユーザーはスマホでお便りを撮影して操作することが多いため、レスポンシブデザイン（タッチターゲットの広さ、ボトムナビゲーション対応）を常に意識してください。
+
+---
+
+## 6. Cursor Cloud 固有の手順
+
+Cloud Agent では Docker を使わず、PostgreSQL 16 を Ubuntu のパッケージで動かします。この VM の `policy-rc.d` は `service postgresql start` を拒否するため、クラスタの起動は `pg_ctlcluster` です。
+
+- 接続先は `.env.example` と同じ `postgresql://childcare:childcare@localhost:5432/childcare_task_agent` です。`.env` が無いときは `.env.example` をコピーします。
+- `OPENROUTER_API_KEY` が空のときは、ルールベースの TODO 抽出にフォールバックします。Supabase の URL と publishable key は `.env.example` にあります。
+- 起動スクリプトは PostgreSQL を上げ、`npx prisma db push --skip-generate` のあと、ポート 3000 が空いていれば `npm run dev -- --hostname 0.0.0.0 --port 3000` を前面で実行します。すでに 3000 番が応答している場合は再起動しません。
+- 検証コマンドは `npm run lint`、`npm run typecheck`、`npm run build` です。ベースイメージの Node.js 22 で通ります。CI は Node.js 20 を使います。
