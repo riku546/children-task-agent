@@ -26,6 +26,7 @@
     "lucide-react": "latest",
     "next": "latest",
     "pdfjs-dist": "latest",
+    "qrcode": "^1.5.4",
     "react": "latest",
     "react-dom": "latest",
     "zod": "latest"
@@ -33,6 +34,7 @@
   "devDependencies": {
     "@biomejs/biome": "2.5.15",
     "@types/node": "latest",
+    "@types/qrcode": "^1.5.6",
     "@types/react": "latest",
     "@types/react-dom": "latest",
     "autoprefixer": "latest",

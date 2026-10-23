@@ -100,7 +100,7 @@ model Task {
   updatedAt        DateTime      @updatedAt
   group            FamilyGroup   @relation(fields: [groupId], references: [id])
   child            Child?        @relation(fields: [childId], references: [id])
-  assignee         FamilyMember? @relation(fields: [assigneeMemberId], references: [id])
+  assignee         FamilyMember? @relation(fields: [assigneeMemberId], references: [id], onDelete: SetNull)
 }
 
 model AiExtraction {
