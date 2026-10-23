@@ -1,8 +1,10 @@
 import { Layers } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
 import { BottomNav } from "@/components/BottomNav";
 import { HeaderNav } from "@/components/HeaderNav";
+import { OnboardingGate } from "@/components/OnboardingGate";
 import { UserNav } from "@/components/UserNav";
 import "./globals.css";
 
@@ -41,7 +43,13 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             </div>
           </header>
 
-          <main>{children}</main>
+          <main>
+            <Suspense
+              fallback={<p className="py-16 text-center text-sm text-zinc-400">読み込み中...</p>}
+            >
+              <OnboardingGate>{children}</OnboardingGate>
+            </Suspense>
+          </main>
           <BottomNav />
         </div>
       </body>

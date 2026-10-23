@@ -7,7 +7,7 @@ import { appNavItems, isNavItemActive } from "@/lib/nav-items";
 export function BottomNav() {
   const pathname = usePathname();
 
-  if (pathname === "/" || pathname === "/login") {
+  if (pathname === "/" || pathname === "/login" || pathname === "/onboarding") {
     return null;
   }
 
