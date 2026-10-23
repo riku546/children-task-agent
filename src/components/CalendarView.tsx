@@ -1,9 +1,10 @@
 "use client";
 
-import { AlertTriangle, Briefcase, ChevronLeft, ChevronRight, Filter, Plus } from "lucide-react";
+import { AlertTriangle, Briefcase, ChevronLeft, ChevronRight, Filter } from "lucide-react";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ChildBadge } from "@/components/ChildBadge";
+import { QuickDueTaskForm } from "@/components/QuickDueTaskForm";
 import { getChildTheme, WORK_THEME } from "@/lib/child-theme";
 import { type ConflictAnalysisResult, isWorkTask } from "@/lib/conflict-detector";
 import { formatDateJa, toDateInputValue } from "@/lib/date";
@@ -14,13 +15,19 @@ type Props = {
   conflicts: ConflictAnalysisResult;
   selectedDate?: string | null;
   onSelectDate?: (dateKey: string | null) => void;
+  groupId?: string;
+  children?: { id: string; name: string }[];
+  onTaskCreated?: (task: TaskRecord) => void;
 };
 
 export function CalendarView({
   tasks,
   conflicts,
   selectedDate: controlledSelectedDate,
-  onSelectDate
+  onSelectDate,
+  groupId = "",
+  children = [],
+  onTaskCreated
 }: Props) {
   const [currentMonthDate, setCurrentMonthDate] = useState(() => {
     const now = new Date();
@@ -28,6 +35,7 @@ export function CalendarView({
   });
   const [internalSelectedDate, setInternalSelectedDate] = useState<string | null>(null);
   const [selectedChild, setSelectedChild] = useState<string>("all");
+  const detailRef = useRef<HTMLElement>(null);
 
   const selectedDate =
     controlledSelectedDate !== undefined ? controlledSelectedDate : internalSelectedDate;
@@ -136,6 +144,11 @@ export function CalendarView({
         ...conflicts.workConflicts.filter((c) => c.dateKey === selectedDate)
       ]
     : [];
+
+  useEffect(() => {
+    if (!selectedDate) return;
+    detailRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }, [selectedDate]);
 
   const year = currentMonthDate.getFullYear();
   const month = currentMonthDate.getMonth() + 1;
@@ -253,6 +266,7 @@ export function CalendarView({
                 type="button"
                 key={day.dateKey}
                 onClick={() => handleDateClick(day.dateKey)}
+                aria-label={`${day.date.getMonth() + 1}月${day.date.getDate()}日のTODOを追加`}
                 className={`group relative min-h-[100px] p-2 transition text-left cursor-pointer md:min-h-[116px] ${
                   !day.isCurrentMonth
                     ? "bg-zinc-50/40 text-zinc-300"
@@ -320,26 +334,40 @@ export function CalendarView({
 
       {/* 選択した日の詳細パネル（展開時） */}
       {selectedDate && (
-        <section className="rounded-lg border border-zinc-200 bg-zinc-50/50 p-4 shadow-2xs">
+        <section
+          ref={detailRef}
+          className="scroll-mt-24 rounded-lg border border-zinc-200 bg-zinc-50/50 p-4 shadow-2xs"
+        >
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-200 pb-3">
             <div>
               <p className="text-xs font-bold uppercase tracking-wider text-zinc-500">選択した日</p>
               <h3 className="text-base font-bold text-zinc-950">{formatDateJa(selectedDate)}</h3>
             </div>
             <div className="flex items-center gap-2">
-              <Link href={`/tasks/new?date=${selectedDate}`} className="button-primary text-sm">
-                <Plus size={14} />
-                <span>この日にTODOを追加</span>
+              <Link
+                href={`/tasks/new?date=${selectedDate}`}
+                className="text-sm font-semibold text-zinc-600 underline-offset-2 hover:text-zinc-950 hover:underline"
+              >
+                お便りから取り込む
               </Link>
               <button
                 type="button"
                 onClick={() => handleDateClick(selectedDate)}
-                className="button-secondary text-sm"
+                className="button-secondary min-h-11 text-sm"
               >
                 閉じる
               </button>
             </div>
           </div>
+
+          {onTaskCreated ? (
+            <QuickDueTaskForm
+              date={selectedDate}
+              groupId={groupId}
+              children={children}
+              onCreated={onTaskCreated}
+            />
+          ) : null}
 
           {/* 衝突の警告 */}
           {selectedDateConflicts.length > 0 && (

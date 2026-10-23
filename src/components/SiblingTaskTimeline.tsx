@@ -11,6 +11,7 @@ type Props = {
   tasks: TaskRecord[];
   group?: GroupRecord | null;
   currentUserId?: string | null;
+  myMemberIds?: string[];
   onAssignToMe?: (taskId: string) => Promise<void> | void;
   onToggleStatus?: (task: TaskRecord) => Promise<void> | void;
   actionLoadingId?: string | null;
@@ -22,6 +23,7 @@ export function SiblingTaskTimeline({
   tasks,
   group,
   currentUserId,
+  myMemberIds,
   onAssignToMe,
   onToggleStatus,
   actionLoadingId,
@@ -238,6 +240,7 @@ export function SiblingTaskTimeline({
                   tasks={childTasks}
                   emptyText="直近の未完了タスクはありません"
                   currentUserId={currentUserId}
+                  myMemberIds={myMemberIds}
                   onAssignToMe={onAssignToMe}
                   onToggleStatus={onToggleStatus}
                   actionLoadingId={actionLoadingId}
