@@ -26,6 +26,18 @@ npm run dev
 
 外部サービスは後から設定できます。`OPENROUTER_API_KEY` が未設定の場合は、簡易ルールベースのTODO生成にフォールバックします。Google Calendar の環境変数が未設定の場合は、デモ用のイベントIDを保存します。
 
+TODO抽出のモデルは入力で切り替わります。手入力や音声などのテキストだけは `OPENROUTER_TEXT_MODEL`（未設定なら `OPENROUTER_MODEL`、それも無ければ `openai/gpt-4.1-mini`）を使います。画像またはPDFなどのファイルが付くときは `OPENROUTER_VISION_MODEL`（未設定なら `openai/gpt-4.1`）を使います。
+
+`openai/gpt-4.1` をファイル付きの既定にしたのは、いまのテキスト用 `openai/gpt-4.1-mini` と同じ OpenRouter の OpenAI 系で、画像入力と JSON 出力に対応する上位モデルだからです。mini よりお便りや画面写真の読み取りに強く、別プロバイダへ切り替えて既存の指定や ZDR の通し方を変えずに済みます。OpenRouter へのリクエストは従来どおり Zero Data Retention（`provider.data_collection: "deny"` と `provider.zdr: true`）です。
+
+スキーマを更新したあとは、データベースに次を反映してください。
+
+```bash
+npx prisma db push
+```
+
+`User.onboardingCompletedAt` は、初回案内を完了またはスキップした時刻です。
+
 ログインには Supabase Auth を使います。Supabase プロジェクトの URL と publishable key を `.env` に設定してください。
 
 ```bash
@@ -42,7 +54,8 @@ http://localhost:3000/auth/callback
 ## 画面
 
 - `/login`: メールアドレス/パスワードログイン、新規登録、Googleログイン
-- `/dashboard`: 今日・明日・未完了TODO
+- `/onboarding`: 初回ログイン時の案内（グループ → 子ども → 読み取り → TODO）。スキップできます
+- `/dashboard`: 今日・明日・未完了TODO。カレンダーの日付からは、その日が期限のTODOをその場で追加できます
 - `/tasks/new`: テキスト、画像OCR、PDF抽出/OCR、音声入力、AI TODO候補確認
 - `/tasks/[id]`: TODO詳細、編集、完了、Googleカレンダー追加
 - `/groups`: 家族グループ作成

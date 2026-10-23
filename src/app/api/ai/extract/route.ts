@@ -16,7 +16,8 @@ export async function POST(request: Request) {
   const body = extractSchema.parse(await request.json());
   const result = await extractWithOpenRouter({
     text: body.confirmedText,
-    imageUrl: body.imageUrl
+    imageUrl: body.imageUrl,
+    inputType: body.inputType
   });
   const savedText = result.extractedText || body.confirmedText || result.summary;
   await saveExtraction(user, {
