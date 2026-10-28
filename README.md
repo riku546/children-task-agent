@@ -26,7 +26,7 @@ npm run dev
 
 外部サービスは後から設定できます。`OPENROUTER_API_KEY` が未設定の場合は、簡易ルールベースのTODO生成にフォールバックします。Google Calendar の環境変数が未設定の場合は、デモ用のイベントIDを保存します。
 
-TODO抽出は、テキストでも画像・PDFでも `openai/gpt-5.6-luna` を使います。変えるときはテキストを `OPENROUTER_TEXT_MODEL`、画像やファイルを `OPENROUTER_VISION_MODEL` に設定します。どちらも未設定なら `openai/gpt-5.6-luna` です。OpenRouter へのリクエストは従来どおり Zero Data Retention（`provider.data_collection: "deny"` と `provider.zdr: true`）です。
+TODO抽出は、テキストでも画像・PDFでも `OPENROUTER_MODEL` のモデルを使います。未設定なら `openai/gpt-5.6-luna` です。OpenRouter へのリクエストは従来どおり Zero Data Retention（`provider.data_collection: "deny"` と `provider.zdr: true`）です。
 
 スキーマを更新したあとは、データベースに次を反映してください。
 
