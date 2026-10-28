@@ -31,15 +31,15 @@ describe("selectExtractionModel", () => {
     );
   });
 
-  it("falls back to the legacy text env and the built-in defaults", () => {
+  it("uses gpt-5.6-luna for text and images when the env vars are unset", () => {
+    assert.equal(DEFAULT_TEXT_EXTRACTION_MODEL, "openai/gpt-5.6-luna");
+    assert.equal(DEFAULT_VISION_EXTRACTION_MODEL, "openai/gpt-5.6-luna");
     assert.equal(
       selectExtractionModel({ inputType: "text" }, { OPENROUTER_MODEL: "openai/gpt-4.1-mini" }),
-      "openai/gpt-4.1-mini"
+      "openai/gpt-5.6-luna"
     );
-    assert.equal(selectExtractionModel({ inputType: "text" }, {}), DEFAULT_TEXT_EXTRACTION_MODEL);
-    assert.equal(
-      selectExtractionModel({ inputType: "image" }, {}),
-      DEFAULT_VISION_EXTRACTION_MODEL
-    );
+    assert.equal(selectExtractionModel({ inputType: "voice" }, {}), "openai/gpt-5.6-luna");
+    assert.equal(selectExtractionModel({ inputType: "image" }, {}), "openai/gpt-5.6-luna");
+    assert.equal(selectExtractionModel({ inputType: "pdf" }, {}), "openai/gpt-5.6-luna");
   });
 });
