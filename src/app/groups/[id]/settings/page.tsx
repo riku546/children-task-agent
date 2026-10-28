@@ -1,6 +1,6 @@
 "use client";
 
-import { Baby, Check, Copy, Link2, Loader2, Plus, Share2, Undo2, Users } from "lucide-react";
+import { Baby, Check, Copy, Link2, Loader2, Plus, Share2, Undo2, Users, X } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -34,7 +34,9 @@ export default function GroupSettingsPage() {
   const [inviteUrl, setInviteUrl] = useState("");
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [inviteExpiresAt, setInviteExpiresAt] = useState("");
+  const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteLoading, setInviteLoading] = useState(false);
+  const [inviteError, setInviteError] = useState("");
   const [copied, setCopied] = useState(false);
   const [canShare, setCanShare] = useState(false);
   const [pending, setPending] = useState<PendingRemoval | null>(null);
@@ -80,16 +82,13 @@ export default function GroupSettingsPage() {
 
   async function createInvite() {
     setInviteLoading(true);
-    setNotice(null);
+    setInviteError("");
     setCopied(false);
     try {
       const response = await fetch(`/api/groups/${params.id}/invite`, { method: "POST" });
       const data = await response.json().catch(() => ({}));
       if (!response.ok || typeof data.url !== "string") {
-        setNotice({
-          type: "error",
-          text: data.error || "招待リンクを発行できませんでした"
-        });
+        setInviteError(data.error || "招待リンクを発行できませんでした");
         return;
       }
       setInviteUrl(data.url);
@@ -97,10 +96,15 @@ export default function GroupSettingsPage() {
       setInviteExpiresAt(typeof data.invite?.expiresAt === "string" ? data.invite.expiresAt : "");
     } catch (error) {
       console.error("Failed to create invite", error);
-      setNotice({ type: "error", text: "招待リンクを発行できませんでした" });
+      setInviteError("招待リンクを発行できませんでした");
     } finally {
       setInviteLoading(false);
     }
+  }
+
+  async function openInvite() {
+    setInviteOpen(true);
+    if (!inviteUrl) await createInvite();
   }
 
   async function copyInvite() {
@@ -111,10 +115,7 @@ export default function GroupSettingsPage() {
     } catch {
       inviteInputRef.current?.focus();
       inviteInputRef.current?.select();
-      setNotice({
-        type: "error",
-        text: "コピーできませんでした。リンクを選択して共有してください。"
-      });
+      setInviteError("コピーできませんでした。リンクを選択して共有してください。");
     }
   }
 
@@ -132,7 +133,7 @@ export default function GroupSettingsPage() {
       });
     } catch (error) {
       if (error instanceof DOMException && error.name === "AbortError") return;
-      setNotice({ type: "error", text: "共有シートを開けませんでした。URLをコピーしてください。" });
+      setInviteError("共有シートを開けませんでした。URLをコピーしてください。");
     }
   }
 
@@ -221,13 +222,18 @@ export default function GroupSettingsPage() {
   }, [copied]);
 
   useEffect(() => {
-    if (!pending) return;
+    if (!pending && !inviteOpen) return;
     function onKey(event: KeyboardEvent) {
-      if (event.key === "Escape" && !submitting) setPending(null);
+      if (event.key !== "Escape") return;
+      if (pending && !submitting) {
+        setPending(null);
+        return;
+      }
+      if (inviteOpen) setInviteOpen(false);
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [pending, submitting]);
+  }, [pending, submitting, inviteOpen]);
 
   const group = useMemo(() => groups.find((item) => item.id === params.id), [groups, params.id]);
 
@@ -265,11 +271,21 @@ export default function GroupSettingsPage() {
         <button
           type="button"
           className={`${primaryButton} w-full sm:w-auto`}
-          onClick={createInvite}
-          disabled={inviteLoading}
+          onClick={openInvite}
+          disabled={inviteLoading && !inviteUrl}
         >
-          {inviteLoading ? <Loader2 size={16} className="animate-spin" /> : <Link2 size={16} />}
-          <span>{inviteLoading ? "発行中..." : "招待リンクを発行"}</span>
+          {inviteLoading && !inviteUrl ? (
+            <Loader2 size={16} className="animate-spin" />
+          ) : (
+            <Link2 size={16} />
+          )}
+          <span>
+            {inviteLoading && !inviteUrl
+              ? "発行中..."
+              : inviteUrl
+                ? "招待リンクを表示"
+                : "招待リンクを発行"}
+          </span>
         </button>
       </div>
 
@@ -283,68 +299,6 @@ export default function GroupSettingsPage() {
           role="status"
         >
           {notice.text}
-        </div>
-      ) : null}
-
-      {inviteUrl ? (
-        <div className="mt-5 rounded-lg border border-emerald-200 bg-emerald-50/60 p-4">
-          <label className="block text-sm font-semibold text-emerald-950" htmlFor="invite">
-            家族を招待するリンク
-          </label>
-          <p className="mt-1 text-sm leading-relaxed text-emerald-900">
-            URLを送るか、相手のスマホのカメラでQRコードを読み取ってください。
-          </p>
-          <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-            <input
-              id="invite"
-              ref={inviteInputRef}
-              className="field min-h-11 min-w-0 flex-1 text-sm bg-white"
-              readOnly
-              value={inviteUrl}
-            />
-            <button type="button" className={`${primaryButton} shrink-0`} onClick={copyInvite}>
-              {copied ? <Check size={16} /> : <Copy size={16} />}
-              <span>{copied ? "コピーしました" : "URLをコピー"}</span>
-            </button>
-          </div>
-
-          {qrDataUrl ? (
-            <figure className="mt-4 flex flex-col items-center">
-              <div className="rounded-xl bg-white p-3 shadow-2xs">
-                <img
-                  src={qrDataUrl}
-                  alt={`${group.name}への招待リンクのQRコード`}
-                  width={320}
-                  height={320}
-                  className="h-64 w-64 max-w-full"
-                />
-              </div>
-              <figcaption className="mt-2 max-w-sm text-center text-sm leading-relaxed text-emerald-950">
-                表示中のQRは、上の招待リンクと同じです。
-              </figcaption>
-            </figure>
-          ) : (
-            <p className="mt-3 text-sm text-emerald-900">
-              QRコードは表示できませんでした。URLをコピーして共有してください。
-            </p>
-          )}
-
-          {canShare ? (
-            <button
-              type="button"
-              className={`${secondaryButton} mt-4 w-full`}
-              onClick={shareInvite}
-            >
-              <Share2 size={16} />
-              <span>スマホの共有シートで送る</span>
-            </button>
-          ) : null}
-
-          {inviteExpiresAt ? (
-            <p className="mt-3 text-center text-xs text-emerald-800">
-              このリンクの有効期限: {formatExpiry(inviteExpiresAt)}
-            </p>
-          ) : null}
         </div>
       ) : null}
 
@@ -421,6 +375,122 @@ export default function GroupSettingsPage() {
           </div>
         </div>
       </div>
+
+      {inviteOpen ? (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-zinc-950/40 p-4 sm:items-center">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="invite-dialog-title"
+            className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-lg border border-zinc-200 bg-white p-5 shadow-lg"
+          >
+            <div className="flex items-start justify-between gap-3 border-b border-zinc-200 pb-3">
+              <div>
+                <h2 id="invite-dialog-title" className="text-lg font-bold text-zinc-950">
+                  家族を招待する
+                </h2>
+                <p className="mt-1 text-sm leading-relaxed text-zinc-600">
+                  URLを送るか、相手のスマホのカメラでQRコードを読み取ってください。
+                </p>
+              </div>
+              <button
+                type="button"
+                className="grid size-11 shrink-0 place-items-center rounded-lg text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900"
+                onClick={() => setInviteOpen(false)}
+                aria-label="閉じる"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {inviteLoading && !inviteUrl ? (
+              <p className="flex items-center justify-center gap-2 py-16 text-sm text-zinc-500">
+                <Loader2 size={16} className="animate-spin" />
+                招待リンクを発行しています...
+              </p>
+            ) : null}
+
+            {inviteError ? (
+              <p className="mt-4 text-sm font-medium text-rose-700" role="alert">
+                {inviteError}
+              </p>
+            ) : null}
+
+            {inviteUrl ? (
+              <div className="mt-4">
+                <label className="block text-sm font-semibold text-zinc-800" htmlFor="invite">
+                  招待リンク
+                </label>
+                <div className="mt-2 flex flex-col gap-2">
+                  <input
+                    id="invite"
+                    ref={inviteInputRef}
+                    className="field min-h-11 text-sm"
+                    readOnly
+                    value={inviteUrl}
+                  />
+                  <button type="button" className={primaryButton} onClick={copyInvite}>
+                    {copied ? <Check size={16} /> : <Copy size={16} />}
+                    <span>{copied ? "コピーしました" : "URLをコピー"}</span>
+                  </button>
+                </div>
+
+                {qrDataUrl ? (
+                  <figure className="mt-4 flex flex-col items-center">
+                    <div className="rounded-xl border border-zinc-200 bg-white p-3">
+                      <img
+                        src={qrDataUrl}
+                        alt={`${group.name}への招待リンクのQRコード`}
+                        width={320}
+                        height={320}
+                        className="h-56 w-56 max-w-full"
+                      />
+                    </div>
+                    <figcaption className="mt-2 text-center text-sm leading-relaxed text-zinc-600">
+                      表示中のQRは、上の招待リンクと同じです。
+                    </figcaption>
+                  </figure>
+                ) : (
+                  <p className="mt-3 text-sm text-zinc-600">
+                    QRコードは表示できませんでした。URLをコピーして共有してください。
+                  </p>
+                )}
+
+                {canShare ? (
+                  <button
+                    type="button"
+                    className={`${secondaryButton} mt-4 w-full`}
+                    onClick={shareInvite}
+                  >
+                    <Share2 size={16} />
+                    <span>スマホの共有シートで送る</span>
+                  </button>
+                ) : null}
+
+                {inviteExpiresAt ? (
+                  <p className="mt-3 text-center text-xs text-zinc-500">
+                    このリンクの有効期限: {formatExpiry(inviteExpiresAt)}
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
+
+            <div className="mt-5 grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                className={secondaryButton}
+                onClick={createInvite}
+                disabled={inviteLoading}
+              >
+                {inviteLoading ? "発行中..." : inviteUrl ? "再発行" : "発行する"}
+              </button>
+              <button type="button" className={primaryButton} onClick={() => setInviteOpen(false)}>
+                閉じる
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {pending ? (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-zinc-950/40 p-4 sm:items-center">
