@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { sanitizeNextPath } from "@/lib/safe-next";
 import { createClient } from "@/lib/supabase/server";
 import { getAppOrigin } from "@/lib/url";
 
@@ -6,11 +7,7 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const origin = getAppOrigin(request);
   const code = searchParams.get("code");
-  let next = searchParams.get("next") ?? "/dashboard";
-
-  if (!next.startsWith("/")) {
-    next = "/dashboard";
-  }
+  const next = sanitizeNextPath(searchParams.get("next"));
 
   if (code) {
     const supabase = await createClient();

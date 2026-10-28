@@ -221,12 +221,14 @@ export function SiblingTaskTimeline({
                       {child.name.charAt(0)}
                     </span>
                     <h3 className="text-sm font-bold text-zinc-900">{child.name}</h3>
-                    <span className="font-mono text-xs text-zinc-400">({childTasks.length})</span>
+                    <span className="font-mono text-xs font-semibold text-zinc-700">
+                      ({childTasks.length})
+                    </span>
                   </div>
 
                   <Link
                     href={`/tasks/new`}
-                    className="inline-flex items-center gap-1 text-xs font-medium text-zinc-400 hover:text-zinc-700 transition"
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-zinc-700 hover:text-zinc-950 transition"
                   >
                     <Plus size={13} />
                     <span>追加</span>

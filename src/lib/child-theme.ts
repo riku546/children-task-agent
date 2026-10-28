@@ -80,13 +80,13 @@ export const WORK_THEME: ColorTheme = {
 
 // 子ども未設定用のデフォルトカラー
 export const DEFAULT_THEME: ColorTheme = {
-  bg: "bg-cloud",
-  text: "text-ink/80",
-  border: "border-ink/15",
-  badgeBg: "bg-ink/10",
-  badgeText: "text-ink/80",
-  dotColor: "bg-ink/40",
-  accentBg: "bg-ink/60"
+  bg: "bg-zinc-100",
+  text: "text-zinc-900",
+  border: "border-zinc-400",
+  badgeBg: "bg-zinc-200",
+  badgeText: "text-zinc-950",
+  dotColor: "bg-zinc-700",
+  accentBg: "bg-zinc-800"
 };
 
 function hashString(str: string): number {

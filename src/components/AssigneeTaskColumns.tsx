@@ -152,7 +152,7 @@ export function AssigneeTaskColumns({ tasks, currentGroup, currentUserId, onRefr
         {/* 未割り当てカラム */}
         {memberBuckets.unassigned && memberBuckets.unassigned.tasks.length > 0 ? (
           <div className="flex flex-col overflow-hidden rounded-lg border border-amber-200/90 bg-white shadow-2xs">
-            <div className="flex items-center justify-between border-b border-amber-200 bg-amber-50/60 px-4 py-3">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-amber-200 bg-amber-50/60 px-4 py-3">
               <div className="flex items-center gap-2">
                 <span className="grid size-5 place-items-center rounded bg-amber-500 text-white font-bold text-xs">
                   ?
@@ -191,7 +191,7 @@ export function AssigneeTaskColumns({ tasks, currentGroup, currentUserId, onRefr
               }`}
             >
               <div
-                className={`flex items-center justify-between border-b px-4 py-3 ${
+                className={`flex flex-wrap items-center justify-between gap-2 border-b px-4 py-3 ${
                   isMe ? "border-emerald-200 bg-emerald-50/50" : "border-zinc-200 bg-zinc-50/70"
                 }`}
               >
@@ -203,7 +203,7 @@ export function AssigneeTaskColumns({ tasks, currentGroup, currentUserId, onRefr
                   >
                     <UserRound size={13} />
                   </div>
-                  <h3 className="text-sm font-bold text-zinc-900">
+                  <h3 className="min-w-0 break-words text-sm font-bold text-zinc-900">
                     {bucket.member.displayName}
                     {isMe ? (
                       <span className="ml-1 text-xs font-semibold text-emerald-700">(自分)</span>
@@ -311,11 +311,11 @@ function TaskRow({
       </div>
 
       {/* 担当操作エリア */}
-      <div className="mt-3 flex items-center justify-between gap-2 border-t border-zinc-100 pt-2.5 text-xs">
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-zinc-100 pt-2.5 text-xs">
         <div className="flex items-center gap-1.5">
           <span className="text-zinc-600 font-medium">担当:</span>
           <select
-            className="rounded border border-zinc-200 bg-white px-2 py-0.5 text-xs font-medium text-zinc-800"
+            className="max-w-full rounded border border-zinc-300 bg-white px-2 py-1 text-xs font-semibold text-zinc-900"
             value={task.assigneeMemberId || "unassigned"}
             disabled={isActionLoading}
             onChange={(e) => onChangeAssignee(e.target.value)}

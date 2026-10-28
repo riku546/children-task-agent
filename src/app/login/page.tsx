@@ -30,11 +30,16 @@ function GoogleIcon() {
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [nextPath, setNextPath] = useState("/dashboard");
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("error")) {
       setError("認証に失敗しました。もう一度ログインをお試しください。");
+    }
+    const next = params.get("next");
+    if (next?.startsWith("/") && !next.startsWith("//")) {
+      setNextPath(next);
     }
   }, []);
 
@@ -42,7 +47,11 @@ export default function LoginPage() {
     setError("");
     setLoading(true);
     try {
-      const response = await fetch("/api/auth/google", { method: "POST" });
+      const response = await fetch("/api/auth/google", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ next: nextPath })
+      });
       const data = await response.json();
       if (!response.ok || !data.url) {
         setError(data.error || "Googleログインを開始できませんでした");
@@ -92,7 +101,13 @@ export default function LoginPage() {
             <span>{loading ? "Googleへ移動中..." : "Googleで続ける"}</span>
           </button>
 
-          <p className="pt-2 text-center text-[11px] text-zinc-400">
+          {nextPath.startsWith("/groups/join") ? (
+            <p className="rounded-md border border-emerald-300 bg-emerald-50 px-3 py-2 text-center text-sm font-medium text-emerald-950">
+              ログイン後、招待された家族グループの参加画面に戻ります。
+            </p>
+          ) : null}
+
+          <p className="pt-2 text-center text-xs font-medium text-zinc-600">
             パスワード設定不要・1クリックで利用開始
           </p>
         </div>
