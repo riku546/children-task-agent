@@ -34,6 +34,9 @@
 
 ```tree
 childcare-task-agent/
+├── .cursor/
+│   └── agents/
+│       └── researcher.md       # 調査用サブエージェント（Composer 2.5, readonly）
 ├── .github/
 │   └── workflows/
 │       └── ci.yml               # GitHub Actions CI (Biome, Typecheck, Build)
@@ -114,6 +117,10 @@ npm run prisma:push       # スキーマをDBへ反映
 
 ### ③ モバイルファーストUI
 - ユーザーはスマホでお便りを撮影して操作することが多いため、レスポンシブデザイン（タッチターゲットの広さ、ボトムナビゲーション対応）を常に意識してください。
+
+### ④ 調査と実装の役割分担
+- コードベースの調査、リサーチ、原因分析、実装前の影響範囲の確認は `researcher` サブエージェント（`.cursor/agents/researcher.md`）に委譲する。
+- メインエージェントは要件整理、設計レビュー、実装を担当する。
 
 ---
 
