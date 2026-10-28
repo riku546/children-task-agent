@@ -2,7 +2,7 @@
 
 import { AlertTriangle, Briefcase, ChevronLeft, ChevronRight, Filter } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { ChildBadge } from "@/components/ChildBadge";
 import { QuickDueTaskForm } from "@/components/QuickDueTaskForm";
 import { getChildTheme, WORK_THEME } from "@/lib/child-theme";
@@ -35,7 +35,7 @@ export function CalendarView({
   });
   const [internalSelectedDate, setInternalSelectedDate] = useState<string | null>(null);
   const [selectedChild, setSelectedChild] = useState<string>("all");
-  const detailRef = useRef<HTMLElement>(null);
+  const [composerOpen, setComposerOpen] = useState(false);
 
   const selectedDate =
     controlledSelectedDate !== undefined ? controlledSelectedDate : internalSelectedDate;
@@ -121,20 +121,28 @@ export function CalendarView({
     setCurrentMonthDate((d) => new Date(d.getFullYear(), d.getMonth() + 1, 1));
   }
 
+  function selectDate(dateKey: string | null) {
+    if (onSelectDate) {
+      onSelectDate(dateKey);
+    } else {
+      setInternalSelectedDate(dateKey);
+    }
+  }
+
   function goToday() {
     const now = new Date();
     setCurrentMonthDate(new Date(now.getFullYear(), now.getMonth(), 1));
-    const todayKey = toDateInputValue(now);
-    handleDateClick(todayKey);
+    selectDate(toDateInputValue(now));
   }
 
   function handleDateClick(dateKey: string) {
-    const next = selectedDate === dateKey ? null : dateKey;
-    if (onSelectDate) {
-      onSelectDate(next);
-    } else {
-      setInternalSelectedDate(next);
-    }
+    selectDate(dateKey);
+    setComposerOpen(true);
+  }
+
+  function closeSelection() {
+    selectDate(null);
+    setComposerOpen(false);
   }
 
   const selectedDateTasks = selectedDate ? tasksByDate.get(selectedDate) || [] : [];
@@ -144,11 +152,6 @@ export function CalendarView({
         ...conflicts.workConflicts.filter((c) => c.dateKey === selectedDate)
       ]
     : [];
-
-  useEffect(() => {
-    if (!selectedDate) return;
-    detailRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-  }, [selectedDate]);
 
   const year = currentMonthDate.getFullYear();
   const month = currentMonthDate.getMonth() + 1;
@@ -334,10 +337,7 @@ export function CalendarView({
 
       {/* 選択した日の詳細パネル（展開時） */}
       {selectedDate && (
-        <section
-          ref={detailRef}
-          className="scroll-mt-24 rounded-lg border border-zinc-200 bg-zinc-50/50 p-4 shadow-2xs"
-        >
+        <section className="rounded-lg border border-zinc-200 bg-zinc-50/50 p-4 shadow-2xs">
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-200 pb-3">
             <div>
               <p className="text-xs font-bold uppercase tracking-wider text-zinc-500">選択した日</p>
@@ -352,22 +352,13 @@ export function CalendarView({
               </Link>
               <button
                 type="button"
-                onClick={() => handleDateClick(selectedDate)}
+                onClick={closeSelection}
                 className="button-secondary min-h-11 text-sm"
               >
                 閉じる
               </button>
             </div>
           </div>
-
-          {onTaskCreated ? (
-            <QuickDueTaskForm
-              date={selectedDate}
-              groupId={groupId}
-              children={children}
-              onCreated={onTaskCreated}
-            />
-          ) : null}
 
           {/* 衝突の警告 */}
           {selectedDateConflicts.length > 0 && (
@@ -426,6 +417,17 @@ export function CalendarView({
           </div>
         </section>
       )}
+
+      {selectedDate && onTaskCreated ? (
+        <QuickDueTaskForm
+          isOpen={composerOpen}
+          date={selectedDate}
+          groupId={groupId}
+          children={children}
+          onClose={() => setComposerOpen(false)}
+          onCreated={onTaskCreated}
+        />
+      ) : null}
     </div>
   );
 }
