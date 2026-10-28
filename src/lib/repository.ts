@@ -1,3 +1,4 @@
+import { type MemberRemovalResult, MembershipError, planMemberRemoval } from "@/lib/membership";
 import { createId, memoryStore, nowIso, toMemoryTask } from "@/lib/memory-store";
 import { prisma, tryDb } from "@/lib/prisma";
 import type { ChildRecord, GroupRecord, Priority, TaskRecord, TaskStatus } from "@/lib/types";
@@ -6,7 +7,42 @@ type UserLike = {
   id: string;
   name: string;
   defaultGroupId: string | null;
+  email?: string;
 };
+
+export async function userCanManageGroup(user: UserLike, groupId: string) {
+  if (!groupId) return false;
+
+  if (process.env.DATABASE_URL) {
+    const email = user.email?.trim();
+    const group = await prisma.familyGroup.findFirst({
+      where: {
+        id: groupId,
+        OR: [
+          { members: { some: { userId: user.id } } },
+          ...(email
+            ? [
+                {
+                  members: {
+                    some: { user: { email: { equals: email, mode: "insensitive" as const } } }
+                  }
+                },
+                { createdBy: { email: { equals: email, mode: "insensitive" as const } } }
+              ]
+            : [])
+        ]
+      },
+      select: { id: true }
+    });
+    return Boolean(group);
+  }
+
+  return memoryStore.groups.some(
+    (group) =>
+      group.id === groupId &&
+      (group.createdById === user.id || group.members.some((member) => member.userId === user.id))
+  );
+}
 
 export async function listGroups(user: UserLike): Promise<GroupRecord[]> {
   const dbGroups = await tryDb(() =>
@@ -96,6 +132,97 @@ export async function createInvite(groupId: string) {
     createdAt: nowIso()
   });
   return { token, expiresAt: expiresAt.toISOString() };
+}
+
+export async function removeGroupMember(
+  user: UserLike,
+  groupId: string,
+  memberId: string
+): Promise<MemberRemovalResult> {
+  const dbGroup = await tryDb(() =>
+    prisma.familyGroup.findFirst({
+      where: {
+        id: groupId,
+        members: { some: { userId: user.id } }
+      },
+      include: { members: true }
+    })
+  );
+
+  if (dbGroup) {
+    const plan = planMemberRemoval({
+      actorUserId: user.id,
+      memberId,
+      members: dbGroup.members.map((member) => ({
+        id: member.id,
+        userId: member.userId,
+        role: member.role,
+        displayName: member.displayName,
+        createdAt: toIso(member.createdAt)
+      }))
+    });
+
+    const unassignedTaskCount = await prisma.$transaction(async (tx) => {
+      if (plan.promoteMemberId) {
+        const promoted = await tx.familyMember.updateMany({
+          where: { id: plan.promoteMemberId, groupId },
+          data: { role: "OWNER" }
+        });
+        if (promoted.count !== 1) {
+          throw new MembershipError(409, "管理者を引き継げませんでした");
+        }
+      }
+
+      const unassigned = await tx.task.updateMany({
+        where: { groupId, assigneeMemberId: plan.memberId },
+        data: { assigneeMemberId: null }
+      });
+      const deleted = await tx.familyMember.deleteMany({
+        where: { id: plan.memberId, groupId }
+      });
+      if (deleted.count !== 1) {
+        throw new MembershipError(404, "メンバーが見つかりません");
+      }
+      return unassigned.count;
+    });
+
+    return { ...plan, unassignedTaskCount };
+  }
+
+  const group = memoryStore.groups.find(
+    (item) => item.id === groupId && item.members.some((member) => member.userId === user.id)
+  );
+  if (!group) {
+    throw new MembershipError(404, "グループが見つかりません");
+  }
+
+  const plan = planMemberRemoval({
+    actorUserId: user.id,
+    memberId,
+    members: group.members
+  });
+
+  if (plan.promoteMemberId) {
+    const successor = group.members.find((member) => member.id === plan.promoteMemberId);
+    if (!successor) {
+      throw new MembershipError(409, "管理者を引き継げませんでした");
+    }
+    successor.role = "OWNER";
+  }
+
+  let unassignedTaskCount = 0;
+  for (const task of memoryStore.tasks) {
+    if (task.groupId === groupId && task.assigneeMemberId === plan.memberId) {
+      task.assigneeMemberId = null;
+      task.assigneeName = null;
+      task.updatedAt = nowIso();
+      unassignedTaskCount += 1;
+    }
+  }
+
+  group.members = group.members.filter((member) => member.id !== plan.memberId);
+  group.updatedAt = nowIso();
+  return { ...plan, unassignedTaskCount };
 }
 
 export async function addChild(groupId: string, name: string): Promise<ChildRecord> {
