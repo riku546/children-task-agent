@@ -7,7 +7,42 @@ type UserLike = {
   id: string;
   name: string;
   defaultGroupId: string | null;
+  email?: string;
 };
+
+export async function userCanManageGroup(user: UserLike, groupId: string) {
+  if (!groupId) return false;
+
+  if (process.env.DATABASE_URL) {
+    const email = user.email?.trim();
+    const group = await prisma.familyGroup.findFirst({
+      where: {
+        id: groupId,
+        OR: [
+          { members: { some: { userId: user.id } } },
+          ...(email
+            ? [
+                {
+                  members: {
+                    some: { user: { email: { equals: email, mode: "insensitive" as const } } }
+                  }
+                },
+                { createdBy: { email: { equals: email, mode: "insensitive" as const } } }
+              ]
+            : [])
+        ]
+      },
+      select: { id: true }
+    });
+    return Boolean(group);
+  }
+
+  return memoryStore.groups.some(
+    (group) =>
+      group.id === groupId &&
+      (group.createdById === user.id || group.members.some((member) => member.userId === user.id))
+  );
+}
 
 export async function listGroups(user: UserLike): Promise<GroupRecord[]> {
   const dbGroups = await tryDb(() =>
