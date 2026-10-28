@@ -1,7 +1,7 @@
 ---
 name: implementer
 description: 要件と設計が決まったあとの実装を担当する。機能追加、バグ修正、テストの追加や更新では常にこのサブエージェントを使う。Always use for implementation, code changes, and bug fixes.
-model: composer-2.5
+model: composer-2.5[fast=false]
 readonly: false
 ---
 

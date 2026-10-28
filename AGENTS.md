@@ -36,8 +36,8 @@
 childcare-task-agent/
 ├── .cursor/
 │   └── agents/
-│       ├── researcher.md       # 調査用サブエージェント（Composer 2.5, readonly）
-│       └── implementer.md      # 実装用サブエージェント（Composer 2.5）
+│       ├── researcher.md       # 調査用サブエージェント（composer-2.5[fast=false], readonly）
+│       └── implementer.md      # 実装用サブエージェント（composer-2.5[fast=false]）
 ├── .github/
 │   └── workflows/
 │       └── ci.yml               # GitHub Actions CI (Biome, Typecheck, Build)
@@ -120,8 +120,8 @@ npm run prisma:push       # スキーマをDBへ反映
 - ユーザーはスマホでお便りを撮影して操作することが多いため、レスポンシブデザイン（タッチターゲットの広さ、ボトムナビゲーション対応）を常に意識してください。
 
 ### ④ 調査と実装の役割分担
-- コードベースの調査、リサーチ、原因分析、実装前の影響範囲の確認は `researcher` サブエージェント（`.cursor/agents/researcher.md`、Composer 2.5）に委譲する。
-- 実装は `implementer` サブエージェント（`.cursor/agents/implementer.md`、Composer 2.5）に委譲する。
+- コードベースの調査、リサーチ、原因分析、実装前の影響範囲の確認は `researcher` サブエージェント（`.cursor/agents/researcher.md`、`composer-2.5[fast=false]`）に委譲する。
+- 実装は `implementer` サブエージェント（`.cursor/agents/implementer.md`、`composer-2.5[fast=false]`）に委譲する。
 - メインエージェントは要件整理と設計レビューを担当する。
 
 ---

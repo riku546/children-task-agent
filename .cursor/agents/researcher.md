@@ -1,7 +1,7 @@
 ---
 name: researcher
 description: コードベースの調査、原因分析、実装前の影響範囲確認に使う。実装前の調査・リサーチ・影響分析では常にこのサブエージェントを使う。Always use for codebase investigation, root-cause analysis, and impact-scope checks before implementation.
-model: composer-2.5
+model: composer-2.5[fast=false]
 readonly: true
 ---
 
