@@ -1,16 +1,18 @@
 "use client";
 
-import { Check, Hand, Heart, Loader2, UserRound } from "lucide-react";
+import { Check, Heart, Loader2, UserRound } from "lucide-react";
 import Link from "next/link";
 import { ChildBadge } from "@/components/ChildBadge";
 import { DuePill, PriorityPill } from "@/components/StatusPill";
 import { isWorkTask } from "@/lib/conflict-detector";
+import { isTaskTakenByMe } from "@/lib/task-claim";
 import type { TaskRecord } from "@/lib/types";
 
 type Props = {
   tasks: TaskRecord[];
   emptyText: string;
   currentUserId?: string | null;
+  myMemberIds?: string[];
   onAssignToMe?: (taskId: string) => Promise<void> | void;
   onToggleStatus?: (task: TaskRecord) => Promise<void> | void;
   actionLoadingId?: string | null;
@@ -22,6 +24,7 @@ export function TaskList({
   tasks,
   emptyText,
   currentUserId,
+  myMemberIds = [],
   onAssignToMe,
   onToggleStatus,
   actionLoadingId,
@@ -53,16 +56,16 @@ export function TaskList({
           const isWork = isWorkTask(task);
           const isActionLoading = actionLoadingId === task.id;
           const isDone = task.status === "DONE";
+          const takenByMe = isTaskTakenByMe(task.assigneeMemberId, myMemberIds, currentUserId);
 
           return (
             <div
               key={task.id}
-              className={`group flex items-center justify-between gap-3 px-3 py-3 transition hover:bg-zinc-50/80 ${
+              className={`group flex flex-col gap-2 px-3 py-3 transition hover:bg-zinc-50/80 sm:flex-row sm:items-center sm:justify-between ${
                 isDone ? "opacity-50" : ""
               }`}
             >
-              {/* 左側: チェックボックス + タイトル */}
-              <div className="flex items-center gap-3 min-w-0 flex-1">
+              <div className="flex min-w-0 flex-1 items-center gap-3">
                 {onToggleStatus && (
                   <button
                     type="button"
@@ -94,13 +97,11 @@ export function TaskList({
                 </Link>
               </div>
 
-              {/* 右側: メタデータ & アクション */}
-              <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+              <div className="flex flex-wrap items-center gap-2 pl-8 sm:shrink-0 sm:pl-0">
                 <ChildBadge name={task.childName} isWork={isWork} size="sm" />
                 <DuePill dueDate={task.dueDate} />
                 <PriorityPill priority={task.priority} />
 
-                {/* 担当者 */}
                 <div className="hidden md:flex items-center gap-1.5 min-w-[76px] text-xs text-zinc-600">
                   <UserRound size={13} className="text-zinc-400" />
                   <span className="truncate">
@@ -108,35 +109,45 @@ export function TaskList({
                   </span>
                 </div>
 
-                {/* アクションボタン */}
-                <div className="flex items-center gap-1.5">
+                <div className="flex flex-wrap items-center gap-1.5">
                   {onAssignToMe &&
                     !isDone &&
-                    (task.assigneeMemberId === currentUserId ? (
-                      <span className="rounded bg-zinc-100 px-2 py-0.5 text-xs font-mono font-medium text-zinc-600">
-                        担当中
+                    (takenByMe ? (
+                      <span
+                        role="status"
+                        className="inline-flex min-h-11 items-center gap-1.5 rounded-full bg-rose-600 px-3 text-xs font-semibold text-white"
+                      >
+                        <Heart size={14} className="fill-white" aria-hidden="true" />
+                        引き受け済み
                       </span>
                     ) : (
                       <button
                         type="button"
                         onClick={() => onAssignToMe(task.id)}
                         disabled={isActionLoading}
-                        className="rounded border border-zinc-200 bg-white px-2.5 py-1 text-xs font-medium text-zinc-700 shadow-2xs hover:bg-zinc-50 hover:border-zinc-300 transition"
-                        title="私が担当する"
+                        aria-pressed={false}
+                        className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-rose-200 bg-rose-50 px-3 text-xs font-semibold text-rose-800 shadow-2xs transition hover:bg-rose-100 disabled:opacity-50"
                       >
-                        <Hand size={12} className="inline mr-1 text-zinc-500" />
+                        {isActionLoading ? (
+                          <Loader2 size={14} className="animate-spin" />
+                        ) : (
+                          <Heart size={14} aria-hidden="true" />
+                        )}
                         引き受ける
                       </button>
                     ))}
+
+                  {task.assigneeName && !takenByMe ? (
+                    <span className="text-xs text-zinc-500 md:hidden">{task.assigneeName}</span>
+                  ) : null}
 
                   {onThankYou && !isDone && task.assigneeName && (
                     <button
                       type="button"
                       onClick={() => onThankYou(task)}
-                      className="rounded border border-zinc-200 bg-white px-2 py-1 text-xs font-medium text-zinc-600 shadow-2xs hover:bg-rose-50 hover:text-rose-700 hover:border-rose-200 transition"
-                      title="感謝を伝える"
+                      className="inline-flex min-h-11 items-center rounded-full border border-zinc-200 bg-white px-3 text-xs font-semibold text-zinc-600 shadow-2xs transition hover:bg-zinc-50"
                     >
-                      <Heart size={12} className="inline text-rose-500" />
+                      ありがとう
                     </button>
                   )}
                 </div>

@@ -12,6 +12,7 @@ import {
   Type,
   Upload
 } from "lucide-react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { type ChangeEvent, Suspense, useEffect, useMemo, useState } from "react";
 import { PageHeader } from "@/components/PageHeader";
@@ -32,6 +33,7 @@ function NewTaskContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const queryDate = searchParams.get("date") || "";
+  const fromOnboarding = searchParams.get("from") === "onboarding";
   const [mode, setMode] = useState<InputMode>("image");
   const cachedGroups = getCachedData<{ groups: GroupRecord[] }>("/api/groups");
   const [groups, setGroups] = useState<GroupRecord[]>(cachedGroups?.groups || []);
@@ -206,6 +208,10 @@ function NewTaskContent() {
     });
     const data = await response.json();
     invalidateCache("/api/tasks");
+    if (fromOnboarding) {
+      router.push("/onboarding?step=4");
+      return;
+    }
     const firstTaskId = data.tasks?.[0]?.id;
     router.push(firstTaskId ? `/tasks/${firstTaskId}` : "/dashboard");
   }
@@ -244,6 +250,15 @@ function NewTaskContent() {
         title="取込"
         description="お便りの写真やファイルから、家族共有のTODOを作成します"
       />
+
+      {fromOnboarding ? (
+        <div className="mt-4 flex flex-col gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-700 sm:flex-row sm:items-center sm:justify-between">
+          <p>読み取ってTODOを保存すると、案内の最後のステップに戻ります。</p>
+          <Link href="/onboarding?step=3" className="font-semibold text-zinc-950 underline">
+            案内に戻る
+          </Link>
+        </div>
+      ) : null}
 
       <div className="mt-6 grid gap-8 lg:grid-cols-[320px_1fr] items-start">
         <div className="space-y-5">

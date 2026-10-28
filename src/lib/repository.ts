@@ -3,6 +3,34 @@ import { createId, memoryStore, nowIso, toMemoryTask } from "@/lib/memory-store"
 import { prisma, tryDb } from "@/lib/prisma";
 import type { ChildRecord, GroupRecord, Priority, TaskRecord, TaskStatus } from "@/lib/types";
 
+export async function isOnboardingComplete(userId: string) {
+  const dbUser = await tryDb(() =>
+    prisma.user.findUnique({
+      where: { id: userId },
+      select: { onboardingCompletedAt: true }
+    })
+  );
+  if (dbUser) return Boolean(dbUser.onboardingCompletedAt);
+
+  const memoryUser = memoryStore.users.find((user) => user.id === userId);
+  return Boolean(memoryUser?.onboardingCompletedAt);
+}
+
+export async function completeOnboarding(userId: string) {
+  const updated = await tryDb(() =>
+    prisma.user.update({
+      where: { id: userId },
+      data: { onboardingCompletedAt: new Date() }
+    })
+  );
+  if (updated) return true;
+
+  const memoryUser = memoryStore.users.find((user) => user.id === userId);
+  if (!memoryUser) return false;
+  memoryUser.onboardingCompletedAt = nowIso();
+  return true;
+}
+
 type UserLike = {
   id: string;
   name: string;

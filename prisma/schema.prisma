@@ -24,15 +24,16 @@ enum TaskPriority {
 }
 
 model User {
-  id          String         @id @default(cuid())
-  email       String         @unique
-  name        String?
-  image       String?
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
-  groups      FamilyMember[]
-  created     FamilyGroup[]  @relation("GroupCreator")
-  extractions AiExtraction[]
+  id                    String         @id @default(cuid())
+  email                 String         @unique
+  name                  String?
+  image                 String?
+  onboardingCompletedAt DateTime?
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
+  groups                FamilyMember[]
+  created               FamilyGroup[]  @relation("GroupCreator")
+  extractions           AiExtraction[]
 }
 
 model FamilyGroup {

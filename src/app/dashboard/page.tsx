@@ -66,7 +66,14 @@ function DashboardContent() {
   const [isWorkModalOpen, setIsWorkModalOpen] = useState(false);
   const [thankYouMessage, setThankYouMessage] = useState<string | null>(null);
 
-  const currentGroupId = groups[0]?.id || "";
+  const currentGroup = groups[0];
+  const currentGroupId = currentGroup?.id || "";
+  const myMemberIds = useMemo(() => {
+    if (!currentUser) return [];
+    return groups.flatMap((group) =>
+      group.members.filter((member) => member.userId === currentUser.id).map((member) => member.id)
+    );
+  }, [groups, currentUser]);
 
   useEffect(() => {
     const view = searchParams.get("view");
@@ -181,6 +188,11 @@ function DashboardContent() {
     }
   }
 
+  function handleTaskCreated(task: TaskRecord) {
+    invalidateCache("/api/tasks");
+    setTasks((prev) => [task, ...prev.filter((item) => item.id !== task.id)]);
+  }
+
   function handleThankYou(task: TaskRecord) {
     const assignee = task.assigneeName || "パートナー";
     setThankYouMessage(`❤️ ${assignee} さんに「ありがとう！」を伝えました`);
@@ -220,6 +232,7 @@ function DashboardContent() {
           tasks={todayTasks}
           emptyText="今日のTODOはありません"
           currentUserId={currentUser?.id}
+          myMemberIds={myMemberIds}
           onAssignToMe={assignToMe}
           onToggleStatus={toggleStatus}
           actionLoadingId={actionLoadingId}
@@ -239,6 +252,7 @@ function DashboardContent() {
             tasks={tomorrowTasks}
             emptyText="明日のTODOはありません"
             currentUserId={currentUser?.id}
+            myMemberIds={myMemberIds}
             onAssignToMe={assignToMe}
             onToggleStatus={toggleStatus}
             actionLoadingId={actionLoadingId}
@@ -258,6 +272,7 @@ function DashboardContent() {
           tasks={upcomingTasks}
           emptyText="今後予定されているTODOはありません"
           currentUserId={currentUser?.id}
+          myMemberIds={myMemberIds}
           onAssignToMe={assignToMe}
           onToggleStatus={toggleStatus}
           actionLoadingId={actionLoadingId}
@@ -277,6 +292,7 @@ function DashboardContent() {
             tasks={doneTasks}
             emptyText=""
             currentUserId={currentUser?.id}
+            myMemberIds={myMemberIds}
             onAssignToMe={assignToMe}
             onToggleStatus={toggleStatus}
             actionLoadingId={actionLoadingId}
@@ -381,12 +397,16 @@ function DashboardContent() {
             conflicts={conflicts}
             selectedDate={calendarSelectedDate}
             onSelectDate={setCalendarSelectedDate}
+            groupId={currentGroupId}
+            children={currentGroup?.children || []}
+            onTaskCreated={handleTaskCreated}
           />
         ) : viewMode === "siblings" ? (
           <SiblingTaskTimeline
             tasks={tasks}
             group={groups[0]}
             currentUserId={currentUser?.id}
+            myMemberIds={myMemberIds}
             onAssignToMe={assignToMe}
             onToggleStatus={toggleStatus}
             actionLoadingId={actionLoadingId}

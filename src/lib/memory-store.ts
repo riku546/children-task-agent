@@ -11,6 +11,7 @@ type UserRecord = {
   id: string;
   email: string;
   name: string;
+  onboardingCompletedAt: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -72,6 +73,7 @@ export function upsertMemoryUser(email: string, name?: string) {
     id: createId("user"),
     email,
     name: name || email.split("@")[0] || "デモユーザー",
+    onboardingCompletedAt: null,
     createdAt: nowIso(),
     updatedAt: nowIso()
   };

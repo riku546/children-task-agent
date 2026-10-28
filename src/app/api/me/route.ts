@@ -1,13 +1,19 @@
 import { NextResponse } from "next/server";
 import { ensureCurrentUser } from "@/lib/auth";
+import { needsOnboarding } from "@/lib/onboarding";
 import { prisma, tryDb } from "@/lib/prisma";
-import { listGroups } from "@/lib/repository";
+import { isOnboardingComplete, listGroups } from "@/lib/repository";
 import { createClient } from "@/lib/supabase/server";
 
 export async function GET() {
   const user = await ensureCurrentUser();
   const groups = await listGroups(user);
-  return NextResponse.json({ user, groups });
+  const completed = await isOnboardingComplete(user.id);
+  return NextResponse.json({
+    user,
+    groups,
+    onboardingRequired: needsOnboarding({ completed, groups })
+  });
 }
 
 export async function PATCH(request: Request) {

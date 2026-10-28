@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { selectExtractionModel } from "@/lib/extraction-model";
 import type { ExtractionResult, Priority, TodoCandidate } from "@/lib/types";
 
 const prioritySchema = z.enum(["low", "medium", "high"]).catch("medium");
@@ -110,7 +111,7 @@ export async function extractWithOpenRouter(input: ExtractInput) {
     });
   }
 
-  const model = process.env.OPENROUTER_MODEL || "google/gemini-2.5-flash";
+  const model = selectExtractionModel();
 
   const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
     method: "POST",
