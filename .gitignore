@@ -10,4 +10,7 @@ next-env.d.ts
 *.tsbuildinfo
 
 # Cursor: ローカルの Agent 承認・サンドボックス設定（リポジトリには含めない）
-.cursor/
+# プロジェクトのサブエージェント定義（.cursor/agents/）だけは共有する
+.cursor/*
+!.cursor/agents/
+!.cursor/agents/**
