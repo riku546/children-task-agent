@@ -33,7 +33,7 @@ export function HeaderNav() {
                 : "font-medium text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900"
             }`}
           >
-            <Icon size={15} className={isActive ? "text-zinc-900" : "text-zinc-400"} />
+            <Icon size={15} className={isActive ? "text-zinc-900" : "text-zinc-600"} />
             <span>{item.label}</span>
           </Link>
         );

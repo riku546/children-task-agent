@@ -37,7 +37,7 @@ export function ChildBadge({ name, isWork = false, size = "sm", showIcon = true 
       }`}
     >
       <span className={`size-1.5 rounded-full ${theme.dotColor}`} />
-      <span>{name}</span>
+      <span className="max-w-full break-words">{name}</span>
     </span>
   );
 }

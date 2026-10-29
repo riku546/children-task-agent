@@ -225,7 +225,9 @@ function DashboardContent() {
         <div className="flex items-center justify-between border-b border-zinc-200 pb-2 text-sm font-bold text-zinc-900">
           <div className="flex items-center gap-2">
             <span>今日のTODO</span>
-            <span className="font-mono text-xs text-zinc-400">({todayTasks.length})</span>
+            <span className="font-mono text-xs font-semibold text-zinc-700">
+              ({todayTasks.length})
+            </span>
           </div>
         </div>
         <TaskList
@@ -245,7 +247,9 @@ function DashboardContent() {
           <div className="flex items-center justify-between border-b border-zinc-200 pb-2 text-sm font-bold text-zinc-900">
             <div className="flex items-center gap-2">
               <span>明日のTODO</span>
-              <span className="font-mono text-xs text-zinc-400">({tomorrowTasks.length})</span>
+              <span className="font-mono text-xs font-semibold text-zinc-700">
+                ({tomorrowTasks.length})
+              </span>
             </div>
           </div>
           <TaskList
@@ -265,7 +269,9 @@ function DashboardContent() {
         <div className="flex items-center justify-between border-b border-zinc-200 pb-2 text-sm font-bold text-zinc-900">
           <div className="flex items-center gap-2">
             <span>今後のTODO</span>
-            <span className="font-mono text-xs text-zinc-400">({upcomingTasks.length})</span>
+            <span className="font-mono text-xs font-semibold text-zinc-700">
+              ({upcomingTasks.length})
+            </span>
           </div>
         </div>
         <TaskList
@@ -282,7 +288,7 @@ function DashboardContent() {
 
       {doneTasks.length > 0 && (
         <div className="pt-4">
-          <div className="flex items-center justify-between border-b border-zinc-200 pb-2 text-sm font-bold text-zinc-400">
+          <div className="flex items-center justify-between border-b border-zinc-200 pb-2 text-sm font-bold text-zinc-700">
             <div className="flex items-center gap-2">
               <span>完了済み</span>
               <span className="font-mono text-xs">({doneCount})</span>
@@ -439,7 +445,7 @@ export default function DashboardPage() {
     <Suspense
       fallback={
         <PageShell>
-          <p className="py-16 text-center text-sm text-zinc-400">読み込み中...</p>
+          <p className="py-16 text-center text-sm font-medium text-zinc-600">読み込み中...</p>
         </PageShell>
       }
     >

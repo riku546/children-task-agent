@@ -54,3 +54,58 @@ select {
     linear-gradient(to right, rgba(0, 0, 0, 0.03) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(0, 0, 0, 0.03) 1px, transparent 1px);
 }
+
+/* スマホの固定ボトムナビとホームインジケータに、TODOの末尾が隠れないようにする */
+@media (max-width: 767px) {
+  main > section[class*="pb-20"],
+  main > section[class*="pb-28"] {
+    padding-bottom: calc(7rem + env(safe-area-inset-bottom));
+  }
+}
+
+/*
+  スマホ幅のTODO行。タイトルを1行目の全幅に置き、優先度・期限・引き受けるは下に回す。
+  行そのもののクラスは変えない（引き受けボタンの並びを変える別ブランチと行が重ならないようにする）。
+*/
+@media (max-width: 639px) {
+  .task-list {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .task-list .divide-y > .group {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+
+  .task-list .divide-y > .group > :first-child {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .task-list .divide-y > .group > :last-child:not(:first-child) {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    padding-left: 2rem;
+    row-gap: 0.375rem;
+  }
+
+  .task-list a.truncate,
+  .task-list a.truncate span {
+    display: block;
+    overflow: visible;
+    text-overflow: unset;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    line-height: 1.45;
+  }
+
+  .task-list button.border-zinc-300 {
+    border-color: #3f3f46;
+  }
+}

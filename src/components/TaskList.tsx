@@ -36,7 +36,7 @@ export function TaskList({
   }
 
   return (
-    <div className="w-full">
+    <div className="task-list w-full min-w-0">
       {showHeader && (
         <div className="hidden sm:flex items-center justify-between border-b border-zinc-200 px-3 py-2 text-xs font-mono uppercase tracking-wider text-zinc-400">
           <div className="flex items-center gap-2">

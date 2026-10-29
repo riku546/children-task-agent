@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { applyNextPath } from "@/lib/safe-next";
 import { updateSession } from "@/lib/supabase/proxy";
 
 const protectedPagePrefixes = ["/dashboard", "/groups", "/tasks", "/profile", "/onboarding"];
@@ -50,10 +51,7 @@ export async function proxy(request: NextRequest) {
   }
 
   if (auth.user && pathname === "/login") {
-    const next = request.nextUrl.searchParams.get("next");
-    const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = next?.startsWith("/") ? next : "/dashboard";
-    redirectUrl.search = "";
+    const redirectUrl = applyNextPath(request.nextUrl, request.nextUrl.searchParams.get("next"));
     return NextResponse.redirect(redirectUrl);
   }
 
