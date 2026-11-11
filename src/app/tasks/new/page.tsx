@@ -14,10 +14,16 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { type ChangeEvent, Suspense, useEffect, useMemo, useState } from "react";
+import { type ChangeEvent, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import { PageShell } from "@/components/PageShell";
 import { fetchJsonWithCache, getCachedData, invalidateCache } from "@/lib/client-cache";
+import {
+  IMAGE_SIZE_LIMIT_MESSAGE,
+  IMAGE_UNREADABLE_MESSAGE,
+  imageDataUrlSizeError,
+  imageFileSizeError
+} from "@/lib/image-size";
 import type { ExtractionResult, GroupRecord, TodoCandidate } from "@/lib/types";
 
 type InputMode = "text" | "image" | "pdf" | "voice";
@@ -44,6 +50,13 @@ function NewTaskContent() {
   const [result, setResult] = useState<ExtractionResult | null>(null);
   const [candidates, setCandidates] = useState<TodoCandidate[]>([]);
   const [listening, setListening] = useState(false);
+  const [uploadError, setUploadError] = useState("");
+  const uploadErrorRef = useRef<HTMLParagraphElement>(null);
+
+  useEffect(() => {
+    if (!uploadError) return;
+    uploadErrorRef.current?.scrollIntoView({ block: "nearest" });
+  }, [uploadError]);
 
   useEffect(() => {
     fetchJsonWithCache<{ groups: GroupRecord[] }>("/api/groups")
@@ -62,15 +75,39 @@ function NewTaskContent() {
   );
 
   function handleImage(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
+    const input = event.target;
+    const file = input.files?.[0];
+    input.value = "";
     if (!file) return;
+    const sizeError = imageFileSizeError(file.size);
+    if (sizeError) {
+      setPreviewUrl("");
+      setUploadError(sizeError);
+      return;
+    }
     setMode("image");
     const reader = new FileReader();
     reader.onload = () => {
-      setPreviewUrl(reader.result as string);
+      const result = reader.result;
+      if (typeof result !== "string") {
+        setPreviewUrl("");
+        setUploadError(IMAGE_UNREADABLE_MESSAGE);
+        return;
+      }
+      const decodedError = imageDataUrlSizeError(result);
+      if (decodedError) {
+        setPreviewUrl("");
+        setUploadError(decodedError);
+        return;
+      }
+      setUploadError("");
+      setPreviewUrl(result);
+    };
+    reader.onerror = () => {
+      setPreviewUrl("");
+      setUploadError(IMAGE_UNREADABLE_MESSAGE);
     };
     reader.readAsDataURL(file);
-    event.target.value = "";
   }
 
   function clearImage() {
@@ -78,7 +115,9 @@ function NewTaskContent() {
   }
 
   async function handlePdf(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
+    const input = event.target;
+    const file = input.files?.[0];
+    input.value = "";
     if (!file) return;
     setMode("pdf");
     setBusyText("PDFから文字を抽出しています");
@@ -119,7 +158,14 @@ function NewTaskContent() {
       }
 
       if (firstPageDataUrl && chunks.length === 0) {
-        setPreviewUrl(firstPageDataUrl);
+        const sizeError = imageDataUrlSizeError(firstPageDataUrl);
+        if (sizeError) {
+          setPreviewUrl("");
+          setUploadError(sizeError);
+        } else {
+          setUploadError("");
+          setPreviewUrl(firstPageDataUrl);
+        }
       }
       if (chunks.length > 0) {
         setConfirmedText(chunks.join("\n\n").trim());
@@ -160,6 +206,16 @@ function NewTaskContent() {
     const hasImage = Boolean(previewUrl?.startsWith("data:image"));
     if (!hasText && !hasImage) return;
 
+    if (hasImage) {
+      const sizeError = imageDataUrlSizeError(previewUrl);
+      if (sizeError) {
+        setPreviewUrl("");
+        setUploadError(sizeError);
+        return;
+      }
+    }
+
+    setUploadError("");
     setBusyText("AIが解析してTODO候補を生成しています");
     try {
       const response = await fetch("/api/ai/extract", {
@@ -172,6 +228,14 @@ function NewTaskContent() {
           imageUrl: hasImage ? previewUrl : undefined
         })
       });
+      if (!response.ok) {
+        const message = await readExtractError(response);
+        if (response.status === 413 || message === IMAGE_SIZE_LIMIT_MESSAGE) {
+          setPreviewUrl("");
+        }
+        setUploadError(message);
+        return;
+      }
       const data = (await response.json()) as ExtractionResult;
       setResult(data);
       setCandidates(data.tasks);
@@ -258,6 +322,16 @@ function NewTaskContent() {
             案内に戻る
           </Link>
         </div>
+      ) : null}
+
+      {uploadError ? (
+        <p
+          ref={uploadErrorRef}
+          role="alert"
+          className="mt-4 scroll-mt-24 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-800"
+        >
+          {uploadError}
+        </p>
       ) : null}
 
       <div className="mt-6 grid gap-8 lg:grid-cols-[320px_1fr] items-start">
@@ -577,6 +651,17 @@ function NewTaskContent() {
       </div>
     </PageShell>
   );
+}
+
+async function readExtractError(response: Response) {
+  try {
+    const data = (await response.json()) as { error?: unknown };
+    if (typeof data.error === "string" && data.error.trim()) return data.error;
+  } catch {
+    // 413 などは JSON でないことがある
+  }
+  if (response.status === 413) return IMAGE_SIZE_LIMIT_MESSAGE;
+  return "TODOの抽出に失敗しました";
 }
 
 function Field({
