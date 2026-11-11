@@ -1,6 +1,6 @@
 import { clsx } from "clsx";
-import { CalendarDays, CheckCircle2, Circle, Flag } from "lucide-react";
-import { formatDateJa } from "@/lib/date";
+import { AlertTriangle, CalendarDays, CheckCircle2, Circle, Flag } from "lucide-react";
+import { formatDateJa, isOverdue } from "@/lib/date";
 import type { Priority, TaskStatus } from "@/lib/types";
 
 export function PriorityPill({ priority }: { priority: Priority }) {
@@ -37,11 +37,22 @@ export function StatusPill({ status }: { status: TaskStatus }) {
   );
 }
 
-export function DuePill({ dueDate }: { dueDate: string | null }) {
+export function DuePill({ dueDate, done = false }: { dueDate: string | null; done?: boolean }) {
   if (!dueDate) {
     return (
       <span className="inline-flex items-center gap-1 rounded border border-zinc-400 bg-zinc-100 px-2 py-0.5 text-xs font-semibold text-zinc-800">
         期日未定
+      </span>
+    );
+  }
+  if (!done && isOverdue(dueDate)) {
+    return (
+      <span className="inline-flex items-center gap-1 rounded border border-red-500 bg-red-50 px-2 py-0.5 text-xs font-semibold text-red-700 shadow-2xs">
+        <AlertTriangle size={12} className="text-red-600" aria-hidden="true" />
+        {formatDateJa(dueDate)}
+        <span className="sr-only">（</span>
+        期限切れ
+        <span className="sr-only">）</span>
       </span>
     );
   }
