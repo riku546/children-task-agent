@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { ensureCurrentUser } from "@/lib/auth";
 import { extractWithOpenRouter } from "@/lib/extraction";
+import { imageUrlSizeError } from "@/lib/image-size";
 import { saveExtraction } from "@/lib/repository";
 
 const extractSchema = z.object({
@@ -12,8 +13,12 @@ const extractSchema = z.object({
 });
 
 export async function POST(request: Request) {
-  const user = await ensureCurrentUser();
   const body = extractSchema.parse(await request.json());
+  const sizeError = imageUrlSizeError(body.imageUrl);
+  if (sizeError) {
+    return NextResponse.json({ error: sizeError.error }, { status: sizeError.status });
+  }
+  const user = await ensureCurrentUser();
   const result = await extractWithOpenRouter({
     text: body.confirmedText,
     imageUrl: body.imageUrl
