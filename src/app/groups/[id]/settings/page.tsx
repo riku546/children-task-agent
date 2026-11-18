@@ -390,7 +390,7 @@ export default function GroupSettingsPage() {
                   家族を招待する
                 </h2>
                 <p className="mt-1 text-sm leading-relaxed text-zinc-600">
-                  URLを送るか、相手のスマホのカメラでQRコードを読み取ってください。
+                  URLを送るか、相手のスマホのカメラでQRコードを読み取ってください。有効期限までは同じリンクで複数人を招待できます。
                 </p>
               </div>
               <button
