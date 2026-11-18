@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
 import { ensureCurrentUser } from "@/lib/auth";
+import { DisplayNameError, updateDisplayName } from "@/lib/display-name";
 import { needsOnboarding } from "@/lib/onboarding";
-import { prisma, tryDb } from "@/lib/prisma";
 import { isOnboardingComplete, listGroups } from "@/lib/repository";
-import { createClient } from "@/lib/supabase/server";
 
 export async function GET() {
   const user = await ensureCurrentUser();
@@ -21,31 +20,17 @@ export async function PATCH(request: Request) {
   const body = await request.json();
   const { name } = body;
 
-  if (typeof name !== "string" || !name.trim()) {
+  if (typeof name !== "string") {
     return NextResponse.json({ error: "お名前を入力してください" }, { status: 400 });
   }
 
-  const updatedName = name.trim();
-
-  await tryDb(async () => {
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { name: updatedName }
-    });
-    await prisma.familyMember.updateMany({
-      where: { userId: user.id },
-      data: { displayName: updatedName }
-    });
-  });
-
   try {
-    const supabase = await createClient();
-    await supabase.auth.updateUser({
-      data: { name: updatedName, full_name: updatedName }
-    });
+    const updatedName = await updateDisplayName(user, name);
+    return NextResponse.json({ ok: true, name: updatedName });
   } catch (err) {
-    console.error("Failed to update supabase user metadata", err);
+    if (err instanceof DisplayNameError) {
+      return NextResponse.json({ error: err.message }, { status: 400 });
+    }
+    throw err;
   }
-
-  return NextResponse.json({ ok: true, name: updatedName });
 }

@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { Camera, Home, Users } from "lucide-react";
+import { Camera, Home, MessageCircle, Users } from "lucide-react";
 
 export type AppNavItem = {
   href: string;
@@ -10,6 +10,7 @@ export type AppNavItem = {
 export const appNavItems: AppNavItem[] = [
   { href: "/dashboard", label: "ホーム", icon: Home },
   { href: "/tasks/new", label: "取込", icon: Camera },
+  { href: "/chat", label: "チャット", icon: MessageCircle },
   { href: "/groups", label: "家族", icon: Users }
 ];
 
