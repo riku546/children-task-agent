@@ -142,7 +142,7 @@ export default function GroupsPage() {
       </div>
 
       {showCreateForm ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-x-0 top-0 z-50 flex h-dvh items-center justify-center p-4 pb-[calc(6.5rem+env(safe-area-inset-bottom))] md:pb-4">
           <button
             type="button"
             className="absolute inset-0 bg-zinc-950/40"
