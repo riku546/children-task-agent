@@ -95,7 +95,7 @@ export default function GroupsPage() {
           <h1 className="text-xl font-bold tracking-tight text-zinc-950 sm:text-2xl">家族</h1>
           <button
             type="button"
-            className="button-secondary shrink-0 border border-zinc-200 bg-white text-sm"
+            className="button-primary shrink-0 text-sm"
             onClick={openCreateModal}
           >
             新しいグループ
