@@ -142,7 +142,7 @@ export default function GroupsPage() {
       </div>
 
       {showCreateForm ? (
-        <div className="fixed inset-x-0 top-0 z-50 flex h-dvh items-center justify-center p-4 pb-[calc(6.5rem+env(safe-area-inset-bottom))] md:pb-4">
+        <div className="fixed inset-0 z-50">
           <button
             type="button"
             className="absolute inset-0 bg-zinc-950/40"
@@ -153,7 +153,7 @@ export default function GroupsPage() {
             role="dialog"
             aria-modal="true"
             aria-labelledby="create-group-dialog-title"
-            className="relative z-10 w-full max-w-md rounded-lg border border-zinc-200 bg-white p-5 shadow-lg"
+            className="absolute left-1/2 top-[50svh] z-10 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-[calc(50%+2.25rem)] rounded-lg border border-zinc-200 bg-white p-5 shadow-lg md:-translate-y-1/2"
           >
             <div className="flex items-start justify-between gap-3">
               <h2 id="create-group-dialog-title" className="text-lg font-bold text-zinc-950">
