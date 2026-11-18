@@ -66,7 +66,7 @@ export function UserNav() {
   return (
     <Link
       href="/profile"
-      className="group relative flex items-center gap-2 rounded-full border border-zinc-200 bg-white p-1 transition hover:border-zinc-300 hover:shadow-2xs focus-ring"
+      className="group relative flex items-center gap-2 rounded-full border border-zinc-200 bg-white p-1 transition hover:border-zinc-300 focus-ring"
       title={`${displayName} の設定・プロフィール`}
     >
       {user?.image ? (

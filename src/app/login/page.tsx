@@ -1,6 +1,6 @@
 "use client";
 
-import { Layers, Loader2, ShieldCheck } from "lucide-react";
+import { Loader2, ShieldCheck } from "lucide-react";
 import { useEffect, useState } from "react";
 
 function GoogleIcon() {
@@ -66,61 +66,48 @@ export default function LoginPage() {
   }
 
   return (
-    <section className="mx-auto flex min-h-[calc(100vh-56px)] max-w-4xl flex-col items-center justify-center px-4 py-12">
-      <div className="w-full max-w-sm rounded-xl border border-zinc-200/90 bg-white p-6 sm:p-8 shadow-soft">
-        <div className="text-center">
-          <span className="mx-auto grid size-9 place-items-center rounded-lg bg-zinc-900 text-white shadow-2xs">
-            <Layers size={18} />
-          </span>
-          <h1 className="mt-4 text-xl font-bold tracking-tight text-zinc-950">
-            育児タスクAI にログイン
-          </h1>
-          <p className="mt-1.5 text-xs text-zinc-500">
-            Googleアカウントで安全にログインまたは新規登録
-          </p>
+    <section className="mx-auto max-w-md px-4 py-12 sm:px-6">
+      <h1 className="text-xl font-bold tracking-tight text-zinc-950 sm:text-2xl">
+        育児タスクAI にログイン
+      </h1>
+      <p className="mt-2 text-sm text-zinc-600">
+        Googleアカウントで安全にログインまたは新規登録できます。
+      </p>
+
+      {error ? (
+        <div className="mt-4 rounded-md border border-rose-200 bg-rose-50 p-3 text-sm font-medium text-rose-700">
+          {error}
         </div>
+      ) : null}
 
-        {error && (
-          <div className="mt-4 rounded-lg bg-rose-50 border border-rose-200 p-3 text-xs font-medium text-rose-700">
-            {error}
-          </div>
-        )}
+      <div className="mt-8 space-y-4">
+        <button
+          type="button"
+          onClick={loginWithGoogle}
+          disabled={loading}
+          className="button-secondary min-h-11 w-full border border-zinc-200 bg-white"
+        >
+          {loading ? <Loader2 size={15} className="animate-spin text-zinc-400" /> : <GoogleIcon />}
+          <span>{loading ? "Googleへ移動中..." : "Googleで続ける"}</span>
+        </button>
 
-        <div className="mt-6 space-y-3">
-          <button
-            type="button"
-            onClick={loginWithGoogle}
-            disabled={loading}
-            className="flex min-h-10 w-full items-center justify-center gap-2.5 rounded-lg border border-zinc-200 bg-white px-4 py-2.5 text-xs font-semibold text-zinc-800 shadow-2xs transition hover:bg-zinc-50 hover:border-zinc-300 focus-ring disabled:opacity-50"
-          >
-            {loading ? (
-              <Loader2 size={15} className="animate-spin text-zinc-400" />
-            ) : (
-              <GoogleIcon />
-            )}
-            <span>{loading ? "Googleへ移動中..." : "Googleで続ける"}</span>
-          </button>
-
-          {nextPath.startsWith("/groups/join") ? (
-            <p className="rounded-md border border-emerald-300 bg-emerald-50 px-3 py-2 text-center text-sm font-medium text-emerald-950">
-              ログイン後、招待された家族グループの参加画面に戻ります。
-            </p>
-          ) : null}
-
-          <p className="pt-2 text-center text-xs font-medium text-zinc-600">
-            パスワード設定不要・1クリックで利用開始
+        {nextPath.startsWith("/groups/join") ? (
+          <p className="rounded-md border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-950">
+            ログイン後、招待された家族グループの参加画面に戻ります。
           </p>
-        </div>
+        ) : null}
 
-        <div className="mt-6 border-t border-zinc-100 pt-4">
-          <div className="flex items-center justify-center gap-1.5 text-[11px] text-zinc-500">
-            <ShieldCheck size={13} className="text-emerald-600" />
-            <span>ZDR準拠（推論後データ即時破棄）</span>
-          </div>
+        <p className="text-sm text-zinc-600">パスワード設定不要・1クリックで利用開始</p>
+      </div>
+
+      <div className="mt-10 border-t border-zinc-200 pt-4">
+        <div className="flex items-center gap-1.5 text-xs text-zinc-500">
+          <ShieldCheck size={13} className="text-emerald-600" />
+          <span>ZDR準拠（推論後データ即時破棄）</span>
         </div>
       </div>
 
-      <p className="mt-6 text-center text-xs text-zinc-500">
+      <p className="mt-8 text-xs text-zinc-500">
         アカウント作成により、サービス利用規約およびプライバシーポリシーに同意したものとみなされます。
       </p>
     </section>

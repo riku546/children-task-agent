@@ -8,11 +8,9 @@ import { fetchJsonWithCache, getCachedData, invalidateCache } from "@/lib/client
 import { MembershipError, planMemberRemoval } from "@/lib/membership";
 import type { GroupRecord, MemberRecord } from "@/lib/types";
 
-const primaryButton =
-  "inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg bg-zinc-900 px-3.5 text-sm font-semibold text-white shadow-2xs transition hover:bg-zinc-800 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50";
+const primaryButton = "button-primary min-h-11";
 
-const secondaryButton =
-  "inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3.5 text-sm font-semibold text-zinc-700 shadow-2xs transition hover:bg-zinc-50 hover:text-zinc-900 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50";
+const secondaryButton = "button-secondary min-h-11";
 
 type PendingRemoval = {
   memberId: string;
@@ -262,7 +260,7 @@ export default function GroupSettingsPage() {
               グループ一覧
             </Link>
             <span className="text-zinc-300">/</span>
-            <span className="text-xs font-mono text-zinc-500">Settings</span>
+            <span className="text-xs text-zinc-500">設定</span>
           </div>
           <h1 className="mt-1 text-xl font-bold tracking-tight text-zinc-950 sm:text-2xl">
             {group.name} の設定
@@ -306,8 +304,8 @@ export default function GroupSettingsPage() {
         <div>
           <div className="flex items-center gap-2 pb-1">
             <Users size={15} className="text-zinc-500" />
-            <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-500">
-              所属メンバー ({group.members.length})
+            <h2 className="text-sm font-bold text-zinc-900">
+              所属メンバー（{group.members.length}）
             </h2>
           </div>
           <p className="mt-2 text-sm leading-relaxed text-zinc-500">
@@ -317,7 +315,7 @@ export default function GroupSettingsPage() {
                 ? "管理者は他のメンバーを外せます。外した人の担当タスクは未担当に戻ります。"
                 : "他のメンバーを外せるのは管理者だけです。自分はこのグループから抜けられます。"}
           </p>
-          <div className="mt-3 divide-y divide-zinc-200 rounded-lg border border-zinc-200 bg-white overflow-hidden shadow-2xs">
+          <div className="mt-3 divide-y divide-zinc-200 border-t border-zinc-200">
             {group.members.map((member) => (
               <MemberRow
                 key={member.id}
@@ -334,8 +332,8 @@ export default function GroupSettingsPage() {
         <div>
           <div className="flex items-center gap-2 pb-1">
             <Baby size={15} className="text-zinc-500" />
-            <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-500">
-              登録中の子ども ({group.children.length})
+            <h2 className="text-sm font-bold text-zinc-900">
+              登録中の子ども（{group.children.length}）
             </h2>
           </div>
 
@@ -357,7 +355,7 @@ export default function GroupSettingsPage() {
             </button>
           </div>
 
-          <div className="mt-3 divide-y divide-zinc-200 rounded-lg border border-zinc-200 bg-white overflow-hidden shadow-2xs">
+          <div className="mt-3 divide-y divide-zinc-200 border-t border-zinc-200">
             {group.children.length === 0 ? (
               <div className="p-6 text-center text-sm text-zinc-500">
                 子どもはまだ登録されていません

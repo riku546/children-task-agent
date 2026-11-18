@@ -227,8 +227,8 @@ export default function ProfilePage() {
           <div className="flex items-center justify-between pb-2">
             <div className="flex items-center gap-2">
               <Users size={15} className="text-zinc-500" />
-              <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-600">
-                参加中の家族グループ ({groups.length})
+              <h2 className="text-sm font-bold text-zinc-900">
+                参加中の家族グループ（{groups.length}）
               </h2>
             </div>
             <Link
@@ -239,7 +239,7 @@ export default function ProfilePage() {
             </Link>
           </div>
 
-          <div className="mt-3 divide-y divide-zinc-200 rounded-lg border border-zinc-200 bg-white overflow-hidden shadow-2xs">
+          <div className="mt-3 divide-y divide-zinc-200 border-t border-zinc-200">
             {groups.length === 0 ? (
               <p className="p-6 text-center text-xs text-zinc-500">参加中のグループはありません</p>
             ) : (
@@ -268,10 +268,8 @@ export default function ProfilePage() {
 
         {/* セクション 3: アカウント操作 / サインアウト */}
         <div className="pt-8">
-          <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-600">
-            セッション管理
-          </h2>
-          <div className="mt-3 flex items-center justify-between rounded-lg border border-zinc-200 bg-zinc-50/50 p-4">
+          <h2 className="text-sm font-bold text-zinc-900">セッション管理</h2>
+          <div className="mt-3 flex items-center justify-between border-t border-zinc-200 py-4">
             <div>
               <div className="text-xs font-semibold text-zinc-900">サインアウト</div>
               <div className="text-[11px] text-zinc-500">

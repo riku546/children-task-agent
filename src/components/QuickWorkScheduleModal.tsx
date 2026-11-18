@@ -106,10 +106,10 @@ export function QuickWorkScheduleModal({
                   key={preset}
                   type="button"
                   onClick={() => setTitle(preset)}
-                  className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition ${
+                  className={`px-1 py-0.5 text-xs font-semibold underline-offset-2 transition ${
                     title === preset
-                      ? "bg-zinc-900 text-white shadow-2xs"
-                      : "border border-zinc-200 bg-zinc-50 text-zinc-600 hover:bg-zinc-100"
+                      ? "text-zinc-950 underline"
+                      : "text-zinc-600 hover:text-zinc-900 hover:underline"
                   }`}
                 >
                   {preset}

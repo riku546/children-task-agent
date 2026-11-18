@@ -23,7 +23,8 @@ export function SegmentedControl<T extends string>({
 }: Props<T>) {
   return (
     <div
-      className={`flex max-w-full items-center overflow-x-auto rounded-lg border border-zinc-200 bg-zinc-100/80 p-0.5 ${className}`}
+      className={`flex max-w-full items-center gap-1 overflow-x-auto border-b border-zinc-200 ${className}`}
+      role="tablist"
     >
       {segments.map((segment) => {
         const Icon = segment.icon;
@@ -32,9 +33,13 @@ export function SegmentedControl<T extends string>({
           <button
             key={segment.id}
             type="button"
+            role="tab"
+            aria-selected={isActive}
             onClick={() => onChange(segment.id)}
-            className={`flex shrink-0 items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-semibold transition ${
-              isActive ? "bg-white text-zinc-950 shadow-2xs" : "text-zinc-600 hover:text-zinc-900"
+            className={`flex shrink-0 items-center gap-1.5 border-b-2 px-3 pb-2.5 pt-1 text-sm font-semibold transition -mb-px ${
+              isActive
+                ? "border-zinc-900 text-zinc-950"
+                : "border-transparent text-zinc-500 hover:text-zinc-800"
             }`}
           >
             {Icon ? <Icon size={15} /> : null}

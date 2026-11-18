@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2, Users } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
@@ -93,7 +93,7 @@ function JoinContent() {
         description="招待リンクのトークンを確認して、このグループのTODOを共有します"
       />
 
-      <div className="mt-6 rounded-lg border border-zinc-300 bg-white p-5 shadow-2xs">
+      <div className="mt-6 space-y-4 border-t border-zinc-200 pt-6">
         {loading ? (
           <p className="flex items-center gap-2 text-sm font-medium text-zinc-700">
             <Loader2 size={16} className="animate-spin" />
@@ -109,14 +109,9 @@ function JoinContent() {
 
         {preview && !error ? (
           <div className="space-y-4">
-            <div className="flex items-start gap-3">
-              <span className="grid size-10 shrink-0 place-items-center rounded-md bg-zinc-900 text-white">
-                <Users size={18} />
-              </span>
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-zinc-700">参加するグループ</p>
-                <h2 className="break-words text-xl font-bold text-zinc-950">{preview.groupName}</h2>
-              </div>
+            <div>
+              <p className="text-sm text-zinc-600">参加するグループ</p>
+              <h2 className="break-words text-xl font-bold text-zinc-950">{preview.groupName}</h2>
             </div>
 
             {preview.alreadyMember || joined ? (
@@ -140,7 +135,7 @@ function JoinContent() {
                 onClick={join}
                 disabled={joining}
               >
-                {joining ? <Loader2 size={16} className="animate-spin" /> : <Users size={16} />}
+                {joining ? <Loader2 size={16} className="animate-spin" /> : null}
                 このグループに参加する
               </button>
             )}

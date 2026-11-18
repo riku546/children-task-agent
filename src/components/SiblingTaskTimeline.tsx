@@ -117,14 +117,14 @@ export function SiblingTaskTimeline({
         <div className="flex items-center gap-2">
           {/* 子どもフィルターチップ（2人以上いる場合） */}
           {allChildren.length > 1 && (
-            <div className="flex items-center rounded-lg border border-zinc-200 bg-zinc-100/80 p-0.5">
+            <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
                 onClick={() => setSelectedChildTab("all")}
-                className={`rounded-md px-3 py-1.5 text-sm font-medium transition ${
+                className={`border-b-2 px-2 pb-1.5 pt-1 text-sm font-semibold transition ${
                   selectedChildTab === "all"
-                    ? "bg-white font-semibold text-zinc-950 shadow-2xs"
-                    : "text-zinc-600 hover:text-zinc-900"
+                    ? "border-zinc-900 text-zinc-950"
+                    : "border-transparent text-zinc-500 hover:text-zinc-800"
                 }`}
               >
                 全員
@@ -136,10 +136,10 @@ export function SiblingTaskTimeline({
                     key={c.name}
                     type="button"
                     onClick={() => setSelectedChildTab(c.name)}
-                    className={`rounded-md px-3 py-1.5 text-sm font-medium transition ${
+                    className={`border-b-2 px-2 pb-1.5 pt-1 text-sm font-semibold transition ${
                       isSelected
-                        ? "bg-white font-semibold text-zinc-950 shadow-2xs"
-                        : "text-zinc-600 hover:text-zinc-900"
+                        ? "border-zinc-900 text-zinc-950"
+                        : "border-transparent text-zinc-500 hover:text-zinc-800"
                     }`}
                   >
                     <span>{c.name}</span>

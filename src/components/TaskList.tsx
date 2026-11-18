@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Heart, Loader2, UserRound } from "lucide-react";
+import { Check, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { ChildBadge } from "@/components/ChildBadge";
 import { DuePill, PriorityPill } from "@/components/StatusPill";
@@ -38,15 +38,13 @@ export function TaskList({
   return (
     <div className="task-list w-full min-w-0">
       {showHeader && (
-        <div className="hidden sm:flex items-center justify-between border-b border-zinc-200 px-3 py-2 text-xs font-mono uppercase tracking-wider text-zinc-400">
-          <div className="flex items-center gap-2">
-            <span>Task</span>
-          </div>
+        <div className="hidden items-center justify-between border-b border-zinc-200 px-3 py-2 text-xs text-zinc-500 sm:flex">
+          <span>やること</span>
           <div className="flex items-center gap-6">
-            <span>Child</span>
-            <span>Due</span>
-            <span>Assignee</span>
-            <span className="w-16 text-right">Actions</span>
+            <span>子ども</span>
+            <span>期限</span>
+            <span>担当</span>
+            <span className="w-20 text-right">操作</span>
           </div>
         </div>
       )}
@@ -88,7 +86,7 @@ export function TaskList({
 
                 <Link href={`/tasks/${task.id}`} className="min-w-0 flex-1 truncate">
                   <span
-                    className={`text-sm font-medium text-zinc-900 hover:text-zinc-600 transition truncate ${
+                    className={`truncate text-sm font-medium text-zinc-900 transition hover:text-zinc-600 ${
                       isDone ? "line-through text-zinc-400" : ""
                     }`}
                   >
@@ -102,22 +100,20 @@ export function TaskList({
                 <DuePill dueDate={task.dueDate} />
                 <PriorityPill priority={task.priority} />
 
-                <div className="hidden md:flex items-center gap-1.5 min-w-[76px] text-xs text-zinc-600">
-                  <UserRound size={13} className="text-zinc-400" />
+                <div className="hidden min-w-[76px] items-center gap-1.5 text-xs text-zinc-600 md:flex">
                   <span className="truncate">
-                    {task.assigneeName || <span className="text-amber-600">未定</span>}
+                    {task.assigneeName || <span className="text-amber-700">未定</span>}
                   </span>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-1.5">
+                <div className="flex flex-wrap items-center gap-2">
                   {onAssignToMe &&
                     !isDone &&
                     (takenByMe ? (
                       <span
                         role="status"
-                        className="inline-flex min-h-11 items-center gap-1.5 rounded-full bg-rose-600 px-3 text-xs font-semibold text-white"
+                        className="inline-flex min-h-11 items-center text-xs font-medium text-zinc-600"
                       >
-                        <Heart size={14} className="fill-white" aria-hidden="true" />
                         引き受け済み
                       </span>
                     ) : (
@@ -126,13 +122,9 @@ export function TaskList({
                         onClick={() => onAssignToMe(task.id)}
                         disabled={isActionLoading}
                         aria-pressed={false}
-                        className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-rose-200 bg-rose-50 px-3 text-xs font-semibold text-rose-800 shadow-2xs transition hover:bg-rose-100 disabled:opacity-50"
+                        className="inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-rose-700 underline-offset-2 transition hover:text-rose-900 hover:underline disabled:opacity-50"
                       >
-                        {isActionLoading ? (
-                          <Loader2 size={14} className="animate-spin" />
-                        ) : (
-                          <Heart size={14} aria-hidden="true" />
-                        )}
+                        {isActionLoading ? <Loader2 size={14} className="animate-spin" /> : null}
                         引き受ける
                       </button>
                     ))}
@@ -141,15 +133,15 @@ export function TaskList({
                     <span className="text-xs text-zinc-500 md:hidden">{task.assigneeName}</span>
                   ) : null}
 
-                  {onThankYou && !isDone && task.assigneeName && (
+                  {onThankYou && !isDone && task.assigneeName ? (
                     <button
                       type="button"
                       onClick={() => onThankYou(task)}
-                      className="inline-flex min-h-11 items-center rounded-full border border-zinc-200 bg-white px-3 text-xs font-semibold text-zinc-600 shadow-2xs transition hover:bg-zinc-50"
+                      className="inline-flex min-h-11 items-center text-xs font-semibold text-zinc-600 underline-offset-2 transition hover:text-zinc-900 hover:underline"
                     >
                       ありがとう
                     </button>
-                  )}
+                  ) : null}
                 </div>
               </div>
             </div>
