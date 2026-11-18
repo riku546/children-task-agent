@@ -9,15 +9,35 @@ export function toDateInputValue(value: string | Date | null | undefined) {
   return `${year}-${month}-${day}`;
 }
 
-export function isSameDate(value: string | null, offsetDays: number) {
-  if (!value) return false;
-  const target = new Date();
-  target.setHours(0, 0, 0, 0);
-  target.setDate(target.getDate() + offsetDays);
-
-  const date = new Date(value);
+/** "YYYY-MM-DD" はUTCではなく端末ローカルの日付として解釈する */
+function parseLocalDate(value: string) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  const date = match
+    ? new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]))
+    : new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
   date.setHours(0, 0, 0, 0);
-  return date.getTime() === target.getTime();
+  return date;
+}
+
+
+export function daysFromToday(value: string | null, now: Date = new Date()) {
+  if (!value) return null;
+  const date = parseLocalDate(value);
+  if (!date) return null;
+  const today = new Date(now);
+  today.setHours(0, 0, 0, 0);
+  return Math.round((date.getTime() - today.getTime()) / 86_400_000);
+}
+
+export function isSameDate(value: string | null, offsetDays: number, now: Date = new Date()) {
+  return daysFromToday(value, now) === offsetDays;
+}
+
+
+export function isOverdue(value: string | null, now: Date = new Date()) {
+  const days = daysFromToday(value, now);
+  return days !== null && days < 0;
 }
 
 export function formatDateJa(value: string | null) {
