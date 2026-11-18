@@ -1,17 +1,6 @@
 "use client";
 
-import {
-  Camera,
-  FileText,
-  Loader2,
-  Mic,
-  Plus,
-  Save,
-  Sparkles,
-  Trash2,
-  Type,
-  Upload
-} from "lucide-react";
+import { Camera, FileText, Loader2, Mic, Plus, Save, Trash2, Type, Upload } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { type ChangeEvent, Suspense, useEffect, useMemo, useState } from "react";
@@ -304,12 +293,12 @@ function NewTaskContent() {
             </label>
           </div>
 
-          <details className="rounded-lg border border-zinc-200 bg-zinc-50/50 px-3 py-2">
+          <details className="border-t border-zinc-200 pt-2">
             <summary className="cursor-pointer text-sm font-semibold text-zinc-700">
               別の入力方法（テキスト・PDF・音声）
             </summary>
             <div className="mt-3 space-y-3">
-              <div className="grid grid-cols-2 gap-1 rounded bg-zinc-200/60 p-0.5 sm:grid-cols-4">
+              <div className="flex flex-wrap gap-1 border-b border-zinc-200">
                 {modes.map((item) => {
                   const Icon = item.icon;
                   const isActive = mode === item.id;
@@ -317,10 +306,10 @@ function NewTaskContent() {
                     <button
                       key={item.id}
                       type="button"
-                      className={`flex items-center justify-center gap-1 rounded py-2 text-xs font-medium transition sm:text-sm ${
+                      className={`flex items-center gap-1 border-b-2 px-2 pb-2 pt-1 text-xs font-semibold transition sm:text-sm ${
                         isActive
-                          ? "bg-white font-semibold text-zinc-900 shadow-2xs"
-                          : "text-zinc-600 hover:text-zinc-900"
+                          ? "border-zinc-900 text-zinc-950"
+                          : "border-transparent text-zinc-500 hover:text-zinc-800"
                       }`}
                       onClick={() => setMode(item.id)}
                     >
@@ -379,8 +368,8 @@ function NewTaskContent() {
                 onClick={generate}
                 disabled={Boolean(busyText)}
               >
-                {busyText ? <Loader2 className="animate-spin" size={14} /> : <Sparkles size={14} />}
-                <span>画像からTODOをAI抽出</span>
+                {busyText ? <Loader2 className="animate-spin" size={14} /> : null}
+                <span>タスクを抽出する</span>
               </button>
             </div>
           ) : null}
@@ -398,10 +387,7 @@ function NewTaskContent() {
           {/* ソーステキスト入力 */}
           <div>
             <div className="flex items-center justify-between">
-              <label
-                className="text-sm font-bold uppercase tracking-wider text-zinc-600"
-                htmlFor="confirmed-text"
-              >
+              <label className="text-sm font-semibold text-zinc-800" htmlFor="confirmed-text">
                 2. 読み取りテキストの確認・編集
               </label>
               <span className="text-xs text-zinc-500">直接編集可能</span>
@@ -420,8 +406,8 @@ function NewTaskContent() {
                 onClick={generate}
                 disabled={Boolean(busyText) || (!confirmedText.trim() && !previewUrl)}
               >
-                {busyText ? <Loader2 className="animate-spin" size={15} /> : <Sparkles size={15} />}
-                <span>テキストからTODO候補を抽出</span>
+                {busyText ? <Loader2 className="animate-spin" size={15} /> : null}
+                <span>タスクを抽出する</span>
               </button>
               {busyText ? (
                 <span className="inline-flex items-center gap-1.5 text-sm font-medium text-emerald-700">
@@ -438,12 +424,10 @@ function NewTaskContent() {
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold uppercase tracking-wider text-zinc-600">
+                    <span className="text-sm font-semibold text-zinc-800">
                       3. 生成されたTODO候補
                     </span>
-                    <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700 border border-emerald-200/60">
-                      {candidates.length} 件
-                    </span>
+                    <span className="text-sm text-zinc-500">（{candidates.length}件）</span>
                   </div>
                   <p className="mt-1 text-base font-semibold text-zinc-900">{result.summary}</p>
                 </div>
@@ -558,10 +542,9 @@ function NewTaskContent() {
               </div>
             </div>
           ) : (
-            <div className="flex flex-1 flex-col items-center justify-center p-12 text-center text-zinc-500">
-              <Sparkles size={24} className="text-zinc-400 mb-2" />
-              <p className="text-sm font-medium text-zinc-600">
-                左側から画像・PDFを取り込むか、上のテキストエリアに入力して「TODO候補を抽出」を押してください。
+            <div className="border-t border-zinc-200 pt-8 text-sm text-zinc-600">
+              <p>
+                左から画像・PDFを取り込むか、上のテキストを確認して「タスクを抽出する」を押してください。
               </p>
               <button
                 type="button"

@@ -27,10 +27,10 @@ export function HeaderNav() {
           <Link
             key={item.href + item.label}
             href={item.href}
-            className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm transition ${
+            className={`inline-flex items-center gap-1.5 border-b-2 px-2.5 pb-2 pt-1.5 text-sm transition ${
               isActive
-                ? "bg-zinc-100 font-semibold text-zinc-900 shadow-2xs"
-                : "font-medium text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900"
+                ? "border-zinc-900 font-semibold text-zinc-900"
+                : "border-transparent font-medium text-zinc-600 hover:text-zinc-900"
             }`}
           >
             <Icon size={15} className={isActive ? "text-zinc-900" : "text-zinc-600"} />

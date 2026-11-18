@@ -11,13 +11,11 @@ type Props = {
 };
 
 export function ChildBadge({ name, isWork = false, size = "sm", showIcon = true }: Props) {
+  const textClass = size === "sm" ? "text-xs" : "text-sm";
+
   if (isWork) {
     return (
-      <span
-        className={`inline-flex items-center gap-1 rounded font-medium border border-zinc-200 bg-zinc-100 text-zinc-700 shadow-2xs ${
-          size === "sm" ? "px-2 py-0.5 text-xs" : "px-2.5 py-1 text-sm"
-        }`}
-      >
+      <span className={`inline-flex items-center gap-1.5 font-medium text-zinc-600 ${textClass}`}>
         {showIcon && <Briefcase size={size === "sm" ? 11 : 13} />}
         <span>仕事</span>
       </span>
@@ -31,12 +29,8 @@ export function ChildBadge({ name, isWork = false, size = "sm", showIcon = true 
   const theme = getChildTheme(name);
 
   return (
-    <span
-      className={`inline-flex items-center gap-1 rounded font-medium border ${theme.border} ${theme.badgeBg} ${theme.badgeText} shadow-2xs ${
-        size === "sm" ? "px-2 py-0.5 text-xs" : "px-2.5 py-1 text-sm"
-      }`}
-    >
-      <span className={`size-1.5 rounded-full ${theme.dotColor}`} />
+    <span className={`inline-flex items-center gap-1.5 font-medium text-zinc-700 ${textClass}`}>
+      <span className={`size-2 shrink-0 rounded-full ${theme.dotColor}`} />
       <span className="max-w-full break-words">{name}</span>
     </span>
   );

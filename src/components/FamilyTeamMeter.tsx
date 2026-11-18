@@ -51,8 +51,7 @@ export function FamilyTeamMeter({ tasks, variant = "inline" }: Props) {
 
   if (tasks.length === 0 || analysis.totalTodo === 0) return null;
 
-  const borderClass =
-    variant === "team" ? "rounded-lg border border-zinc-200 bg-zinc-50/50 px-3.5" : "";
+  const borderClass = variant === "team" ? "border-b border-zinc-200" : "";
 
   return (
     <div

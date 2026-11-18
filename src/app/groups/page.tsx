@@ -51,10 +51,8 @@ export default function GroupsPage() {
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[320px_1fr]">
         {/* グループ作成サイドパネル */}
-        <div className="rounded-lg border border-zinc-200 bg-zinc-50/50 p-4 shadow-2xs">
-          <h2 className="text-sm font-bold uppercase tracking-wider text-zinc-700">
-            グループ新規作成
-          </h2>
+        <div className="border-b border-zinc-200 pb-6">
+          <h2 className="text-sm font-bold text-zinc-900">グループを新しく作る</h2>
           <div className="mt-3">
             <label className="block text-sm font-semibold text-zinc-700" htmlFor="group-name">
               グループ名
@@ -81,11 +79,9 @@ export default function GroupsPage() {
         {/* グループ一覧テーブル */}
         <div>
           <div className="flex items-center justify-between pb-1">
-            <h2 className="text-sm font-bold uppercase tracking-wider text-zinc-700">
-              参加中のグループ ({groups.length})
-            </h2>
+            <h2 className="text-sm font-bold text-zinc-900">参加中のグループ（{groups.length}）</h2>
           </div>
-          <div className="mt-3 divide-y divide-zinc-200 rounded-lg border border-zinc-200 bg-white overflow-hidden shadow-2xs">
+          <div className="mt-3 divide-y divide-zinc-200 border-t border-zinc-200">
             {groups.length === 0 ? (
               <div className="p-8 text-center text-sm text-zinc-500">
                 参加しているグループはありません
@@ -98,9 +94,7 @@ export default function GroupsPage() {
                   className="flex items-center justify-between p-4 transition hover:bg-zinc-50/80"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="grid size-8 place-items-center rounded bg-zinc-100 text-zinc-700">
-                      <Users size={16} />
-                    </div>
+                    <Users size={16} className="shrink-0 text-zinc-500" />
                     <div>
                       <div className="text-sm font-bold text-zinc-900">{group.name}</div>
                       <div className="mt-0.5 text-xs text-zinc-500">
