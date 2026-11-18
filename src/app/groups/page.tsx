@@ -95,7 +95,7 @@ export default function GroupsPage() {
           <h1 className="text-xl font-bold tracking-tight text-zinc-950 sm:text-2xl">家族</h1>
           <button
             type="button"
-            className="button-secondary shrink-0 text-sm"
+            className="button-secondary shrink-0 border border-zinc-200 bg-white text-sm"
             onClick={openCreateModal}
           >
             新しいグループ
@@ -142,7 +142,7 @@ export default function GroupsPage() {
       </div>
 
       {showCreateForm ? (
-        <div className="fixed inset-0 z-50 flex items-end justify-center p-4 sm:items-center">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <button
             type="button"
             className="absolute inset-0 bg-zinc-950/40"
