@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { afterEach, describe, it } from "node:test";
-import { acceptInviteInMemory, InviteJoinError, previewInviteInMemory } from "./invite-join.ts";
+import { acceptInviteInMemory, previewInviteInMemory } from "./invite-join.ts";
 import { createId, memoryStore, nowIso } from "./memory-store.ts";
 
 const createdGroupIds: string[] = [];
@@ -47,7 +47,7 @@ afterEach(() => {
 });
 
 describe("acceptInviteInMemory", () => {
-  it("adds the visitor as MEMBER and consumes the token once", () => {
+  it("adds multiple visitors with the same token until expiry", () => {
     const { groupId, token } = seedGroup("owner_1");
     const preview = previewInviteInMemory("guest_1", token);
     assert.equal(preview.alreadyMember, false);
@@ -59,19 +59,19 @@ describe("acceptInviteInMemory", () => {
     const member = group?.members.find((item) => item.userId === "guest_1");
     assert.equal(member?.role, "MEMBER");
     assert.equal(member?.displayName, "ゲスト");
-    assert.ok(memoryStore.invites.find((item) => item.token === token)?.usedAt);
+    assert.equal(memoryStore.invites.find((item) => item.token === token)?.usedAt, null);
+
+    const guest2 = acceptInviteInMemory({ id: "guest_2", name: "次の人" }, token);
+    assert.equal(guest2.alreadyMember, false);
+    assert.equal(group?.members.filter((item) => item.userId === "guest_2").length, 1);
+    assert.equal(group?.members.length, 3);
 
     const again = acceptInviteInMemory({ id: "guest_1", name: "ゲスト" }, token);
     assert.equal(again.alreadyMember, true);
     assert.equal(group?.members.filter((item) => item.userId === "guest_1").length, 1);
-
-    assert.throws(
-      () => acceptInviteInMemory({ id: "guest_2", name: "次の人" }, token),
-      (error: unknown) => error instanceof InviteJoinError && error.status === 410
-    );
   });
 
-  it("does not consume the token when the owner opens their own link", () => {
+  it("keeps idempotent when the owner opens their own link", () => {
     const { token } = seedGroup("owner_2");
     const view = acceptInviteInMemory({ id: "owner_2", name: "保護者" }, token);
     assert.equal(view.alreadyMember, true);

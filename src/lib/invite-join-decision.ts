@@ -32,8 +32,9 @@ export function normalizeInviteToken(token: string) {
 }
 
 /**
- * 招待トークンを消費するかどうかの判定。
- * すでにメンバーなら期限切れ・使用済みでも参加済みとして扱う（リンクは消費しない）。
+ * 招待リンクで参加できるかどうかの判定。
+ * 有効期限内なら usedAt の有無に関わらず、未参加者は参加できる（同一リンクで複数人可）。
+ * すでにメンバーなら期限切れでも参加済みとして扱う。
  */
 export function decideInviteJoin(input: {
   token: string;
@@ -58,13 +59,6 @@ export function decideInviteJoin(input: {
 
   if (input.alreadyMember) {
     return { action: "already-member", ...base };
-  }
-  if (invite.usedAt) {
-    return {
-      action: "reject",
-      status: 410,
-      message: "この招待リンクはすでに使われています"
-    };
   }
   if (invite.expiresAt.getTime() <= input.now.getTime()) {
     return {

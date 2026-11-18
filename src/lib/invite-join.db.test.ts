@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { after, describe, it } from "node:test";
 import { PrismaClient } from "@prisma/client";
-import { acceptGroupInvite, InviteJoinError, previewGroupInvite } from "./invite-join.ts";
+import { acceptGroupInvite, previewGroupInvite } from "./invite-join.ts";
 
 const databaseUrl = process.env.DATABASE_URL;
 const prisma = databaseUrl ? new PrismaClient() : null;
@@ -18,7 +18,7 @@ async function createUser(email: string, name: string) {
 describe("acceptGroupInvite database", {
   skip: databaseUrl ? false : "DATABASE_URL is not set"
 }, () => {
-  it("consumes a token once and keeps an existing member idempotent", async () => {
+  it("lets multiple users join with the same token and keeps existing members idempotent", async () => {
     if (!prisma) return;
     const owner = await createUser(ownerEmail, "オーナー");
     const guest = await createUser(guestEmail, "ゲスト");
@@ -56,18 +56,20 @@ describe("acceptGroupInvite database", {
     assert.equal(member?.role, "MEMBER");
     assert.equal(member?.displayName, "ゲスト");
     const consumed = await prisma.invite.findUnique({ where: { id: invite.id } });
-    assert.ok(consumed?.usedAt);
+    assert.equal(consumed?.usedAt, null);
+
+    const otherJoined = await acceptGroupInvite({ id: other.id, name: "別の人" }, invite.token);
+    assert.equal(otherJoined.alreadyMember, false);
+    const otherMember = await prisma.familyMember.findUnique({
+      where: { userId_groupId: { userId: other.id, groupId: group.id } }
+    });
+    assert.equal(otherMember?.role, "MEMBER");
 
     const again = await acceptGroupInvite({ id: guest.id, name: "ゲスト" }, invite.token);
     assert.equal(again.alreadyMember, true);
 
     const ownerView = await acceptGroupInvite({ id: owner.id, name: "オーナー" }, invite.token);
     assert.equal(ownerView.alreadyMember, true);
-
-    await assert.rejects(
-      () => acceptGroupInvite({ id: other.id, name: "別の人" }, invite.token),
-      (error: unknown) => error instanceof InviteJoinError && error.status === 410
-    );
   });
 
   after(async () => {
