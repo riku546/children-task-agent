@@ -1,8 +1,7 @@
 "use client";
 
-import { type ChangeEvent, useRef, useState } from "react";
-import { PageHeader } from "@/components/PageHeader";
-import { PageShell } from "@/components/PageShell";
+import { ArrowUp, Plus, X } from "lucide-react";
+import { type ChangeEvent, useEffect, useRef, useState } from "react";
 import { invalidateCache } from "@/lib/client-cache";
 import { imageDataUrlSizeError, imageFileSizeError } from "@/lib/image-size";
 
@@ -24,8 +23,35 @@ export default function ChatPage() {
   const [attachmentName, setAttachmentName] = useState("");
   const [attachment, setAttachment] = useState<{ text?: string; imageUrl?: string } | null>(null);
   const [pendingRemoval, setPendingRemoval] = useState<PendingRemoval>(null);
+  const [attachMenuOpen, setAttachMenuOpen] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const pdfInputRef = useRef<HTMLInputElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const attachMenuRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollTop = el.scrollHeight;
+  }, [turns, sending]);
+
+  useEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = "0px";
+    el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
+  }, [draft]);
+
+  useEffect(() => {
+    if (!attachMenuOpen) return;
+    function onMouseDown(event: MouseEvent) {
+      if (attachMenuRef.current?.contains(event.target as Node)) return;
+      setAttachMenuOpen(false);
+    }
+    document.addEventListener("mousedown", onMouseDown);
+    return () => document.removeEventListener("mousedown", onMouseDown);
+  }, [attachMenuOpen]);
 
   function buildMessages(nextTurns: Turn[]) {
     const messages: { role: "user" | "assistant"; content: string }[] = [];
@@ -191,49 +217,94 @@ export default function ChatPage() {
     }
   }
 
-  return (
-    <PageShell width="narrow">
-      <PageHeader title="チャット" description="タスクや家族の操作を文章で任せます" />
+  const sendDisabled = sending || (!draft.trim() && !attachment);
+  const showAttachmentError = attachment === null && attachmentName.length > 0;
 
-      <div className="mt-6 divide-y divide-zinc-200 border-t border-zinc-200">
+  return (
+    <section className="mx-auto flex h-[calc(100dvh-3.5rem-1px)] max-w-3xl flex-col px-4 sm:px-6">
+      <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto">
         {turns.length === 0 && !sending ? (
-          <p className="py-6 text-center text-sm text-zinc-500">まだやり取りはありません</p>
-        ) : (
-          turns.map((turn, index) => (
-            <div key={`${index}-${turn.kind}`} className="py-3">
-              <div className="text-[11px] font-semibold text-zinc-500">
-                {turn.kind === "user" ? "あなた" : "結果"}
-              </div>
-              <p className="mt-1 text-sm text-zinc-900 whitespace-pre-wrap">{turn.text}</p>
-              {turn.actionSummaries?.map((summary) => (
-                <p key={summary} className="mt-1 text-xs text-zinc-600">
-                  {summary}
-                </p>
-              ))}
-            </div>
-          ))
-        )}
-        {sending ? (
-          <div className="py-3">
-            <div className="text-[11px] font-semibold text-zinc-500">結果</div>
-            <p className="mt-1 text-sm text-zinc-600">送信しています</p>
+          <div className="flex h-full items-center justify-center">
+            <p className="text-sm text-zinc-500">メッセージを入力してください</p>
           </div>
-        ) : null}
+        ) : (
+          <div className="flex flex-col gap-3 py-4">
+            {turns.map((turn, index) => (
+              <div
+                key={`${index}-${turn.kind}`}
+                className={`flex flex-col gap-1 ${turn.kind === "user" ? "items-end" : "items-start"}`}
+              >
+                <div
+                  className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm whitespace-pre-wrap ${
+                    turn.kind === "user" ? "bg-zinc-900 text-white" : "bg-zinc-100 text-zinc-900"
+                  }`}
+                >
+                  {turn.text}
+                </div>
+                {turn.actionSummaries?.map((summary) => (
+                  <p key={summary} className="max-w-[85%] text-xs text-zinc-500">
+                    {summary}
+                  </p>
+                ))}
+              </div>
+            ))}
+            {sending ? (
+              <div className="flex items-start">
+                <div className="max-w-[85%] rounded-2xl bg-zinc-100 px-3 py-2 text-sm text-zinc-900">
+                  送信しています
+                </div>
+              </div>
+            ) : null}
+          </div>
+        )}
       </div>
 
-      <div className="mt-6 space-y-2">
-        <label className="text-xs font-semibold text-zinc-700" htmlFor="chat-body">
-          内容
-        </label>
-        <textarea
-          id="chat-body"
-          className="field min-h-[120px] resize-y"
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          disabled={sending}
-        />
-        {attachmentName ? <p className="text-xs text-zinc-600">{attachmentName}</p> : null}
-        <div className="flex flex-wrap items-center gap-2">
+      <div className="shrink-0 pb-[calc(4.75rem+env(safe-area-inset-bottom))] pt-2 md:pb-4">
+        {showAttachmentError ? <p className="mb-1 text-xs text-red-600">{attachmentName}</p> : null}
+
+        <form
+          className="rounded-3xl border border-zinc-300 bg-white p-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void handleSend();
+          }}
+        >
+          {attachment ? (
+            <div className="mb-1 flex items-center justify-between gap-2 px-2 text-sm text-zinc-700">
+              <span className="min-w-0 truncate">{attachmentName}</span>
+              <button
+                type="button"
+                aria-label="添付を外す"
+                className="flex size-8 shrink-0 items-center justify-center rounded-full text-zinc-600 hover:bg-zinc-100 disabled:opacity-40"
+                disabled={sending}
+                onClick={() => {
+                  setAttachment(null);
+                  setAttachmentName("");
+                }}
+              >
+                <X size={16} />
+              </button>
+            </div>
+          ) : null}
+
+          <textarea
+            ref={textareaRef}
+            id="chat-body"
+            rows={1}
+            placeholder="メッセージを入力"
+            className="max-h-40 w-full resize-none border-none bg-transparent px-2 py-2 text-sm outline-none"
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            disabled={sending}
+            onKeyDown={(e) => {
+              if (e.key !== "Enter" || e.shiftKey) return;
+              if (e.nativeEvent.isComposing) return;
+              e.preventDefault();
+              if (sendDisabled) return;
+              void handleSend();
+            }}
+          />
+
           <input
             ref={imageInputRef}
             type="file"
@@ -248,32 +319,55 @@ export default function ChatPage() {
             className="hidden"
             onChange={handlePdf}
           />
-          <button
-            type="button"
-            className="button-secondary"
-            disabled={sending}
-            onClick={() => imageInputRef.current?.click()}
-          >
-            画像
-          </button>
-          <button
-            type="button"
-            className="button-secondary"
-            disabled={sending}
-            onClick={() => pdfInputRef.current?.click()}
-          >
-            PDF
-          </button>
-          <button
-            type="button"
-            className="button-primary"
-            disabled={sending || (!draft.trim() && !attachment)}
-            onClick={handleSend}
-          >
-            送信
-          </button>
-        </div>
+
+          <div className="flex items-center justify-between">
+            <div ref={attachMenuRef} className="relative">
+              {attachMenuOpen ? (
+                <div className="absolute bottom-11 left-0 z-20 min-w-36 rounded-xl border border-zinc-200 bg-white py-1 shadow-sm">
+                  <button
+                    type="button"
+                    className="block w-full px-3 py-2 text-left text-sm text-zinc-900 hover:bg-zinc-100"
+                    onClick={() => {
+                      imageInputRef.current?.click();
+                      setAttachMenuOpen(false);
+                    }}
+                  >
+                    画像
+                  </button>
+                  <button
+                    type="button"
+                    className="block w-full px-3 py-2 text-left text-sm text-zinc-900 hover:bg-zinc-100"
+                    onClick={() => {
+                      pdfInputRef.current?.click();
+                      setAttachMenuOpen(false);
+                    }}
+                  >
+                    PDF
+                  </button>
+                </div>
+              ) : null}
+              <button
+                type="button"
+                aria-label="ファイルを追加"
+                className="flex size-9 items-center justify-center rounded-full text-zinc-700 hover:bg-zinc-100 disabled:opacity-40"
+                disabled={sending}
+                onClick={() => setAttachMenuOpen((open) => !open)}
+              >
+                <Plus size={20} />
+              </button>
+            </div>
+
+            <button
+              type="submit"
+              aria-label="送信"
+              className="flex size-9 items-center justify-center rounded-full bg-zinc-900 text-white disabled:opacity-40"
+              disabled={sendDisabled}
+            >
+              <ArrowUp size={18} />
+            </button>
+          </div>
+        </form>
       </div>
-    </PageShell>
+    </section>
   );
 }
