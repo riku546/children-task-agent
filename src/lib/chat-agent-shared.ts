@@ -897,6 +897,24 @@ type OpenRouterMessage = {
 
 export const MAX_AGENT_LOOP_TURNS = 3;
 
+export type ChatAgentEvent = { type: "status"; text: string } | { type: "delta"; text: string };
+
+export function toolStatusText(toolName: string): string {
+  const labels: Record<string, string> = {
+    list_tasks: "タスクを確認しています",
+    create_task: "タスクを作っています",
+    update_task: "タスクを更新しています",
+    create_group: "グループを作っています",
+    add_child: "子どもを追加しています",
+    create_invite: "招待リンクを作っています",
+    join_group: "グループに参加しています",
+    remove_member: "メンバーを確認しています",
+    update_my_name: "表示名を変えています",
+    calendar_link: "カレンダーのリンクを作っています"
+  };
+  return labels[toolName] ?? "処理しています";
+}
+
 export type RunChatLoopInput = {
   apiKey: string;
   systemPrompt: string;
@@ -904,6 +922,7 @@ export type RunChatLoopInput = {
   runtime: ToolRuntime;
   fetchImpl?: typeof fetch;
   model?: string;
+  onEvent?: (event: ChatAgentEvent) => void;
 };
 
 export type RunChatLoopResult = {
@@ -927,6 +946,158 @@ function resolveOutgoingPendingRemoval(
     return null;
   }
   return value;
+}
+
+type ParsedAssistantTurn = {
+  content: string;
+  toolCalls: Array<{
+    id: string;
+    type: string;
+    function: { name: string; arguments: string };
+  }>;
+  parseError?: string;
+};
+
+type ToolCallAccumulator = {
+  id?: string;
+  type?: string;
+  function?: { name?: string; arguments?: string };
+};
+
+function appendToolCallDelta(
+  acc: Record<number, ToolCallAccumulator>,
+  raw: {
+    index?: number;
+    id?: string;
+    type?: string;
+    function?: { name?: string; arguments?: string };
+  }
+) {
+  const index = raw.index ?? 0;
+  const entry = acc[index] ?? {};
+  if (raw.id) entry.id = raw.id;
+  if (raw.type) entry.type = raw.type;
+  if (raw.function) {
+    entry.function ??= {};
+    if (raw.function.name) {
+      entry.function.name = (entry.function.name ?? "") + raw.function.name;
+    }
+    if (raw.function.arguments !== undefined) {
+      entry.function.arguments = (entry.function.arguments ?? "") + raw.function.arguments;
+    }
+  }
+  acc[index] = entry;
+}
+
+function finalizeToolCalls(
+  acc: Record<number, ToolCallAccumulator>
+): ParsedAssistantTurn["toolCalls"] {
+  return Object.keys(acc)
+    .map((key) => Number(key))
+    .sort((a, b) => a - b)
+    .map((index) => {
+      const item = acc[index];
+      return {
+        id: item.id ?? `call_${index}`,
+        type: item.type ?? "function",
+        function: {
+          name: item.function?.name ?? "",
+          arguments: item.function?.arguments ?? ""
+        }
+      };
+    })
+    .filter((call) => call.function.name.length > 0);
+}
+
+async function parseOpenRouterResponse(
+  response: Response,
+  onEvent?: (event: ChatAgentEvent) => void
+): Promise<ParsedAssistantTurn> {
+  const contentType = response.headers.get("Content-Type") || "";
+  if (!contentType.includes("text/event-stream")) {
+    let data: unknown;
+    try {
+      data = await response.json();
+    } catch {
+      return { content: "", toolCalls: [], parseError: "応答の形式が不正でした。" };
+    }
+    const choice = (data as { choices?: Array<{ message?: OpenRouterMessage }> })?.choices?.[0]
+      ?.message;
+    if (!choice) {
+      return { content: "", toolCalls: [] };
+    }
+    return {
+      content: (choice.content || "").trim(),
+      toolCalls: choice.tool_calls ?? []
+    };
+  }
+
+  const reader = response.body?.getReader();
+  if (!reader) {
+    return { content: "", toolCalls: [], parseError: "応答の形式が不正でした。" };
+  }
+
+  const decoder = new TextDecoder();
+  let lineBuffer = "";
+  let content = "";
+  const toolAcc: Record<number, ToolCallAccumulator> = {};
+  let sawToolCalls = false;
+  let invalidPayload = false;
+
+  const processSseLine = (line: string) => {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith(":")) return;
+    if (!trimmed.startsWith("data:")) return;
+    const payload = trimmed.slice(5).trim();
+    if (payload === "[DONE]") return;
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(payload);
+    } catch {
+      invalidPayload = true;
+      return;
+    }
+    const deltas = (parsed as { choices?: Array<{ delta?: Record<string, unknown> }> })?.choices;
+    const delta = deltas?.[0]?.delta;
+    if (!delta) return;
+
+    if (Array.isArray(delta.tool_calls)) {
+      sawToolCalls = true;
+      for (const chunk of delta.tool_calls) {
+        appendToolCallDelta(toolAcc, chunk as ToolCallAccumulator & { index?: number });
+      }
+    }
+
+    const piece = delta.content;
+    if (typeof piece === "string" && piece.length > 0 && !sawToolCalls) {
+      content += piece;
+      onEvent?.({ type: "delta", text: piece });
+    }
+  };
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    lineBuffer += decoder.decode(value, { stream: true });
+    const lines = lineBuffer.split(/\r?\n/);
+    lineBuffer = lines.pop() ?? "";
+    for (const line of lines) {
+      processSseLine(line);
+    }
+  }
+  lineBuffer += decoder.decode();
+  if (lineBuffer.trim()) {
+    processSseLine(lineBuffer);
+  }
+
+  if (invalidPayload) {
+    return { content: "", toolCalls: [], parseError: "応答の形式が不正でした。" };
+  }
+
+  return {
+    content: content.trim(),
+    toolCalls: finalizeToolCalls(toolAcc)
+  };
 }
 
 export async function runChatAgentLoop(input: RunChatLoopInput): Promise<RunChatLoopResult> {
@@ -980,7 +1151,8 @@ export async function runChatAgentLoop(input: RunChatLoopInput): Promise<RunChat
           tool_choice: "auto",
           provider: { data_collection: "deny", zdr: true },
           reasoning: { effort: "none" },
-          max_completion_tokens: 800
+          max_completion_tokens: 800,
+          ...(input.onEvent ? { stream: true } : {})
         })
       });
     } catch {
@@ -999,38 +1171,28 @@ export async function runChatAgentLoop(input: RunChatLoopInput): Promise<RunChat
       });
     }
 
-    let data: unknown;
-    try {
-      data = await response.json();
-    } catch {
+    const parsed = await parseOpenRouterResponse(response, input.onEvent);
+    if (parsed.parseError) {
       return finish({
-        reply: "応答の形式が不正でした。",
+        reply: parsed.parseError,
         actions
       });
     }
 
-    const choice = (data as { choices?: Array<{ message?: OpenRouterMessage }> })?.choices?.[0]
-      ?.message;
-    if (!choice) {
-      return finish({
-        reply: lastAssistantText || "応答がありませんでした。",
-        actions
-      });
-    }
-
-    const toolCalls = choice.tool_calls;
-    if (!toolCalls?.length) {
-      lastAssistantText = (choice.content || "").trim() || lastAssistantText;
+    const toolCalls = parsed.toolCalls;
+    if (!toolCalls.length) {
+      lastAssistantText = parsed.content || lastAssistantText;
       return finish({ reply: lastAssistantText || "完了しました。", actions });
     }
 
     messages.push({
       role: "assistant",
-      content: choice.content ?? null,
+      content: parsed.content ? parsed.content : null,
       tool_calls: toolCalls
     });
 
     for (const call of toolCalls) {
+      input.onEvent?.({ type: "status", text: toolStatusText(call.function.name) });
       let parsedArgs: unknown = {};
       try {
         parsedArgs = JSON.parse(call.function.arguments || "{}");

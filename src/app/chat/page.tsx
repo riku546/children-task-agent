@@ -16,6 +16,19 @@ type PendingRemoval = {
   memberId: string;
 } | null;
 
+const USAGE_GUIDE_REPLY = `このチャットでは、文章で次のことができます。
+
+・タスクの確認、作成、更新
+・グループの作成、子どもの追加
+・招待リンクの発行と、招待への参加
+・表示名の変更
+・画像やPDFのお便りからタスクを作る
+
+タスクの削除とログアウトは、このチャットではできません。`;
+
+const GUIDANCE_BUTTON_CLASS =
+  "rounded-full border border-zinc-300 bg-white px-3 py-1.5 text-xs font-medium text-zinc-800 hover:bg-zinc-50 disabled:opacity-40";
+
 export default function ChatPage() {
   const [turns, setTurns] = useState<Turn[]>([]);
   const [draft, setDraft] = useState("");
@@ -24,6 +37,8 @@ export default function ChatPage() {
   const [attachment, setAttachment] = useState<{ text?: string; imageUrl?: string } | null>(null);
   const [pendingRemoval, setPendingRemoval] = useState<PendingRemoval>(null);
   const [attachMenuOpen, setAttachMenuOpen] = useState(false);
+  const [streamStatus, setStreamStatus] = useState<string | null>(null);
+  const [streamText, setStreamText] = useState("");
   const imageInputRef = useRef<HTMLInputElement>(null);
   const pdfInputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -34,7 +49,7 @@ export default function ChatPage() {
     const el = scrollRef.current;
     if (!el) return;
     el.scrollTop = el.scrollHeight;
-  }, [turns, sending]);
+  }, [turns, sending, streamStatus, streamText]);
 
   useEffect(() => {
     const el = textareaRef.current;
@@ -159,16 +174,27 @@ export default function ChatPage() {
     reader.readAsDataURL(file);
   }
 
-  async function handleSend() {
-    const text = draft.trim();
+  function showUsageGuide() {
+    setTurns([
+      { kind: "user", text: "使い方を教えて" },
+      { kind: "result", text: USAGE_GUIDE_REPLY }
+    ]);
+  }
+
+  async function handleSend(overrideText?: string) {
+    const text = (overrideText ?? draft).trim();
     if (sending) return;
     if (!text && !attachment) return;
 
     const userText = text || "（添付を確認してください）";
     const nextTurns: Turn[] = [...turns, { kind: "user", text: userText }];
     setTurns(nextTurns);
-    setDraft("");
+    if (!overrideText) {
+      setDraft("");
+    }
     setSending(true);
+    setStreamStatus(null);
+    setStreamText("");
 
     try {
       const res = await fetch("/api/chat", {
@@ -180,24 +206,125 @@ export default function ChatPage() {
           attachment
         })
       });
-      const data = await res.json();
-      if (!res.ok) {
-        setTurns((prev) => [...prev, { kind: "result", text: data.error || "送信に失敗しました" }]);
+
+      const contentType = res.headers.get("Content-Type") || "";
+      const isJson = contentType.includes("application/json");
+
+      if (isJson || !res.ok) {
+        const data = await res.json();
+        if (!res.ok) {
+          setTurns((prev) => [
+            ...prev,
+            { kind: "result", text: data.error || "送信に失敗しました" }
+          ]);
+          return;
+        }
+
+        const summaries = (data.actions || []).map((a: { summary: string }) => a.summary);
+        setTurns((prev) => [
+          ...prev,
+          {
+            kind: "result",
+            text: data.reply || "完了しました。",
+            actionSummaries: summaries.length > 0 ? summaries : undefined
+          }
+        ]);
+
+        if (data.pendingRemoval) {
+          setPendingRemoval(data.pendingRemoval);
+        } else if (pendingRemoval) {
+          setPendingRemoval(null);
+        }
+
+        if (summaries.length > 0) {
+          invalidateCache("/api/tasks");
+          invalidateCache("/api/groups");
+          invalidateCache("/api/me");
+        }
+
+        setAttachment(null);
+        setAttachmentName("");
         return;
       }
 
-      const summaries = (data.actions || []).map((a: { summary: string }) => a.summary);
+      const reader = res.body?.getReader();
+      if (!reader) {
+        setTurns((prev) => [...prev, { kind: "result", text: "通信に失敗しました" }]);
+        return;
+      }
+
+      const decoder = new TextDecoder();
+      let buffer = "";
+      type ChatDoneEvent = {
+        reply?: string;
+        actions?: { summary: string }[];
+        pendingRemoval?: PendingRemoval;
+      };
+      let doneEvent: ChatDoneEvent | null = null;
+      let streamError: string | null = null;
+      let accumulated = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed) continue;
+          let event: Record<string, unknown>;
+          try {
+            event = JSON.parse(trimmed) as Record<string, unknown>;
+          } catch {
+            continue;
+          }
+          if (event.type === "status" && typeof event.text === "string") {
+            setStreamStatus(event.text);
+          } else if (event.type === "delta" && typeof event.text === "string") {
+            accumulated += event.text;
+            setStreamStatus(null);
+            setStreamText(accumulated);
+          } else if (event.type === "done") {
+            doneEvent = event as unknown as ChatDoneEvent;
+          } else if (event.type === "error" && typeof event.error === "string") {
+            streamError = event.error;
+          }
+        }
+      }
+
+      if (streamError !== null) {
+        setTurns((prev) => [...prev, { kind: "result", text: streamError }]);
+        return;
+      }
+
+      if (!doneEvent) {
+        const fallback =
+          accumulated.trim().length > 0 ? accumulated : streamText.trim() || "通信に失敗しました";
+        if (!accumulated.trim() && !streamText.trim()) {
+          setTurns((prev) => [...prev, { kind: "result", text: "通信に失敗しました" }]);
+        } else {
+          setTurns((prev) => [...prev, { kind: "result", text: fallback }]);
+        }
+        return;
+      }
+
+      const summaries = (doneEvent.actions || []).map((a) => a.summary);
+      const replyText =
+        (doneEvent.reply && doneEvent.reply.length > 0 ? doneEvent.reply : accumulated) ||
+        "完了しました。";
+
       setTurns((prev) => [
         ...prev,
         {
           kind: "result",
-          text: data.reply || "完了しました。",
+          text: replyText,
           actionSummaries: summaries.length > 0 ? summaries : undefined
         }
       ]);
 
-      if (data.pendingRemoval) {
-        setPendingRemoval(data.pendingRemoval);
+      if (doneEvent.pendingRemoval) {
+        setPendingRemoval(doneEvent.pendingRemoval);
       } else if (pendingRemoval) {
         setPendingRemoval(null);
       }
@@ -214,8 +341,12 @@ export default function ChatPage() {
       setTurns((prev) => [...prev, { kind: "result", text: "通信に失敗しました" }]);
     } finally {
       setSending(false);
+      setStreamStatus(null);
+      setStreamText("");
     }
   }
+
+  const sendingBubbleText = streamText || streamStatus || "送信しています";
 
   const sendDisabled = sending || (!draft.trim() && !attachment);
   const showAttachmentError = attachment === null && attachmentName.length > 0;
@@ -250,8 +381,8 @@ export default function ChatPage() {
             ))}
             {sending ? (
               <div className="flex items-start">
-                <div className="max-w-[85%] rounded-2xl bg-zinc-100 px-3 py-2 text-sm text-zinc-900">
-                  送信しています
+                <div className="max-w-[85%] rounded-2xl bg-zinc-100 px-3 py-2 text-sm whitespace-pre-wrap text-zinc-900">
+                  {sendingBubbleText}
                 </div>
               </div>
             ) : null}
@@ -260,6 +391,34 @@ export default function ChatPage() {
       </div>
 
       <div className="shrink-0 pb-[calc(4.75rem+env(safe-area-inset-bottom))] pt-2 md:pb-4">
+        {turns.length === 0 && !sending ? (
+          <div className="mb-2 flex flex-wrap gap-2">
+            <button
+              type="button"
+              className={GUIDANCE_BUTTON_CLASS}
+              disabled={sending}
+              onClick={showUsageGuide}
+            >
+              使い方
+            </button>
+            <button
+              type="button"
+              className={GUIDANCE_BUTTON_CLASS}
+              disabled={sending}
+              onClick={() => void handleSend("タスクを作って")}
+            >
+              タスクを作成
+            </button>
+            <button
+              type="button"
+              className={GUIDANCE_BUTTON_CLASS}
+              disabled={sending}
+              onClick={() => void handleSend("招待リンクを出して")}
+            >
+              人を招待
+            </button>
+          </div>
+        ) : null}
         {showAttachmentError ? <p className="mb-1 text-xs text-red-600">{attachmentName}</p> : null}
 
         <form

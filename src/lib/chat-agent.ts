@@ -19,6 +19,7 @@ export * from "@/lib/chat-agent-shared";
 import {
   type AgentUser,
   buildSystemPrompt,
+  type ChatAgentEvent,
   type ChatTurn,
   type PendingRemoval,
   type RunChatLoopResult,
@@ -47,6 +48,7 @@ export async function runChatSession(input: {
   messages: ChatTurn[];
   pendingRemoval: PendingRemoval;
   attachment?: { text?: string; imageUrl?: string } | null;
+  onEvent?: (event: ChatAgentEvent) => void;
 }): Promise<RunChatLoopResult> {
   const groups = await listGroups(input.user);
   const tasks = await listTasks(input.user);
@@ -115,6 +117,7 @@ export async function runChatSession(input: {
     apiKey,
     systemPrompt,
     clientMessages: input.messages,
-    runtime
+    runtime,
+    onEvent: input.onEvent
   });
 }

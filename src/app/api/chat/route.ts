@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { ensureCurrentUser, UnauthorizedError } from "@/lib/auth";
 import { runChatSession } from "@/lib/chat-agent";
+import type { ChatAgentEvent } from "@/lib/chat-agent-shared";
 import { imageUrlSizeError } from "@/lib/image-size";
 
 const messageSchema = z.object({
@@ -27,6 +28,10 @@ const bodySchema = z.object({
     .optional()
 });
 
+function encodeNdjsonEvent(payload: Record<string, unknown>): Uint8Array {
+  return new TextEncoder().encode(`${JSON.stringify(payload)}\n`);
+}
+
 export async function POST(request: Request) {
   try {
     const user = await ensureCurrentUser();
@@ -40,18 +45,43 @@ export async function POST(request: Request) {
     }
 
     const messages = body.messages.slice(-8);
-    const result = await runChatSession({
-      user,
-      request,
-      messages,
-      pendingRemoval: body.pendingRemoval ?? null,
-      attachment: body.attachment ?? null
+
+    const stream = new ReadableStream<Uint8Array>({
+      async start(controller) {
+        const push = (payload: Record<string, unknown>) => {
+          controller.enqueue(encodeNdjsonEvent(payload));
+        };
+        const onEvent = (event: ChatAgentEvent) => {
+          push(event);
+        };
+        try {
+          const result = await runChatSession({
+            user,
+            request,
+            messages,
+            pendingRemoval: body.pendingRemoval ?? null,
+            attachment: body.attachment ?? null,
+            onEvent
+          });
+          push({
+            type: "done",
+            reply: result.reply,
+            actions: result.actions,
+            pendingRemoval: result.pendingRemoval ?? null
+          });
+          controller.close();
+        } catch {
+          push({ type: "error", error: "チャットの処理に失敗しました" });
+          controller.close();
+        }
+      }
     });
 
-    return NextResponse.json({
-      reply: result.reply,
-      actions: result.actions,
-      pendingRemoval: result.pendingRemoval ?? null
+    return new Response(stream, {
+      headers: {
+        "Content-Type": "application/x-ndjson; charset=utf-8",
+        "Cache-Control": "no-cache"
+      }
     });
   } catch (err) {
     if (err instanceof UnauthorizedError) {

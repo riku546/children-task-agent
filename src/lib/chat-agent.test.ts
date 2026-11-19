@@ -310,4 +310,139 @@ describe("runChatAgentLoop", () => {
     assert.match(result.reply, /続きの操作|ここまでの結果/);
     assert.equal(CHAT_TOOLS.length > 0, true);
   });
+
+  it("emits status and uses stream when onEvent is provided", async () => {
+    let calls = 0;
+    const bodies: unknown[] = [];
+    const events: string[] = [];
+    const fetchImpl: typeof fetch = async (_url, init) => {
+      calls += 1;
+      if (init?.body) bodies.push(JSON.parse(String(init.body)));
+      if (calls === 1) {
+        return new Response(
+          JSON.stringify({
+            choices: [
+              {
+                message: {
+                  role: "assistant",
+                  content: null,
+                  tool_calls: [
+                    {
+                      id: "call_list",
+                      type: "function",
+                      function: { name: "list_tasks", arguments: "{}" }
+                    }
+                  ]
+                }
+              }
+            ]
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } }
+        );
+      }
+      return new Response(
+        JSON.stringify({
+          choices: [
+            {
+              message: {
+                role: "assistant",
+                content: "タスクは1件です。",
+                tool_calls: []
+              }
+            }
+          ]
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      );
+    };
+
+    const runtime = makeRuntime();
+    const result = await runChatAgentLoop({
+      apiKey: "test-key",
+      systemPrompt: "test",
+      clientMessages: [{ role: "user", content: "タスクを見せて" }],
+      runtime,
+      fetchImpl,
+      onEvent: (event) => {
+        if (event.type === "status") events.push(event.text);
+      }
+    });
+
+    assert.equal(calls, 2);
+    assert.equal(result.reply, "タスクは1件です。");
+    assert.equal(events.includes("タスクを確認しています"), true);
+    const firstBody = bodies[0] as {
+      stream?: boolean;
+      provider?: { data_collection?: string; zdr?: boolean };
+    };
+    assert.equal(firstBody.stream, true);
+    assert.equal(firstBody.provider?.data_collection, "deny");
+    assert.equal(firstBody.provider?.zdr, true);
+  });
+
+  it("streams deltas from text/event-stream content chunks", async () => {
+    const sseBody = [
+      'data: {"choices":[{"delta":{"content":"こん"}}]}\n\n',
+      'data: {"choices":[{"delta":{"content":"にちは"}}]}\n\n',
+      "data: [DONE]\n\n"
+    ].join("");
+    const fetchImpl: typeof fetch = async () =>
+      new Response(sseBody, {
+        status: 200,
+        headers: { "Content-Type": "text/event-stream" }
+      });
+
+    const deltas: string[] = [];
+    const runtime = makeRuntime();
+    const result = await runChatAgentLoop({
+      apiKey: "test-key",
+      systemPrompt: "test",
+      clientMessages: [{ role: "user", content: "挨拶" }],
+      runtime,
+      fetchImpl,
+      onEvent: (event) => {
+        if (event.type === "delta") deltas.push(event.text);
+      }
+    });
+
+    assert.deepEqual(deltas, ["こん", "にちは"]);
+    assert.equal(result.reply, "こんにちは");
+  });
+
+  it("assembles fragmented tool_calls from text/event-stream", async () => {
+    let calls = 0;
+    const sseBody = [
+      'data: {"choices":[{"delta":{"tool_calls":[{"index":0,"id":"call_1","type":"function","function":{"name":"list","arguments":""}}]}}]}\n\n',
+      'data: {"choices":[{"delta":{"tool_calls":[{"index":0,"function":{"name":"_tasks","arguments":"{}"}}]}}]}\n\n',
+      "data: [DONE]\n\n"
+    ].join("");
+    const fetchImpl: typeof fetch = async () => {
+      calls += 1;
+      if (calls === 1) {
+        return new Response(sseBody, {
+          status: 200,
+          headers: { "Content-Type": "text/event-stream" }
+        });
+      }
+      return new Response(
+        JSON.stringify({
+          choices: [{ message: { role: "assistant", content: "完了", tool_calls: [] } }]
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      );
+    };
+
+    const runtime = makeRuntime();
+    const result = await runChatAgentLoop({
+      apiKey: "test-key",
+      systemPrompt: "test",
+      clientMessages: [{ role: "user", content: "一覧" }],
+      runtime,
+      fetchImpl,
+      onEvent: () => {}
+    });
+
+    assert.equal(calls, 2);
+    assert.equal(result.reply, "完了");
+  });
 });
