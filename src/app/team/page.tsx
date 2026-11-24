@@ -7,6 +7,7 @@ import { AssigneeTaskColumns } from "@/components/AssigneeTaskColumns";
 import { FamilyTeamMeter } from "@/components/FamilyTeamMeter";
 import { PageHeader } from "@/components/PageHeader";
 import { PageShell } from "@/components/PageShell";
+import { TeamBoardSkeleton } from "@/components/Skeleton";
 import { fetchJsonWithCache, getCachedData } from "@/lib/client-cache";
 import type { GroupRecord, TaskRecord } from "@/lib/types";
 
@@ -68,7 +69,7 @@ function TeamContent() {
       />
 
       {loading && tasks.length === 0 ? (
-        <p className="mt-8 text-center text-sm text-zinc-500">読み込み中...</p>
+        <TeamBoardSkeleton />
       ) : (
         <div className="mt-4 space-y-4">
           <FamilyTeamMeter tasks={tasks} variant="team" />
@@ -89,7 +90,7 @@ export default function TeamPage() {
     <Suspense
       fallback={
         <PageShell>
-          <p className="py-16 text-center text-sm text-zinc-400">読み込み中...</p>
+          <TeamBoardSkeleton />
         </PageShell>
       }
     >

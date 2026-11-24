@@ -2,6 +2,7 @@
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { type ReactNode, useEffect, useState } from "react";
+import { PageSkeleton } from "@/components/Skeleton";
 import { shouldEnforceOnboarding } from "@/lib/onboarding";
 
 let onboardingRequiredCache: boolean | null = null;
@@ -52,5 +53,5 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
 
   if (!enforce || ready) return children;
 
-  return <p className="py-16 text-center text-sm text-zinc-400">読み込み中...</p>;
+  return <PageSkeleton />;
 }

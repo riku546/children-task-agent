@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { setOnboardingRequiredCache } from "@/components/OnboardingGate";
 import { PageShell } from "@/components/PageShell";
+import { OnboardingSkeleton } from "@/components/Skeleton";
 import { invalidateCache } from "@/lib/client-cache";
 import { hasNamedChild } from "@/lib/onboarding";
 import type { GroupRecord } from "@/lib/types";
@@ -179,7 +180,7 @@ function OnboardingContent() {
   if (loading) {
     return (
       <PageShell width="narrow">
-        <p className="py-16 text-center text-sm text-zinc-400">読み込み中...</p>
+        <OnboardingSkeleton />
       </PageShell>
     );
   }
@@ -396,7 +397,7 @@ export default function OnboardingPage() {
     <Suspense
       fallback={
         <PageShell width="narrow">
-          <p className="py-16 text-center text-sm text-zinc-400">読み込み中...</p>
+          <OnboardingSkeleton />
         </PageShell>
       }
     >

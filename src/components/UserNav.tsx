@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
+import { Skeleton } from "@/components/Skeleton";
 import { fetchJsonWithCache, getCachedData } from "@/lib/client-cache";
 
 type UserData = {
@@ -108,12 +109,16 @@ export function UserNav() {
             referrerPolicy="no-referrer"
           />
         ) : (
-          <span className="grid size-7 place-items-center rounded-full bg-zinc-100 text-xs font-semibold text-zinc-700">
-            {initial || <CircleUserRound size={16} />}
+          <span
+            className={`grid size-7 place-items-center rounded-full bg-zinc-100 text-xs font-semibold text-zinc-700 ${
+              loading ? "animate-pulse" : ""
+            }`}
+          >
+            {loading ? null : initial || <CircleUserRound size={16} />}
           </span>
         )}
         <span className="hidden pr-2 text-xs font-medium text-zinc-700 group-hover:text-zinc-900 md:inline">
-          {loading ? "..." : displayName}
+          {loading ? <Skeleton className="h-3 w-14" /> : displayName}
         </span>
       </button>
       {open ? (

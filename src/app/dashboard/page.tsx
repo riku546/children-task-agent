@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import { PageShell } from "@/components/PageShell";
+import { TaskRowsSkeleton } from "@/components/Skeleton";
 import { TaskList } from "@/components/TaskList";
 import { fetchJsonWithCache, getCachedData, invalidateCache } from "@/lib/client-cache";
 import { isSameDate } from "@/lib/date";
@@ -192,7 +193,7 @@ function DashboardContent() {
       />
 
       {loading && tasks.length === 0 ? (
-        <p className="mt-8 text-center text-sm text-zinc-500">読み込み中...</p>
+        <TaskRowsSkeleton />
       ) : (
         <div className="mt-6 space-y-6">
           <TaskSection
@@ -311,7 +312,7 @@ export default function DashboardPage() {
     <Suspense
       fallback={
         <PageShell>
-          <p className="py-16 text-center text-sm font-medium text-zinc-600">読み込み中...</p>
+          <TaskRowsSkeleton />
         </PageShell>
       }
     >

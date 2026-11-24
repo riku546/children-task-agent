@@ -4,6 +4,7 @@ import { Baby, Check, Copy, Link2, Loader2, Plus, Share2, Undo2, Users, X } from
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { SettingsSkeleton } from "@/components/Skeleton";
 import { fetchJsonWithCache, getCachedData, invalidateCache } from "@/lib/client-cache";
 import { MembershipError, planMemberRemoval } from "@/lib/membership";
 import type { GroupRecord, MemberRecord } from "@/lib/types";
@@ -28,6 +29,7 @@ export default function GroupSettingsPage() {
   const cachedMe = getCachedData<{ user?: { id: string } }>("/api/me");
   const [groups, setGroups] = useState<GroupRecord[]>(cachedGroups?.groups || []);
   const [currentUserId, setCurrentUserId] = useState<string | undefined>(cachedMe?.user?.id);
+  const [loading, setLoading] = useState(!(cachedGroups && cachedMe));
   const [childName, setChildName] = useState("");
   const [inviteUrl, setInviteUrl] = useState("");
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
@@ -50,9 +52,11 @@ export default function GroupSettingsPage() {
       if (cached && me) {
         setGroups(cached.groups || []);
         setCurrentUserId(me.user?.id);
+        setLoading(false);
         return;
       }
     }
+    setLoading(true);
     try {
       const [groupData, meData] = await Promise.all([
         fetchJsonWithCache<{ groups: GroupRecord[] }>("/api/groups", { force }),
@@ -62,6 +66,8 @@ export default function GroupSettingsPage() {
       setCurrentUserId(meData.user?.id);
     } catch (error) {
       console.error("Failed to load groups in settings", error);
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -235,10 +241,18 @@ export default function GroupSettingsPage() {
 
   const group = useMemo(() => groups.find((item) => item.id === params.id), [groups, params.id]);
 
+  if (loading && !group) {
+    return (
+      <section className="mx-auto max-w-5xl px-4 pb-24 pt-6 sm:px-6 md:pb-12 md:pt-8">
+        <SettingsSkeleton />
+      </section>
+    );
+  }
+
   if (!group) {
     return (
-      <section className="mx-auto max-w-5xl px-4 py-12 text-sm text-zinc-500">
-        読み込み中...
+      <section className="mx-auto max-w-5xl px-4 py-12 text-sm text-zinc-600">
+        このグループは見つかりません。
       </section>
     );
   }

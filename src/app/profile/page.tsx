@@ -3,6 +3,7 @@
 import { CircleUserRound, LogOut, Save, Undo2, Users } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { ProfileSkeleton } from "@/components/Skeleton";
 import { fetchJsonWithCache, getCachedData, invalidateCache } from "@/lib/client-cache";
 import { createClient } from "@/lib/supabase/client";
 import type { GroupRecord } from "@/lib/types";
@@ -114,8 +115,8 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <section className="mx-auto max-w-2xl px-4 py-16 text-center text-sm font-semibold text-ink/60">
-        読み込み中...
+      <section className="mx-auto max-w-3xl px-4 pb-20 pt-6 sm:px-6 md:pb-12 md:pt-8">
+        <ProfileSkeleton />
       </section>
     );
   }
