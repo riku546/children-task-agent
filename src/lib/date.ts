@@ -20,7 +20,6 @@ function parseLocalDate(value: string) {
   return date;
 }
 
-
 export function daysFromToday(value: string | null, now: Date = new Date()) {
   if (!value) return null;
   const date = parseLocalDate(value);
@@ -33,7 +32,6 @@ export function daysFromToday(value: string | null, now: Date = new Date()) {
 export function isSameDate(value: string | null, offsetDays: number, now: Date = new Date()) {
   return daysFromToday(value, now) === offsetDays;
 }
-
 
 export function isOverdue(value: string | null, now: Date = new Date()) {
   const days = daysFromToday(value, now);

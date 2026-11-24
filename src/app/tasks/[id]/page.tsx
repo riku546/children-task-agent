@@ -109,10 +109,7 @@ export default function TaskDetailPage() {
         {/* メインエディタ領域 */}
         <div className="space-y-6">
           <div>
-            <label
-              htmlFor="task-title"
-              className="block text-sm font-bold uppercase tracking-wider text-zinc-600"
-            >
+            <label htmlFor="task-title" className="block text-sm font-semibold text-zinc-700">
               タスク名
             </label>
             <input
@@ -126,10 +123,7 @@ export default function TaskDetailPage() {
           </div>
 
           <div>
-            <label
-              htmlFor="task-desc"
-              className="block text-sm font-bold uppercase tracking-wider text-zinc-600"
-            >
+            <label htmlFor="task-desc" className="block text-sm font-semibold text-zinc-700">
               詳細・メモ
             </label>
             <textarea
@@ -143,7 +137,7 @@ export default function TaskDetailPage() {
 
           {/* カレンダー連携アクション */}
           <div className="border-t border-zinc-200 pt-5">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-zinc-600">外部連携</h3>
+            <h3 className="text-sm font-semibold text-zinc-700">外部連携</h3>
             <div className="mt-3 flex items-center justify-between rounded border border-zinc-200 bg-zinc-50/50 p-3.5">
               <div className="flex items-center gap-3">
                 <CalendarPlus size={18} className="text-zinc-600" />
@@ -167,9 +161,7 @@ export default function TaskDetailPage() {
         {/* 右サイドバー: メタデータ属性パネル */}
         <aside className="space-y-5 lg:border-l lg:border-zinc-200 lg:pl-6">
           <div className="pb-1">
-            <span className="text-sm font-bold uppercase tracking-wider text-zinc-600">
-              属性・プロパティ
-            </span>
+            <span className="text-sm font-semibold text-zinc-700">タスクの情報</span>
           </div>
 
           <div className="space-y-4">

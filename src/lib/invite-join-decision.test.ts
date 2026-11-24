@@ -61,7 +61,7 @@ describe("decideInviteJoin", () => {
     }
   });
 
-  it("does not consume the link when the visitor is already a member", () => {
+  it("treats an already-member as joined even when the link was used or expired", () => {
     const used = decideInviteJoin({
       token: "invite_abc",
       invite: invite({ usedAt: new Date("2026-10-01T00:00:00.000Z") }),
@@ -79,15 +79,14 @@ describe("decideInviteJoin", () => {
     assert.equal(expired.action, "already-member");
   });
 
-  it("rejects a used or expired invite for someone outside the group", () => {
+  it("allows join when usedAt is set but the invite is still within expiry", () => {
     const used = decideInviteJoin({
       token: "invite_abc",
       invite: invite({ usedAt: now }),
       alreadyMember: false,
       now
     });
-    assert.equal(used.action, "reject");
-    if (used.action === "reject") assert.equal(used.status, 410);
+    assert.equal(used.action, "join");
 
     const expired = decideInviteJoin({
       token: "invite_abc",

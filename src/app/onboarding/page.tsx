@@ -185,7 +185,7 @@ function OnboardingContent() {
 
   return (
     <PageShell width="narrow">
-      <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">はじめに</p>
+      <p className="text-sm font-medium text-zinc-500">はじめに</p>
       <h1 className="mt-1 text-xl font-bold tracking-tight text-zinc-950 sm:text-2xl">
         家族のTODOを始める
       </h1>
@@ -193,32 +193,26 @@ function OnboardingContent() {
         共有グループ、お子さん、お便りの読み取りの順に設定します。あとからでも変更できます。
       </p>
 
-      <ol className="mt-5 grid grid-cols-4 gap-2">
+      <ol className="mt-5 flex flex-wrap gap-x-4 gap-y-1 border-b border-zinc-200 pb-3 text-sm">
         {steps.map((item) => {
           const active = item.id === step;
           const done = item.id < step;
           return (
             <li key={item.id}>
-              <div
-                className={`flex min-h-11 flex-col items-center justify-center rounded-lg border px-1 text-center text-[11px] font-semibold sm:text-xs ${
-                  active
-                    ? "border-zinc-900 bg-zinc-900 text-white"
-                    : done
-                      ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-                      : "border-zinc-200 bg-white text-zinc-500"
+              <span
+                className={`inline-flex items-center gap-1.5 font-semibold ${
+                  active ? "text-zinc-950" : done ? "text-emerald-800" : "text-zinc-400"
                 }`}
               >
-                <span className="flex items-center gap-1">
-                  {done ? <Check size={12} /> : <span>{item.id}</span>}
-                  <span>{item.label}</span>
-                </span>
-              </div>
+                {done ? <Check size={14} aria-hidden /> : <span>{item.id}.</span>}
+                {item.label}
+              </span>
             </li>
           );
         })}
       </ol>
 
-      <section className="mt-5 rounded-xl border border-zinc-200 bg-white p-4 shadow-2xs sm:p-5">
+      <section className="mt-6 space-y-4">
         {step === 1 && (
           <div className="space-y-4">
             <div>

@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  AlertTriangle,
   ArrowUpRight,
   Briefcase,
   CalendarDays,
@@ -25,7 +24,7 @@ import { SiblingTaskTimeline } from "@/components/SiblingTaskTimeline";
 import { TaskList } from "@/components/TaskList";
 import { fetchJsonWithCache, getCachedData, invalidateCache } from "@/lib/client-cache";
 import { detectAllConflicts } from "@/lib/conflict-detector";
-import {  isOverdue, isSameDate } from "@/lib/date";
+import { isOverdue, isSameDate } from "@/lib/date";
 import type { GroupRecord, TaskRecord } from "@/lib/types";
 
 type ViewMode = "list" | "siblings" | "calendar";
@@ -208,7 +207,7 @@ function DashboardContent() {
     () => tasks.filter((task) => task.status !== "DONE" && isSameDate(task.dueDate, 1)),
     [tasks]
   );
-    const overdueTasks = useMemo(
+  const overdueTasks = useMemo(
     () =>
       tasks
         .filter((task) => task.status !== "DONE" && isOverdue(task.dueDate))
@@ -230,17 +229,16 @@ function DashboardContent() {
   const doneTasks = useMemo(() => tasks.filter((task) => task.status === "DONE"), [tasks]);
   const doneCount = doneTasks.length;
 
-   const listSections = (
+  const listSections = (
     <div className="space-y-6">
       {overdueTasks.length > 0 && (
-        <div className="rounded-lg border border-red-200 bg-red-50/40 px-2 pt-2">
-          <div className="flex items-center justify-between border-b border-red-200 px-1 pb-2 text-sm font-bold text-red-700">
+        <div>
+          <div className="flex items-center justify-between border-b border-zinc-200 pb-2 text-sm font-bold text-rose-700">
             <div className="flex items-center gap-2">
-              <AlertTriangle size={15} aria-hidden="true" />
               <span>期限切れ</span>
               <span className="font-mono text-xs font-semibold">({overdueTasks.length})</span>
             </div>
-            <span className="text-xs font-semibold text-red-600">早めに対応してください</span>
+            <span className="text-xs font-semibold text-rose-600">早めに対応してください</span>
           </div>
           <TaskList
             tasks={overdueTasks}
@@ -418,8 +416,8 @@ function DashboardContent() {
 
       {viewMode === "list" && (
         <div className="mt-2 flex items-center gap-4 text-sm font-mono text-zinc-600">
-                    {overdueTasks.length > 0 && (
-            <span className="text-red-700">
+          {overdueTasks.length > 0 && (
+            <span className="text-rose-700">
               期限切れ: <strong>{overdueTasks.length}</strong>
             </span>
           )}

@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, CheckCircle2, Circle, Hand, Loader2, UserRound } from "lucide-react";
+import { ArrowRight, CheckCircle2, Circle, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { ChildBadge } from "@/components/ChildBadge";
@@ -19,19 +19,16 @@ type Props = {
 export function AssigneeTaskColumns({ tasks, currentGroup, currentUserId, onRefresh }: Props) {
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
 
-  // 現在のユーザーに対応するMember
   const currentMember = useMemo(() => {
     if (!currentGroup || !currentUserId) return null;
     return currentGroup.members.find((m) => m.userId === currentUserId) || null;
   }, [currentGroup, currentUserId]);
 
-  // 選択中グループのタスク
   const groupTasks = useMemo(() => {
     if (!currentGroup) return tasks;
     return tasks.filter((task) => task.groupId === currentGroup.id);
   }, [tasks, currentGroup]);
 
-  // メンバー別タスクの集計
   const memberBuckets = useMemo(() => {
     if (!currentGroup) {
       return {
@@ -63,7 +60,6 @@ export function AssigneeTaskColumns({ tasks, currentGroup, currentUserId, onRefr
       };
     });
 
-    // 担当未設定のタスク
     const unassignedTasks = groupTasks.filter((t) => {
       const hasId = members.some((m) => m.id === t.assigneeMemberId);
       const hasName = members.some((m) => m.displayName === t.assigneeName);
@@ -79,7 +75,6 @@ export function AssigneeTaskColumns({ tasks, currentGroup, currentUserId, onRefr
     };
   }, [currentGroup, groupTasks]);
 
-  // 「私がやる」ボタン
   async function assignToMe(taskId: string) {
     if (!currentMember) return;
     setActionLoadingId(taskId);
@@ -98,7 +93,6 @@ export function AssigneeTaskColumns({ tasks, currentGroup, currentUserId, onRefr
     }
   }
 
-  // 担当者の変更
   async function changeAssignee(taskId: string, memberId: string) {
     setActionLoadingId(taskId);
     try {
@@ -118,7 +112,6 @@ export function AssigneeTaskColumns({ tasks, currentGroup, currentUserId, onRefr
     }
   }
 
-  // ステータスのトグル
   async function toggleStatus(task: TaskRecord) {
     setActionLoadingId(task.id);
     try {
@@ -146,104 +139,65 @@ export function AssigneeTaskColumns({ tasks, currentGroup, currentUserId, onRefr
   }
 
   return (
-    <div className="space-y-4">
-      {/* 担当者別カラムボード */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {/* 未割り当てカラム */}
-        {memberBuckets.unassigned && memberBuckets.unassigned.tasks.length > 0 ? (
-          <div className="flex flex-col overflow-hidden rounded-lg border border-amber-200/90 bg-white shadow-2xs">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-amber-200 bg-amber-50/60 px-4 py-3">
-              <div className="flex items-center gap-2">
-                <span className="grid size-5 place-items-center rounded bg-amber-500 text-white font-bold text-xs">
-                  ?
-                </span>
-                <h3 className="text-sm font-bold text-amber-950">担当未設定</h3>
-              </div>
-              <span className="rounded bg-amber-200/80 px-2 py-0.5 text-xs font-bold text-amber-900">
-                {memberBuckets.unassigned.tasks.length} 件
-              </span>
-            </div>
-            <div className="divide-y divide-zinc-200/80 flex-1">
-              {memberBuckets.unassigned.tasks.map((task) => (
-                <TaskRow
-                  key={task.id}
-                  task={task}
-                  members={currentGroup.members}
-                  currentMember={currentMember}
-                  isActionLoading={actionLoadingId === task.id}
-                  onAssignToMe={() => assignToMe(task.id)}
-                  onChangeAssignee={(memberId) => changeAssignee(task.id, memberId)}
-                  onToggleStatus={() => toggleStatus(task)}
-                />
-              ))}
-            </div>
+    <div className="space-y-8">
+      {memberBuckets.unassigned && memberBuckets.unassigned.tasks.length > 0 ? (
+        <section>
+          <h3 className="border-b border-amber-200 pb-2 text-sm font-bold text-amber-950">
+            担当未設定
+            <span className="ml-2 font-normal text-amber-800">
+              {memberBuckets.unassigned.tasks.length}件（未完 {memberBuckets.unassigned.todoCount}）
+            </span>
+          </h3>
+          <div className="divide-y divide-zinc-200">
+            {memberBuckets.unassigned.tasks.map((task) => (
+              <TaskRow
+                key={task.id}
+                task={task}
+                members={currentGroup.members}
+                currentMember={currentMember}
+                isActionLoading={actionLoadingId === task.id}
+                onAssignToMe={() => assignToMe(task.id)}
+                onChangeAssignee={(memberId) => changeAssignee(task.id, memberId)}
+                onToggleStatus={() => toggleStatus(task)}
+              />
+            ))}
           </div>
-        ) : null}
+        </section>
+      ) : null}
 
-        {/* 各メンバーのカラム */}
-        {memberBuckets.buckets?.map((bucket) => {
-          const isMe = currentMember?.id === bucket.member.id;
-          return (
-            <div
-              key={bucket.member.id}
-              className={`flex flex-col overflow-hidden rounded-lg border bg-white shadow-2xs ${
-                isMe ? "border-emerald-300 ring-1 ring-emerald-300/30" : "border-zinc-200"
-              }`}
-            >
-              <div
-                className={`flex flex-wrap items-center justify-between gap-2 border-b px-4 py-3 ${
-                  isMe ? "border-emerald-200 bg-emerald-50/50" : "border-zinc-200 bg-zinc-50/70"
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  <div
-                    className={`grid size-5 place-items-center rounded text-white font-bold text-xs ${
-                      isMe ? "bg-emerald-600" : "bg-zinc-700"
-                    }`}
-                  >
-                    <UserRound size={13} />
-                  </div>
-                  <h3 className="min-w-0 break-words text-sm font-bold text-zinc-900">
-                    {bucket.member.displayName}
-                    {isMe ? (
-                      <span className="ml-1 text-xs font-semibold text-emerald-700">(自分)</span>
-                    ) : null}
-                  </h3>
-                </div>
-                <div className="flex items-center gap-1.5 text-xs font-semibold">
-                  <span className="text-zinc-600">計 {bucket.tasks.length}</span>
-                  {bucket.todoCount > 0 ? (
-                    <span className="rounded bg-emerald-100 px-2 py-0.5 text-emerald-800">
-                      未完 {bucket.todoCount}
-                    </span>
-                  ) : null}
-                </div>
-              </div>
+      {memberBuckets.buckets?.map((bucket) => {
+        const isMe = currentMember?.id === bucket.member.id;
+        return (
+          <section key={bucket.member.id}>
+            <h3 className="border-b border-zinc-200 pb-2 text-sm font-bold text-zinc-900">
+              {bucket.member.displayName}
+              {isMe ? <span className="ml-1 font-normal text-zinc-600">（自分）</span> : null}
+              <span className="ml-2 font-normal text-zinc-500">
+                {bucket.tasks.length}件{bucket.todoCount > 0 ? ` · 未完 ${bucket.todoCount}` : null}
+              </span>
+            </h3>
 
-              <div className="divide-y divide-zinc-200 flex-1">
-                {bucket.tasks.length === 0 ? (
-                  <div className="p-8 text-center text-sm text-zinc-500">
-                    現在担当しているタスクはありません
-                  </div>
-                ) : (
-                  bucket.tasks.map((task) => (
-                    <TaskRow
-                      key={task.id}
-                      task={task}
-                      members={currentGroup.members}
-                      currentMember={currentMember}
-                      isActionLoading={actionLoadingId === task.id}
-                      onAssignToMe={() => assignToMe(task.id)}
-                      onChangeAssignee={(memberId) => changeAssignee(task.id, memberId)}
-                      onToggleStatus={() => toggleStatus(task)}
-                    />
-                  ))
-                )}
+            {bucket.tasks.length === 0 ? (
+              <p className="py-6 text-sm text-zinc-500">現在担当しているタスクはありません</p>
+            ) : (
+              <div className="divide-y divide-zinc-200">
+                {bucket.tasks.map((task) => (
+                  <TaskRow
+                    key={task.id}
+                    task={task}
+                    members={currentGroup.members}
+                    currentMember={currentMember}
+                    isActionLoading={actionLoadingId === task.id}
+                    onAssignToMe={() => assignToMe(task.id)}
+                    onChangeAssignee={(memberId) => changeAssignee(task.id, memberId)}
+                    onToggleStatus={() => toggleStatus(task)}
+                  />
+                ))}
               </div>
-            </div>
-          );
-        })}
-      </div>
+            )}
+          </section>
+        );
+      })}
     </div>
   );
 }
@@ -270,7 +224,7 @@ function TaskRow({
 
   return (
     <div
-      className={`group p-3.5 transition hover:bg-zinc-50/70 ${
+      className={`group py-3.5 transition hover:bg-zinc-50/70 ${
         isDone ? "bg-zinc-50/40 opacity-70" : ""
       }`}
     >
@@ -279,7 +233,7 @@ function TaskRow({
           type="button"
           onClick={onToggleStatus}
           disabled={isActionLoading}
-          className="mt-0.5 shrink-0 text-zinc-400 hover:text-zinc-800 transition"
+          className="mt-0.5 shrink-0 text-zinc-400 transition hover:text-zinc-800"
           title={isDone ? "未完了に戻す" : "完了にする"}
         >
           {isDone ? <CheckCircle2 size={17} className="text-emerald-600" /> : <Circle size={17} />}
@@ -288,34 +242,33 @@ function TaskRow({
         <div className="min-w-0 flex-1">
           <Link
             href={`/tasks/${task.id}`}
-            className={`text-sm font-semibold leading-snug block transition ${
-              isDone ? "line-through text-zinc-400" : "text-zinc-900 hover:text-emerald-700"
+            className={`block text-sm font-semibold leading-snug transition ${
+              isDone ? "text-zinc-400 line-through" : "text-zinc-900 hover:text-zinc-600"
             }`}
           >
             {task.title}
           </Link>
-          <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs">
-            <DuePill dueDate={task.dueDate} />
-            <PriorityPill priority={task.priority} />
+          <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
             <ChildBadge name={task.childName} isWork={isWorkTask(task)} size="sm" />
+            <DuePill dueDate={task.dueDate} done={isDone} />
+            <PriorityPill priority={task.priority} />
           </div>
         </div>
 
         <Link
           href={`/tasks/${task.id}`}
-          className="shrink-0 text-zinc-400 group-hover:text-zinc-800 transition pt-0.5"
+          className="shrink-0 pt-0.5 text-zinc-400 transition group-hover:text-zinc-800"
           title="詳細"
         >
           <ArrowRight size={15} />
         </Link>
       </div>
 
-      {/* 担当操作エリア */}
       <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-zinc-100 pt-2.5 text-xs">
         <div className="flex items-center gap-1.5">
-          <span className="text-zinc-600 font-medium">担当:</span>
+          <span className="font-medium text-zinc-600">担当</span>
           <select
-            className="max-w-full rounded border border-zinc-300 bg-white px-2 py-1 text-xs font-semibold text-zinc-900"
+            className="max-w-full rounded-md border border-zinc-200 bg-white px-2 py-1 text-xs font-medium text-zinc-900"
             value={task.assigneeMemberId || "unassigned"}
             disabled={isActionLoading}
             onChange={(e) => onChangeAssignee(e.target.value)}
@@ -334,9 +287,9 @@ function TaskRow({
             type="button"
             onClick={onAssignToMe}
             disabled={isActionLoading}
-            className="inline-flex items-center gap-1 rounded border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-800 transition hover:bg-emerald-100"
+            className="inline-flex min-h-9 items-center gap-1 text-sm font-semibold text-emerald-800 underline-offset-2 hover:underline disabled:opacity-50"
           >
-            {isActionLoading ? <Loader2 size={12} className="animate-spin" /> : <Hand size={12} />}
+            {isActionLoading ? <Loader2 size={12} className="animate-spin" /> : null}
             <span>私がやる</span>
           </button>
         ) : null}

@@ -201,10 +201,10 @@ export function CalendarView({
           <button
             type="button"
             onClick={() => setSelectedChild("all")}
-            className={`rounded-full px-3 py-1 text-sm font-medium transition ${
+            className={`border-b-2 px-2 pb-1 pt-0.5 text-sm font-semibold transition ${
               selectedChild === "all"
-                ? "bg-zinc-900 text-white shadow-2xs"
-                : "border border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50"
+                ? "border-zinc-900 text-zinc-950"
+                : "border-transparent text-zinc-500 hover:text-zinc-800"
             }`}
           >
             全員
@@ -217,10 +217,10 @@ export function CalendarView({
                 key={name}
                 type="button"
                 onClick={() => setSelectedChild(name)}
-                className={`flex items-center gap-1 rounded-full px-3 py-1 text-sm font-medium transition ${
+                className={`flex items-center gap-1 border-b-2 px-2 pb-1 pt-0.5 text-sm font-semibold transition ${
                   isSelected
-                    ? "bg-zinc-900 text-white shadow-2xs"
-                    : "border border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50"
+                    ? "border-zinc-900 text-zinc-950"
+                    : "border-transparent text-zinc-500 hover:text-zinc-800"
                 }`}
               >
                 <span className={`size-1.5 rounded-full ${theme.dotColor}`} />
@@ -231,10 +231,10 @@ export function CalendarView({
           <button
             type="button"
             onClick={() => setSelectedChild("work")}
-            className={`flex items-center gap-1 rounded-full px-3 py-1 text-sm font-medium transition ${
+            className={`flex items-center gap-1 border-b-2 px-2 pb-1 pt-0.5 text-sm font-semibold transition ${
               selectedChild === "work"
-                ? "bg-zinc-900 text-white shadow-2xs"
-                : "border border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50"
+                ? "border-zinc-900 text-zinc-950"
+                : "border-transparent text-zinc-500 hover:text-zinc-800"
             }`}
           >
             <Briefcase size={13} />
@@ -244,7 +244,7 @@ export function CalendarView({
       </div>
 
       {/* カレンダーグリッド本体 */}
-      <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-2xs">
+      <div className="overflow-hidden border border-zinc-200 bg-white">
         {/* 曜日ヘッダー */}
         <div className="grid grid-cols-7 border-b border-zinc-200 bg-zinc-50 text-center text-sm font-medium text-zinc-600">
           <span className="py-2 text-rose-600 font-semibold">日</span>
@@ -337,10 +337,10 @@ export function CalendarView({
 
       {/* 選択した日の詳細パネル（展開時） */}
       {selectedDate && (
-        <section className="rounded-lg border border-zinc-200 bg-zinc-50/50 p-4 shadow-2xs">
+        <section className="border-t border-zinc-200 pt-4">
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-200 pb-3">
             <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-zinc-500">選択した日</p>
+              <p className="text-sm font-semibold text-zinc-700">選択した日</p>
               <h3 className="text-base font-bold text-zinc-950">{formatDateJa(selectedDate)}</h3>
             </div>
             <div className="flex items-center gap-2">
@@ -382,7 +382,7 @@ export function CalendarView({
                 この日の予定・TODOはありません
               </p>
             ) : (
-              <div className="divide-y divide-zinc-200 rounded border border-zinc-200 bg-white overflow-hidden shadow-2xs">
+              <div className="divide-y divide-zinc-200 border-t border-zinc-200">
                 {selectedDateTasks.map((task) => (
                   <div
                     key={task.id}

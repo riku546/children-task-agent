@@ -1,23 +1,18 @@
 "use client";
 
-import {
-  Camera,
-  FileText,
-  Loader2,
-  Mic,
-  Plus,
-  Save,
-  Sparkles,
-  Trash2,
-  Type,
-  Upload
-} from "lucide-react";
+import { Camera, FileText, Loader2, Mic, Plus, Save, Trash2, Type, Upload } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { type ChangeEvent, Suspense, useEffect, useMemo, useState } from "react";
+import { type ChangeEvent, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import { PageShell } from "@/components/PageShell";
 import { fetchJsonWithCache, getCachedData, invalidateCache } from "@/lib/client-cache";
+import {
+  IMAGE_SIZE_LIMIT_MESSAGE,
+  IMAGE_UNREADABLE_MESSAGE,
+  imageDataUrlSizeError,
+  imageFileSizeError
+} from "@/lib/image-size";
 import type { ExtractionResult, GroupRecord, TodoCandidate } from "@/lib/types";
 
 type InputMode = "text" | "image" | "pdf" | "voice";
@@ -44,6 +39,13 @@ function NewTaskContent() {
   const [result, setResult] = useState<ExtractionResult | null>(null);
   const [candidates, setCandidates] = useState<TodoCandidate[]>([]);
   const [listening, setListening] = useState(false);
+  const [uploadError, setUploadError] = useState("");
+  const uploadErrorRef = useRef<HTMLParagraphElement>(null);
+
+  useEffect(() => {
+    if (!uploadError) return;
+    uploadErrorRef.current?.scrollIntoView({ block: "nearest" });
+  }, [uploadError]);
 
   useEffect(() => {
     fetchJsonWithCache<{ groups: GroupRecord[] }>("/api/groups")
@@ -62,15 +64,39 @@ function NewTaskContent() {
   );
 
   function handleImage(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
+    const input = event.target;
+    const file = input.files?.[0];
+    input.value = "";
     if (!file) return;
+    const sizeError = imageFileSizeError(file.size);
+    if (sizeError) {
+      setPreviewUrl("");
+      setUploadError(sizeError);
+      return;
+    }
     setMode("image");
     const reader = new FileReader();
     reader.onload = () => {
-      setPreviewUrl(reader.result as string);
+      const result = reader.result;
+      if (typeof result !== "string") {
+        setPreviewUrl("");
+        setUploadError(IMAGE_UNREADABLE_MESSAGE);
+        return;
+      }
+      const decodedError = imageDataUrlSizeError(result);
+      if (decodedError) {
+        setPreviewUrl("");
+        setUploadError(decodedError);
+        return;
+      }
+      setUploadError("");
+      setPreviewUrl(result);
+    };
+    reader.onerror = () => {
+      setPreviewUrl("");
+      setUploadError(IMAGE_UNREADABLE_MESSAGE);
     };
     reader.readAsDataURL(file);
-    event.target.value = "";
   }
 
   function clearImage() {
@@ -78,7 +104,9 @@ function NewTaskContent() {
   }
 
   async function handlePdf(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
+    const input = event.target;
+    const file = input.files?.[0];
+    input.value = "";
     if (!file) return;
     setMode("pdf");
     setBusyText("PDFから文字を抽出しています");
@@ -119,7 +147,14 @@ function NewTaskContent() {
       }
 
       if (firstPageDataUrl && chunks.length === 0) {
-        setPreviewUrl(firstPageDataUrl);
+        const sizeError = imageDataUrlSizeError(firstPageDataUrl);
+        if (sizeError) {
+          setPreviewUrl("");
+          setUploadError(sizeError);
+        } else {
+          setUploadError("");
+          setPreviewUrl(firstPageDataUrl);
+        }
       }
       if (chunks.length > 0) {
         setConfirmedText(chunks.join("\n\n").trim());
@@ -160,6 +195,16 @@ function NewTaskContent() {
     const hasImage = Boolean(previewUrl?.startsWith("data:image"));
     if (!hasText && !hasImage) return;
 
+    if (hasImage) {
+      const sizeError = imageDataUrlSizeError(previewUrl);
+      if (sizeError) {
+        setPreviewUrl("");
+        setUploadError(sizeError);
+        return;
+      }
+    }
+
+    setUploadError("");
     setBusyText("AIが解析してTODO候補を生成しています");
     try {
       const response = await fetch("/api/ai/extract", {
@@ -172,6 +217,14 @@ function NewTaskContent() {
           imageUrl: hasImage ? previewUrl : undefined
         })
       });
+      if (!response.ok) {
+        const message = await readExtractError(response);
+        if (response.status === 413 || message === IMAGE_SIZE_LIMIT_MESSAGE) {
+          setPreviewUrl("");
+        }
+        setUploadError(message);
+        return;
+      }
       const data = (await response.json()) as ExtractionResult;
       setResult(data);
       setCandidates(data.tasks);
@@ -260,6 +313,16 @@ function NewTaskContent() {
         </div>
       ) : null}
 
+      {uploadError ? (
+        <p
+          ref={uploadErrorRef}
+          role="alert"
+          className="mt-4 scroll-mt-24 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-800"
+        >
+          {uploadError}
+        </p>
+      ) : null}
+
       <div className="mt-6 grid gap-8 lg:grid-cols-[320px_1fr] items-start">
         <div className="space-y-5">
           <div>
@@ -304,12 +367,12 @@ function NewTaskContent() {
             </label>
           </div>
 
-          <details className="rounded-lg border border-zinc-200 bg-zinc-50/50 px-3 py-2">
+          <details className="border-t border-zinc-200 pt-2">
             <summary className="cursor-pointer text-sm font-semibold text-zinc-700">
               別の入力方法（テキスト・PDF・音声）
             </summary>
             <div className="mt-3 space-y-3">
-              <div className="grid grid-cols-2 gap-1 rounded bg-zinc-200/60 p-0.5 sm:grid-cols-4">
+              <div className="flex flex-wrap gap-1 border-b border-zinc-200">
                 {modes.map((item) => {
                   const Icon = item.icon;
                   const isActive = mode === item.id;
@@ -317,10 +380,10 @@ function NewTaskContent() {
                     <button
                       key={item.id}
                       type="button"
-                      className={`flex items-center justify-center gap-1 rounded py-2 text-xs font-medium transition sm:text-sm ${
+                      className={`flex items-center gap-1 border-b-2 px-2 pb-2 pt-1 text-xs font-semibold transition sm:text-sm ${
                         isActive
-                          ? "bg-white font-semibold text-zinc-900 shadow-2xs"
-                          : "text-zinc-600 hover:text-zinc-900"
+                          ? "border-zinc-900 text-zinc-950"
+                          : "border-transparent text-zinc-500 hover:text-zinc-800"
                       }`}
                       onClick={() => setMode(item.id)}
                     >
@@ -379,8 +442,8 @@ function NewTaskContent() {
                 onClick={generate}
                 disabled={Boolean(busyText)}
               >
-                {busyText ? <Loader2 className="animate-spin" size={14} /> : <Sparkles size={14} />}
-                <span>画像からTODOをAI抽出</span>
+                {busyText ? <Loader2 className="animate-spin" size={14} /> : null}
+                <span>タスクを抽出する</span>
               </button>
             </div>
           ) : null}
@@ -398,10 +461,7 @@ function NewTaskContent() {
           {/* ソーステキスト入力 */}
           <div>
             <div className="flex items-center justify-between">
-              <label
-                className="text-sm font-bold uppercase tracking-wider text-zinc-600"
-                htmlFor="confirmed-text"
-              >
+              <label className="text-sm font-semibold text-zinc-800" htmlFor="confirmed-text">
                 2. 読み取りテキストの確認・編集
               </label>
               <span className="text-xs text-zinc-500">直接編集可能</span>
@@ -420,8 +480,8 @@ function NewTaskContent() {
                 onClick={generate}
                 disabled={Boolean(busyText) || (!confirmedText.trim() && !previewUrl)}
               >
-                {busyText ? <Loader2 className="animate-spin" size={15} /> : <Sparkles size={15} />}
-                <span>テキストからTODO候補を抽出</span>
+                {busyText ? <Loader2 className="animate-spin" size={15} /> : null}
+                <span>タスクを抽出する</span>
               </button>
               {busyText ? (
                 <span className="inline-flex items-center gap-1.5 text-sm font-medium text-emerald-700">
@@ -438,12 +498,10 @@ function NewTaskContent() {
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold uppercase tracking-wider text-zinc-600">
+                    <span className="text-sm font-semibold text-zinc-800">
                       3. 生成されたTODO候補
                     </span>
-                    <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700 border border-emerald-200/60">
-                      {candidates.length} 件
-                    </span>
+                    <span className="text-sm text-zinc-500">（{candidates.length}件）</span>
                   </div>
                   <p className="mt-1 text-base font-semibold text-zinc-900">{result.summary}</p>
                 </div>
@@ -558,10 +616,9 @@ function NewTaskContent() {
               </div>
             </div>
           ) : (
-            <div className="flex flex-1 flex-col items-center justify-center p-12 text-center text-zinc-500">
-              <Sparkles size={24} className="text-zinc-400 mb-2" />
-              <p className="text-sm font-medium text-zinc-600">
-                左側から画像・PDFを取り込むか、上のテキストエリアに入力して「TODO候補を抽出」を押してください。
+            <div className="border-t border-zinc-200 pt-8 text-sm text-zinc-600">
+              <p>
+                左から画像・PDFを取り込むか、上のテキストを確認して「タスクを抽出する」を押してください。
               </p>
               <button
                 type="button"
@@ -577,6 +634,17 @@ function NewTaskContent() {
       </div>
     </PageShell>
   );
+}
+
+async function readExtractError(response: Response) {
+  try {
+    const data = (await response.json()) as { error?: unknown };
+    if (typeof data.error === "string" && data.error.trim()) return data.error;
+  } catch {
+    // 413 などは JSON でないことがある
+  }
+  if (response.status === 413) return IMAGE_SIZE_LIMIT_MESSAGE;
+  return "TODOの抽出に失敗しました";
 }
 
 function Field({

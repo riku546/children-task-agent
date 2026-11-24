@@ -42,6 +42,7 @@ describe("shouldEnforceOnboarding", () => {
     assert.equal(shouldEnforceOnboarding("/tasks/new", "onboarding"), false);
     assert.equal(shouldEnforceOnboarding("/dashboard", null), true);
     assert.equal(shouldEnforceOnboarding("/tasks/new", null), true);
+    assert.equal(shouldEnforceOnboarding("/chat", null), true);
     assert.equal(shouldEnforceOnboarding("/login", null), false);
   });
 });

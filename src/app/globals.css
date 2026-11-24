@@ -32,19 +32,19 @@ select {
 }
 
 .field {
-  @apply w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 shadow-2xs transition focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900;
+  @apply w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 transition focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900;
 }
 
 .button-primary {
-  @apply inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg bg-zinc-900 px-3.5 py-1.5 text-sm font-semibold text-white shadow-2xs transition hover:bg-zinc-800 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50;
+  @apply inline-flex min-h-9 items-center justify-center gap-1.5 rounded-md bg-zinc-900 px-3.5 py-1.5 text-sm font-semibold text-white transition hover:bg-zinc-800 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50;
 }
 
 .button-secondary {
-  @apply inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3.5 py-1.5 text-sm font-semibold text-zinc-700 shadow-2xs transition hover:bg-zinc-50 hover:text-zinc-900 hover:border-zinc-300 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50;
+  @apply inline-flex min-h-9 items-center justify-center gap-1.5 rounded-md px-3.5 py-1.5 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 hover:text-zinc-900 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50;
 }
 
 .button-icon {
-  @apply inline-flex size-9 items-center justify-center rounded-lg border border-zinc-200 bg-white text-zinc-600 shadow-2xs transition hover:bg-zinc-50 hover:text-zinc-900 hover:border-zinc-300 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50;
+  @apply inline-flex size-9 items-center justify-center rounded-md border border-zinc-200 bg-white text-zinc-600 transition hover:bg-zinc-50 hover:text-zinc-900 hover:border-zinc-300 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50;
 }
 
 /* SaaS風の微細グリッド背景（LP等で使用可能） */

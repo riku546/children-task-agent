@@ -2,7 +2,14 @@ import { type NextRequest, NextResponse } from "next/server";
 import { applyNextPath } from "@/lib/safe-next";
 import { updateSession } from "@/lib/supabase/proxy";
 
-const protectedPagePrefixes = ["/dashboard", "/groups", "/tasks", "/profile", "/onboarding"];
+const protectedPagePrefixes = [
+  "/dashboard",
+  "/groups",
+  "/tasks",
+  "/profile",
+  "/onboarding",
+  "/chat"
+];
 const publicAuthPrefixes = ["/login", "/auth/callback", "/api/auth", "/api/health"];
 
 function isPublicAuthPath(pathname: string) {

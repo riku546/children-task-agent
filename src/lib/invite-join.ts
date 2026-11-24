@@ -80,16 +80,14 @@ export function acceptInviteInMemory(
   const view = viewFromDecision(decision);
   if (decision.action !== "join") return view;
 
-  const row = memoryStore.invites.find((item) => item.id === decision.inviteId);
   const group = memoryStore.groups.find((item) => item.id === decision.groupId);
-  if (!row || row.usedAt || !group) {
-    throw new InviteJoinError(410, "この招待リンクはすでに使われています");
+  if (!group) {
+    throw new InviteJoinError(404, "招待リンクが見つかりません");
   }
   if (group.members.some((member) => member.userId === user.id)) {
     return { ...view, alreadyMember: true };
   }
 
-  row.usedAt = now.toISOString();
   group.members.push({
     id: createId("member"),
     userId: user.id,
@@ -161,22 +159,18 @@ async function consumeDatabaseInvite(
 ): Promise<"joined" | "already"> {
   try {
     return await prisma.$transaction(async (tx) => {
-      const consumed = await tx.invite.updateMany({
-        where: {
-          id: decision.inviteId,
-          usedAt: null,
-          expiresAt: { gt: new Date() }
-        },
-        data: { usedAt: new Date() }
+      const inviteRow = await tx.invite.findUnique({
+        where: { id: decision.inviteId },
+        select: { expiresAt: true }
       });
-      if (consumed.count !== 1) {
-        const existing = await tx.familyMember.findUnique({
-          where: { userId_groupId: { userId: user.id, groupId: decision.groupId } },
-          select: { id: true }
-        });
-        if (existing) return "already" as const;
-        throw new InviteJoinError(410, "この招待リンクはすでに使われています");
+      if (!inviteRow || inviteRow.expiresAt.getTime() <= Date.now()) {
+        throw new InviteJoinError(410, "招待リンクの有効期限が切れています");
       }
+      const existing = await tx.familyMember.findUnique({
+        where: { userId_groupId: { userId: user.id, groupId: decision.groupId } },
+        select: { id: true }
+      });
+      if (existing) return "already" as const;
       await tx.familyMember.create({
         data: {
           userId: user.id,
