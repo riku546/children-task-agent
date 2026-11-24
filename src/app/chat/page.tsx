@@ -1,20 +1,38 @@
 "use client";
 
-import { ArrowUp, Plus, X } from "lucide-react";
+import { ArrowUp, Camera, Mic, Plus, X } from "lucide-react";
 import { type ChangeEvent, useEffect, useRef, useState } from "react";
+import { ChatMessageText } from "@/components/ChatMessageText";
 import { invalidateCache } from "@/lib/client-cache";
 import { imageDataUrlSizeError, imageFileSizeError } from "@/lib/image-size";
 
 type Turn = {
   kind: "user" | "result";
   text: string;
+  apiText?: string;
   actionSummaries?: string[];
 };
+
+type ComposerMode = "create_task" | null;
 
 type PendingRemoval = {
   groupId: string;
   memberId: string;
 } | null;
+
+type SpeechRecognitionInstance = {
+  lang: string;
+  interimResults: boolean;
+  continuous: boolean;
+  start: () => void;
+  stop: () => void;
+  onstart?: () => void;
+  onend?: () => void;
+  onresult?: (event: { results: SpeechRecognitionResultList }) => void;
+  onerror?: (event: { error: string }) => void;
+};
+
+type SpeechRecognitionCtor = new () => SpeechRecognitionInstance;
 
 const USAGE_GUIDE_REPLY = `このチャットでは、文章で次のことができます。
 
@@ -22,12 +40,21 @@ const USAGE_GUIDE_REPLY = `このチャットでは、文章で次のことが�
 ・グループの作成、子どもの追加
 ・招待リンクの発行と、招待への参加
 ・表示名の変更
-・画像やPDFのお便りからタスクを作る
+・画像やPDF、撮影、音声からタスクを作る
 
-タスクの削除とログアウトは、このチャットではできません。`;
+チャットではできないことは、次の画面で行えます。
+
+・招待のQRコード: [グループ一覧](/groups) から各グループの設定
+・ログアウト: [プロフィール](/profile)
+・候補を直してから保存: [お便りから作成](/tasks/new)
+
+タスクの削除とグループの削除は、このアプリにはありません。`;
 
 const GUIDANCE_BUTTON_CLASS =
   "rounded-full border border-zinc-300 bg-white px-3 py-1.5 text-xs font-medium text-zinc-800 hover:bg-zinc-50 disabled:opacity-40";
+
+const GUIDANCE_BUTTON_SELECTED_CLASS =
+  "rounded-full border border-zinc-900 bg-zinc-900 px-3 py-1.5 text-xs font-medium text-white disabled:opacity-40";
 
 export default function ChatPage() {
   const [turns, setTurns] = useState<Turn[]>([]);
@@ -36,14 +63,17 @@ export default function ChatPage() {
   const [attachmentName, setAttachmentName] = useState("");
   const [attachment, setAttachment] = useState<{ text?: string; imageUrl?: string } | null>(null);
   const [pendingRemoval, setPendingRemoval] = useState<PendingRemoval>(null);
-  const [attachMenuOpen, setAttachMenuOpen] = useState(false);
   const [streamStatus, setStreamStatus] = useState<string | null>(null);
   const [streamText, setStreamText] = useState("");
-  const imageInputRef = useRef<HTMLInputElement>(null);
-  const pdfInputRef = useRef<HTMLInputElement>(null);
+  const [composerMode, setComposerMode] = useState<ComposerMode>(null);
+  const [listening, setListening] = useState(false);
+  const [speechError, setSpeechError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const attachMenuRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const speechRecognitionRef = useRef<SpeechRecognitionInstance | null>(null);
+  const draftBeforeSpeechRef = useRef("");
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -59,20 +89,16 @@ export default function ChatPage() {
   }, [draft]);
 
   useEffect(() => {
-    if (!attachMenuOpen) return;
-    function onMouseDown(event: MouseEvent) {
-      if (attachMenuRef.current?.contains(event.target as Node)) return;
-      setAttachMenuOpen(false);
-    }
-    document.addEventListener("mousedown", onMouseDown);
-    return () => document.removeEventListener("mousedown", onMouseDown);
-  }, [attachMenuOpen]);
+    return () => {
+      speechRecognitionRef.current?.stop();
+    };
+  }, []);
 
   function buildMessages(nextTurns: Turn[]) {
     const messages: { role: "user" | "assistant"; content: string }[] = [];
     for (const turn of nextTurns) {
       if (turn.kind === "user") {
-        messages.push({ role: "user", content: turn.text });
+        messages.push({ role: "user", content: turn.apiText ?? turn.text });
       } else {
         messages.push({ role: "assistant", content: turn.text });
       }
@@ -80,12 +106,7 @@ export default function ChatPage() {
     return messages.slice(-8);
   }
 
-  async function handlePdf(event: ChangeEvent<HTMLInputElement>) {
-    const input = event.target;
-    const file = input.files?.[0];
-    input.value = "";
-    if (!file) return;
-
+  async function handlePdf(file: File) {
     setAttachmentName(file.name);
     try {
       const pdfjs = await import("pdfjs-dist");
@@ -102,7 +123,7 @@ export default function ChatPage() {
       for (let pageNumber = 1; pageNumber <= pageLimit; pageNumber += 1) {
         const page = await pdf.getPage(pageNumber);
         const content = await page.getTextContent();
-        const text = content.items.map((item: any) => item.str).join(" ");
+        const text = content.items.map((item) => ("str" in item ? item.str : "")).join(" ");
         if (text.trim().length > 10) {
           chunks.push(text);
           continue;
@@ -142,12 +163,7 @@ export default function ChatPage() {
     }
   }
 
-  function handleImage(event: ChangeEvent<HTMLInputElement>) {
-    const input = event.target;
-    const file = input.files?.[0];
-    input.value = "";
-    if (!file) return;
-
+  function handleImage(file: File) {
     const sizeError = imageFileSizeError(file.size);
     if (sizeError) {
       setAttachment(null);
@@ -174,24 +190,79 @@ export default function ChatPage() {
     reader.readAsDataURL(file);
   }
 
+  function handleFileSelect(event: ChangeEvent<HTMLInputElement>) {
+    const input = event.target;
+    const file = input.files?.[0];
+    input.value = "";
+    if (!file) return;
+
+    const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+    if (isPdf) {
+      void handlePdf(file);
+    } else {
+      handleImage(file);
+    }
+  }
+
   function showUsageGuide() {
-    setTurns([
+    setTurns((prev) => [
+      ...prev,
       { kind: "user", text: "使い方を教えて" },
       { kind: "result", text: USAGE_GUIDE_REPLY }
     ]);
   }
 
-  async function handleSend(overrideText?: string) {
-    const text = (overrideText ?? draft).trim();
-    if (sending) return;
-    if (!text && !attachment) return;
+  function enterCreateTaskMode() {
+    setComposerMode("create_task");
+    setTimeout(() => textareaRef.current?.focus(), 0);
+  }
 
-    const userText = text || "（添付を確認してください）";
-    const nextTurns: Turn[] = [...turns, { kind: "user", text: userText }];
+  function cancelCreateTaskMode() {
+    setComposerMode(null);
+  }
+
+  function handleInvite() {
+    if (composerMode) setComposerMode(null);
+    void handleSend("招待リンクを出して");
+  }
+
+  type SendOptions = {
+    overrideText?: string;
+    overrideApiText?: string;
+    attachmentOverride?: { text?: string; imageUrl?: string } | null;
+  };
+
+  async function handleSend(options?: SendOptions | string) {
+    const opts: SendOptions =
+      typeof options === "string" ? { overrideText: options } : (options ?? {});
+    const { overrideText, overrideApiText, attachmentOverride } = opts;
+
+    const text = (overrideText ?? draft).trim();
+    const activeAttachment = attachmentOverride !== undefined ? attachmentOverride : attachment;
+
+    if (sending) return;
+    if (!text && !activeAttachment) return;
+
+    let userText: string;
+    let apiText: string | undefined;
+
+    if (overrideText !== undefined) {
+      userText = overrideText;
+      apiText = overrideApiText;
+    } else if (composerMode === "create_task") {
+      userText = text;
+      apiText = `この文章の内容をタスク化して。タイトルは文章から具体的に付ける。中身のない「タスク」という名前にはしない。\n${text}`;
+    } else {
+      userText = text || "（添付を確認してください）";
+    }
+
+    const nextTurns: Turn[] = [...turns, { kind: "user", text: userText, apiText }];
     setTurns(nextTurns);
-    if (!overrideText) {
+
+    if (overrideText === undefined) {
       setDraft("");
     }
+    setComposerMode(null);
     setSending(true);
     setStreamStatus(null);
     setStreamText("");
@@ -203,7 +274,7 @@ export default function ChatPage() {
         body: JSON.stringify({
           messages: buildMessages(nextTurns),
           pendingRemoval,
-          attachment
+          attachment: activeAttachment
         })
       });
 
@@ -346,10 +417,102 @@ export default function ChatPage() {
     }
   }
 
+  async function handleCameraCapture(event: ChangeEvent<HTMLInputElement>) {
+    const input = event.target;
+    const file = input.files?.[0];
+    input.value = "";
+    if (!file) return;
+
+    const sizeError = imageFileSizeError(file.size);
+    if (sizeError) {
+      setAttachmentName(sizeError);
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = typeof reader.result === "string" ? reader.result : "";
+      const dataError = imageDataUrlSizeError(result);
+      if (dataError) {
+        setAttachmentName(dataError);
+        return;
+      }
+
+      const draftSnapshot = draft;
+      const userText = draftSnapshot.trim() ? draftSnapshot : "写真を送りました";
+      const apiText = draftSnapshot.trim()
+        ? `写真をタスク化して。\n${draftSnapshot.trim()}`
+        : "（添付を確認してください）";
+
+      const imageAttachment = { imageUrl: result };
+      setDraft("");
+      setAttachment(null);
+      setAttachmentName("");
+      setComposerMode(null);
+
+      void handleSend({
+        overrideText: userText,
+        overrideApiText: apiText,
+        attachmentOverride: imageAttachment
+      });
+    };
+    reader.onerror = () => {
+      setAttachmentName("画像を読み取れませんでした");
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function toggleSpeech() {
+    if (listening) {
+      speechRecognitionRef.current?.stop();
+      return;
+    }
+
+    const w = window as Window & {
+      SpeechRecognition?: SpeechRecognitionCtor;
+      webkitSpeechRecognition?: SpeechRecognitionCtor;
+    };
+    const SpeechRecognition = w.SpeechRecognition ?? w.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      setSpeechError("このブラウザは音声入力に対応していません。文字で入力してください。");
+      return;
+    }
+
+    setSpeechError(null);
+    draftBeforeSpeechRef.current = draft;
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = "ja-JP";
+    recognition.interimResults = true;
+    recognition.continuous = false;
+
+    recognition.onstart = () => setListening(true);
+    recognition.onend = () => setListening(false);
+    recognition.onresult = (event) => {
+      let transcript = "";
+      for (let i = 0; i < event.results.length; i += 1) {
+        transcript += event.results[i][0].transcript;
+      }
+      const base = draftBeforeSpeechRef.current;
+      const combined = base ? `${base}${transcript}` : transcript;
+      setDraft(combined);
+    };
+    recognition.onerror = () => {
+      setListening(false);
+      setSpeechError("音声を取得できませんでした。文字で入力してください。");
+    };
+
+    speechRecognitionRef.current = recognition;
+    recognition.start();
+  }
+
   const sendingBubbleText = streamText || streamStatus || "送信しています";
 
   const sendDisabled = sending || (!draft.trim() && !attachment);
   const showAttachmentError = attachment === null && attachmentName.length > 0;
+
+  const textareaPlaceholder =
+    composerMode === "create_task" ? "作りたいタスクの内容を入力してください" : "メッセージを入力";
 
   return (
     <section className="mx-auto flex h-[calc(100dvh-3.5rem-1px)] max-w-3xl flex-col px-4 sm:px-6">
@@ -370,7 +533,7 @@ export default function ChatPage() {
                     turn.kind === "user" ? "bg-zinc-900 text-white" : "bg-zinc-100 text-zinc-900"
                   }`}
                 >
-                  {turn.text}
+                  {turn.kind === "user" ? turn.text : <ChatMessageText text={turn.text} />}
                 </div>
                 {turn.actionSummaries?.map((summary) => (
                   <p key={summary} className="max-w-[85%] text-xs text-zinc-500">
@@ -382,7 +545,7 @@ export default function ChatPage() {
             {sending ? (
               <div className="flex items-start">
                 <div className="max-w-[85%] rounded-2xl bg-zinc-100 px-3 py-2 text-sm whitespace-pre-wrap text-zinc-900">
-                  {sendingBubbleText}
+                  <ChatMessageText text={sendingBubbleText} />
                 </div>
               </div>
             ) : null}
@@ -391,35 +554,52 @@ export default function ChatPage() {
       </div>
 
       <div className="shrink-0 pb-[calc(4.75rem+env(safe-area-inset-bottom))] pt-2 md:pb-4">
-        {turns.length === 0 && !sending ? (
-          <div className="mb-2 flex flex-wrap gap-2">
+        <div className="mb-2 flex flex-wrap gap-2">
+          <button
+            type="button"
+            className={GUIDANCE_BUTTON_CLASS}
+            disabled={sending}
+            onClick={showUsageGuide}
+          >
+            使い方
+          </button>
+          <button
+            type="button"
+            className={
+              composerMode === "create_task"
+                ? GUIDANCE_BUTTON_SELECTED_CLASS
+                : GUIDANCE_BUTTON_CLASS
+            }
+            disabled={sending}
+            onClick={enterCreateTaskMode}
+          >
+            タスクを作成
+          </button>
+          <button
+            type="button"
+            className={GUIDANCE_BUTTON_CLASS}
+            disabled={sending}
+            onClick={handleInvite}
+          >
+            人を招待
+          </button>
+        </div>
+
+        {composerMode === "create_task" ? (
+          <div className="mb-1 flex items-center gap-2 text-xs text-zinc-600">
+            <span>入力した内容でタスクを作ります</span>
             <button
               type="button"
-              className={GUIDANCE_BUTTON_CLASS}
-              disabled={sending}
-              onClick={showUsageGuide}
+              className="text-zinc-500 underline"
+              onClick={cancelCreateTaskMode}
             >
-              使い方
-            </button>
-            <button
-              type="button"
-              className={GUIDANCE_BUTTON_CLASS}
-              disabled={sending}
-              onClick={() => void handleSend("タスクを作って")}
-            >
-              タスクを作成
-            </button>
-            <button
-              type="button"
-              className={GUIDANCE_BUTTON_CLASS}
-              disabled={sending}
-              onClick={() => void handleSend("招待リンクを出して")}
-            >
-              人を招待
+              やめる
             </button>
           </div>
         ) : null}
+
         {showAttachmentError ? <p className="mb-1 text-xs text-red-600">{attachmentName}</p> : null}
+        {speechError ? <p className="mb-1 text-xs text-red-600">{speechError}</p> : null}
 
         <form
           className="rounded-3xl border border-zinc-300 bg-white p-2"
@@ -450,7 +630,7 @@ export default function ChatPage() {
             ref={textareaRef}
             id="chat-body"
             rows={1}
-            placeholder="メッセージを入力"
+            placeholder={textareaPlaceholder}
             className="max-h-40 w-full resize-none border-none bg-transparent px-2 py-2 text-sm outline-none"
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
@@ -465,54 +645,52 @@ export default function ChatPage() {
           />
 
           <input
-            ref={imageInputRef}
+            ref={fileInputRef}
             type="file"
-            accept="image/*"
+            accept="image/*,application/pdf,.pdf"
             className="hidden"
-            onChange={handleImage}
+            onChange={handleFileSelect}
           />
           <input
-            ref={pdfInputRef}
+            ref={cameraInputRef}
             type="file"
-            accept="application/pdf"
+            accept="image/*"
+            capture="environment"
             className="hidden"
-            onChange={handlePdf}
+            onChange={handleCameraCapture}
           />
 
           <div className="flex items-center justify-between">
-            <div ref={attachMenuRef} className="relative">
-              {attachMenuOpen ? (
-                <div className="absolute bottom-11 left-0 z-20 min-w-36 rounded-xl border border-zinc-200 bg-white py-1 shadow-sm">
-                  <button
-                    type="button"
-                    className="block w-full px-3 py-2 text-left text-sm text-zinc-900 hover:bg-zinc-100"
-                    onClick={() => {
-                      imageInputRef.current?.click();
-                      setAttachMenuOpen(false);
-                    }}
-                  >
-                    画像
-                  </button>
-                  <button
-                    type="button"
-                    className="block w-full px-3 py-2 text-left text-sm text-zinc-900 hover:bg-zinc-100"
-                    onClick={() => {
-                      pdfInputRef.current?.click();
-                      setAttachMenuOpen(false);
-                    }}
-                  >
-                    PDF
-                  </button>
-                </div>
-              ) : null}
+            <div className="flex items-center gap-0.5">
               <button
                 type="button"
                 aria-label="ファイルを追加"
                 className="flex size-9 items-center justify-center rounded-full text-zinc-700 hover:bg-zinc-100 disabled:opacity-40"
                 disabled={sending}
-                onClick={() => setAttachMenuOpen((open) => !open)}
+                onClick={() => fileInputRef.current?.click()}
               >
                 <Plus size={20} />
+              </button>
+              <button
+                type="button"
+                aria-label="写真を撮影して送信"
+                className="flex size-9 items-center justify-center rounded-full text-zinc-700 hover:bg-zinc-100 disabled:opacity-40"
+                disabled={sending}
+                onClick={() => cameraInputRef.current?.click()}
+              >
+                <Camera size={20} />
+              </button>
+              <button
+                type="button"
+                aria-label={listening ? "音声入力を止める" : "音声入力"}
+                aria-pressed={listening}
+                className={`flex size-9 items-center justify-center rounded-full disabled:opacity-40 ${
+                  listening ? "bg-zinc-900 text-white" : "text-zinc-700 hover:bg-zinc-100"
+                }`}
+                disabled={sending}
+                onClick={toggleSpeech}
+              >
+                <Mic size={20} />
               </button>
             </div>
 

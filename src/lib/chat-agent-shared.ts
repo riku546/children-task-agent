@@ -160,6 +160,29 @@ function buildRoster(groups: GroupRecord[]): string {
     .join("\n");
 }
 
+const PLACEHOLDER_TASK_TITLES = new Set([
+  "タスク",
+  "新しいタスク",
+  "新規タスク",
+  "タスクを作って",
+  "タスクを作成",
+  "タスクを作成する",
+  "task",
+  "todo",
+  "やること"
+]);
+
+export function normalizeTaskTitleForCompare(title: string): string {
+  return title
+    .trim()
+    .replace(/\s+/g, "")
+    .replace(/[a-zA-Z0-9]/g, (ch) => ch.toLowerCase());
+}
+
+export function isPlaceholderTaskTitle(title: string): boolean {
+  return PLACEHOLDER_TASK_TITLES.has(normalizeTaskTitleForCompare(title));
+}
+
 export function buildSystemPrompt(user: AgentUser, groups: GroupRecord[], extra?: string): string {
   const lines = [
     "あなたは育児タスクアプリの操作係です。画面と同じデータをツールでのみ変更します。",
@@ -167,7 +190,7 @@ export function buildSystemPrompt(user: AgentUser, groups: GroupRecord[], extra?
     `利用者の表示名: ${user.name}`,
     "家族名簿（userIdは含めない）:",
     buildRoster(groups) || "（参加グループなし）",
-    "できないこと: タスク削除、ログアウト、子どもの名前変更・削除、グループ名変更、ありがとう通知。依頼されたら理由を1文で伝え、成功したように言わない。",
+    "できないこと: create_task は内容が具体的なときだけ呼ぶ。無いときはツールを呼ばず聞き返す。タイトルを「タスク」「新しいタスク」にしない。タスク削除・グループ削除・子どもの削除・グループ名変更は画面にもなくできない。できない操作は成功したように言わず、実在する画面だけ [名前](/path) で案内する。外部URLやjavascriptはリンクにしない。招待QRは画像で出せない。招待URLは文章で示し、[グループ設定](/groups/{groupId}/settings) を付ける。ログアウトは [プロフィール](/profile)。タスクの画面操作は [タスク](/tasks/{taskId})。idが無いときは [ホーム](/dashboard)。ありがとうは [ホーム](/dashboard)。候補を直してから保存は [お便りから作成](/tasks/new)。",
     "Googleカレンダー連携は calendar_link ツールのURLを返すだけ。登録完了とは言わない。",
     "仕事の予定は create_task の type を WORK にする。",
     "名前が一意でない・見つからないときは書き込まず聞き返す。"
@@ -265,7 +288,8 @@ export const CHAT_TOOLS = [
     type: "function",
     function: {
       name: "create_task",
-      description: "タスクを作成する",
+      description:
+        "タスクを作成する。内容が具体的でないときは呼ばない。タイトルを「タスク」にしない",
       parameters: {
         type: "object",
         required: ["title"],
@@ -335,7 +359,8 @@ export const CHAT_TOOLS = [
     type: "function",
     function: {
       name: "create_invite",
-      description: "グループ招待URLを発行する",
+      description:
+        "グループ招待URLを発行する。QRは返さない。url を示し、settingsPath をグループ設定への Markdown リンクとして案内する",
       parameters: {
         type: "object",
         properties: {
@@ -547,6 +572,14 @@ export async function executeChatTool(
       }
       case "create_task": {
         const args = createTaskArgs.parse(rawArgs);
+        if (isPlaceholderTaskTitle(args.title)) {
+          return {
+            content: JSON.stringify({
+              error:
+                "タイトルが具体的ではありません。作成せず、何をするタスクかをユーザーに聞き返してください。"
+            })
+          };
+        }
         const groupMatch = resolveGroup(runtime.groups, args.groupName);
         if (groupMatch.kind === "many") {
           return {
@@ -639,7 +672,10 @@ export async function executeChatTool(
         }
         upsertRuntimeTask(runtime, task);
         return {
-          content: JSON.stringify({ task: projectTaskForList(task) }),
+          content: JSON.stringify({
+            task: projectTaskForList(task),
+            path: `/tasks/${task.id}`
+          }),
           summary: `タスク「${args.title}」を作成しました`
         };
       }
@@ -758,7 +794,11 @@ export async function executeChatTool(
         const invite = await runtime.hooks.createInvite(group.id);
         const url = buildInviteJoinUrl(getAppOrigin(runtime.request), invite.token);
         return {
-          content: JSON.stringify({ url, expiresAt: invite.expiresAt }),
+          content: JSON.stringify({
+            url,
+            expiresAt: invite.expiresAt,
+            settingsPath: `/groups/${group.id}/settings`
+          }),
           summary: `「${group.name}」の招待URLを発行しました`
         };
       }

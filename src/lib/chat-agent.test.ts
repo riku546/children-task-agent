@@ -1,8 +1,11 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
+  type AgentUser,
+  buildSystemPrompt,
   CHAT_TOOLS,
   executeChatTool,
+  isPlaceholderTaskTitle,
   isRemovalConsent,
   MAX_AGENT_LOOP_TURNS,
   projectTaskForList,
@@ -94,6 +97,85 @@ function makeRuntime(overrides?: Partial<ToolRuntime>): ToolRuntime {
     ...overrides
   };
 }
+
+describe("isPlaceholderTaskTitle", () => {
+  it("returns true for placeholder titles", () => {
+    assert.equal(isPlaceholderTaskTitle("タスク"), true);
+    assert.equal(isPlaceholderTaskTitle("  新しいタスク  "), true);
+    assert.equal(isPlaceholderTaskTitle("新規タスク"), true);
+    assert.equal(isPlaceholderTaskTitle("タスクを作成"), true);
+    assert.equal(isPlaceholderTaskTitle("Task"), true);
+    assert.equal(isPlaceholderTaskTitle("TODO"), true);
+    assert.equal(isPlaceholderTaskTitle("やること"), true);
+  });
+
+  it("returns false for concrete titles", () => {
+    assert.equal(isPlaceholderTaskTitle("連絡帳を出す"), false);
+    assert.equal(isPlaceholderTaskTitle("雑巾を持参"), false);
+    assert.equal(isPlaceholderTaskTitle(""), false);
+  });
+});
+
+describe("buildSystemPrompt", () => {
+  const user: AgentUser = { id: "user_1", name: "ママ", defaultGroupId: "group_1" };
+
+  it("includes guidance for groups settings, profile, and task deletion", () => {
+    const prompt = buildSystemPrompt(user, [baseGroup]);
+    assert.match(prompt, /グループ設定/);
+    assert.match(prompt, /プロフィール/);
+    assert.match(prompt, /タスク削除/);
+  });
+});
+
+describe("create_task placeholder guard", () => {
+  it("does not call createTasks when title is タスク", async () => {
+    let called = false;
+    const runtime = makeRuntime({
+      hooks: noopHooks({
+        createTasks: async () => {
+          called = true;
+          return [baseTask];
+        }
+      })
+    });
+    const result = await executeChatTool("create_task", { title: "タスク" }, runtime);
+    const body = JSON.parse(result.content);
+    assert.equal(called, false);
+    assert.match(body.error, /具体的ではありません/);
+  });
+
+  it("calls createTasks for concrete title and includes path", async () => {
+    let called = false;
+    const createdTask: TaskRecord = {
+      ...baseTask,
+      id: "task_new",
+      title: "連絡帳を出す"
+    };
+    const runtime = makeRuntime({
+      hooks: noopHooks({
+        createTasks: async () => {
+          called = true;
+          return [createdTask];
+        },
+        updateTask: async () => null
+      })
+    });
+    const result = await executeChatTool("create_task", { title: "連絡帳を出す" }, runtime);
+    const body = JSON.parse(result.content);
+    assert.equal(called, true);
+    assert.equal(body.path, "/tasks/task_new");
+    assert.equal(body.task.title, "連絡帳を出す");
+  });
+});
+
+describe("create_invite settingsPath", () => {
+  it("includes settingsPath in content", async () => {
+    const runtime = makeRuntime();
+    const result = await executeChatTool("create_invite", { groupId: "group_1" }, runtime);
+    const body = JSON.parse(result.content);
+    assert.equal(body.settingsPath, "/groups/group_1/settings");
+  });
+});
 
 describe("isRemovalConsent", () => {
   it("accepts only the exact consent words", () => {
