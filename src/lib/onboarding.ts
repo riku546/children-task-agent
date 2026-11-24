@@ -1,6 +1,6 @@
 export const UNSET_CHILD_NAME = "未設定";
 
-const APP_PREFIXES = ["/dashboard", "/groups", "/tasks", "/profile", "/team", "/family"];
+const APP_PREFIXES = ["/dashboard", "/groups", "/tasks", "/profile", "/team", "/family", "/chat"];
 
 export function hasNamedChild(groups: { children: { name: string | null }[] }[]) {
   return groups.some((group) =>
