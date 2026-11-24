@@ -14,8 +14,7 @@ const ONBOARDING_ACTIVE_KEY = "onboarding-active";
 const steps = [
   { id: 1, label: "グループ" },
   { id: 2, label: "子ども" },
-  { id: 3, label: "読み取り" },
-  { id: 4, label: "TODO" }
+  { id: 3, label: "TODO" }
 ];
 
 function namedChildrenOf(group: GroupRecord | undefined) {
@@ -29,7 +28,9 @@ function OnboardingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const requestedStep = Number(searchParams.get("step") || "1");
-  const [step, setStep] = useState(requestedStep >= 1 && requestedStep <= 4 ? requestedStep : 1);
+  const [step, setStep] = useState(
+    requestedStep >= 1 && requestedStep <= 3 ? requestedStep : requestedStep > 3 ? 3 : 1
+  );
   const [loading, setLoading] = useState(true);
   const [groups, setGroups] = useState<GroupRecord[]>([]);
   const [selectedGroupId, setSelectedGroupId] = useState("");
@@ -190,7 +191,7 @@ function OnboardingContent() {
         家族のTODOを始める
       </h1>
       <p className="mt-1 text-sm text-zinc-600">
-        共有グループ、お子さん、お便りの読み取りの順に設定します。あとからでも変更できます。
+        共有グループとお子さんを設定します。お便りはチャットに送るとタスクになります。
       </p>
 
       <ol className="mt-5 flex flex-wrap gap-x-4 gap-y-1 border-b border-zinc-200 pb-3 text-sm">
@@ -317,34 +318,9 @@ function OnboardingContent() {
         {step === 3 && (
           <div className="space-y-4">
             <div>
-              <h2 className="text-base font-bold text-zinc-950">お便りを読み取る</h2>
-              <p className="mt-1 text-sm text-zinc-600">
-                園や学校のプリントを写真かPDFで取り込むと、TODOの候補ができます。今はやらなくても大丈夫です。
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => router.push("/tasks/new?from=onboarding")}
-              className="button-primary min-h-11 w-full"
-            >
-              お便りを読み取る
-            </button>
-            <button
-              type="button"
-              onClick={() => goToStep(4)}
-              className="button-secondary min-h-11 w-full"
-            >
-              読み取りはあとで
-            </button>
-          </div>
-        )}
-
-        {step === 4 && (
-          <div className="space-y-4">
-            <div>
               <h2 className="text-base font-bold text-zinc-950">TODOリストへ</h2>
               <p className="mt-1 text-sm text-zinc-600">
-                今日やることと、家族の担当がホームに並びます。♡の「引き受ける」で自分の担当にできます。
+                今日やることと、家族の担当がホームに並びます。「引き受ける」で自分の担当にできます。お便りはチャットに送ってください。
               </p>
             </div>
             <ul className="space-y-1 text-sm text-zinc-700">

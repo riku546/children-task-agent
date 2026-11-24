@@ -1,51 +1,32 @@
 "use client";
 
-import {
-  ArrowUpRight,
-  Briefcase,
-  CalendarDays,
-  Camera,
-  Layers,
-  ListTodo,
-  MoreHorizontal,
-  RefreshCw,
-  Type
-} from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
-import { CalendarView } from "@/components/CalendarView";
-import { ConflictAlerts } from "@/components/ConflictAlerts";
 import { PageHeader } from "@/components/PageHeader";
 import { PageShell } from "@/components/PageShell";
-import { QuickWorkScheduleModal } from "@/components/QuickWorkScheduleModal";
-import { SegmentedControl } from "@/components/SegmentedControl";
-import { SiblingTaskTimeline } from "@/components/SiblingTaskTimeline";
 import { TaskList } from "@/components/TaskList";
 import { fetchJsonWithCache, getCachedData, invalidateCache } from "@/lib/client-cache";
-import { detectAllConflicts } from "@/lib/conflict-detector";
-import { isOverdue, isSameDate } from "@/lib/date";
+import { isSameDate } from "@/lib/date";
 import type { GroupRecord, TaskRecord } from "@/lib/types";
 
-type ViewMode = "list" | "siblings" | "calendar";
+const TODAY_LIMIT = 4;
+const UPCOMING_LIMIT = 4;
+const DONE_LIMIT = 3;
 
-const homeSegments = [
-  { id: "list" as const, label: "期限", icon: ListTodo },
-  { id: "siblings" as const, label: "子ども", icon: Layers },
-  { id: "calendar" as const, label: "カレンダー", icon: CalendarDays }
-];
+type SectionId = "today" | "upcoming" | "done";
 
-function parseViewMode(raw: string | null): ViewMode {
-  if (raw === "siblings" || raw === "calendar" || raw === "list") {
-    return raw;
-  }
-  return "list";
+function compareDueDate(a: TaskRecord, b: TaskRecord) {
+  if (a.dueDate && b.dueDate) return a.dueDate.localeCompare(b.dueDate);
+  if (a.dueDate) return -1;
+  if (b.dueDate) return 1;
+  return 0;
 }
 
 function DashboardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const initialViewParam = searchParams.get("view");
 
   const cachedTasks = getCachedData<{ tasks: TaskRecord[] }>("/api/tasks");
   const cachedMe = getCachedData<{ user?: { id: string; name: string }; groups?: GroupRecord[] }>(
@@ -59,15 +40,12 @@ function DashboardContent() {
   const [groups, setGroups] = useState<GroupRecord[]>(cachedMe?.groups || []);
   const [loading, setLoading] = useState(!cachedTasks);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState<Record<SectionId, boolean>>({
+    today: false,
+    upcoming: false,
+    done: false
+  });
 
-  const [viewMode, setViewMode] = useState<ViewMode>(() => parseViewMode(initialViewParam));
-
-  const [calendarSelectedDate, setCalendarSelectedDate] = useState<string | null>(null);
-  const [isWorkModalOpen, setIsWorkModalOpen] = useState(false);
-  const [thankYouMessage, setThankYouMessage] = useState<string | null>(null);
-
-  const currentGroup = groups[0];
-  const currentGroupId = currentGroup?.id || "";
   const myMemberIds = useMemo(() => {
     if (!currentUser) return [];
     return groups.flatMap((group) =>
@@ -76,22 +54,10 @@ function DashboardContent() {
   }, [groups, currentUser]);
 
   useEffect(() => {
-    const view = searchParams.get("view");
-    if (view === "assignee") {
+    if (searchParams.get("view") === "assignee") {
       router.replace("/team");
-      return;
     }
-    setViewMode(parseViewMode(view));
   }, [searchParams, router]);
-
-  function handleViewChange(mode: ViewMode) {
-    setViewMode(mode);
-    if (typeof window !== "undefined") {
-      const url = new URL(window.location.href);
-      url.searchParams.set("view", mode);
-      window.history.replaceState(null, "", url.toString());
-    }
-  }
 
   async function load(force = false) {
     if (!force) {
@@ -130,8 +96,6 @@ function DashboardContent() {
   useEffect(() => {
     load();
   }, []);
-
-  const conflicts = useMemo(() => detectAllConflicts(tasks), [tasks]);
 
   async function assignToMe(taskId: string) {
     if (!currentUser) return;
@@ -188,292 +152,157 @@ function DashboardContent() {
     }
   }
 
-  function handleTaskCreated(task: TaskRecord) {
-    invalidateCache("/api/tasks");
-    setTasks((prev) => [task, ...prev.filter((item) => item.id !== task.id)]);
-  }
-
-  function handleThankYou(task: TaskRecord) {
-    const assignee = task.assigneeName || "パートナー";
-    setThankYouMessage(`❤️ ${assignee} さんに「ありがとう！」を伝えました`);
-    setTimeout(() => setThankYouMessage(null), 3000);
-  }
-
   const todayTasks = useMemo(
     () => tasks.filter((task) => task.status !== "DONE" && isSameDate(task.dueDate, 0)),
     [tasks]
   );
-  const tomorrowTasks = useMemo(
-    () => tasks.filter((task) => task.status !== "DONE" && isSameDate(task.dueDate, 1)),
-    [tasks]
-  );
-  const overdueTasks = useMemo(
-    () =>
-      tasks
-        .filter((task) => task.status !== "DONE" && isOverdue(task.dueDate))
-        .sort((a, b) => (a.dueDate ?? "").localeCompare(b.dueDate ?? "")),
-    [tasks]
-  );
   const upcomingTasks = useMemo(
     () =>
-      tasks.filter(
-        (task) =>
-          task.status !== "DONE" &&
-          !isOverdue(task.dueDate) &&
-          !isSameDate(task.dueDate, 0) &&
-          !isSameDate(task.dueDate, 1)
-      ),
+      tasks
+        .filter((task) => task.status !== "DONE" && !isSameDate(task.dueDate, 0))
+        .sort(compareDueDate),
     [tasks]
   );
   const openTasks = useMemo(() => tasks.filter((task) => task.status !== "DONE"), [tasks]);
   const doneTasks = useMemo(() => tasks.filter((task) => task.status === "DONE"), [tasks]);
-  const doneCount = doneTasks.length;
 
-  const listSections = (
-    <div className="space-y-6">
-      {overdueTasks.length > 0 && (
-        <div>
-          <div className="flex items-center justify-between border-b border-zinc-200 pb-2 text-sm font-bold text-rose-700">
-            <div className="flex items-center gap-2">
-              <span>期限切れ</span>
-              <span className="font-mono text-xs font-semibold">({overdueTasks.length})</span>
-            </div>
-            <span className="text-xs font-semibold text-rose-600">早めに対応してください</span>
-          </div>
-          <TaskList
-            tasks={overdueTasks}
-            emptyText=""
-            currentUserId={currentUser?.id}
-            myMemberIds={myMemberIds}
-            onAssignToMe={assignToMe}
-            onToggleStatus={toggleStatus}
-            actionLoadingId={actionLoadingId}
-            onThankYou={handleThankYou}
-          />
-        </div>
-      )}
-
-      <div>
-        <div className="flex items-center justify-between border-b border-zinc-200 pb-2 text-sm font-bold text-zinc-900">
-          <div className="flex items-center gap-2">
-            <span>今日のTODO</span>
-            <span className="font-mono text-xs font-semibold text-zinc-700">
-              ({todayTasks.length})
-            </span>
-          </div>
-        </div>
-        <TaskList
-          tasks={todayTasks}
-          emptyText="今日のTODOはありません"
-          currentUserId={currentUser?.id}
-          myMemberIds={myMemberIds}
-          onAssignToMe={assignToMe}
-          onToggleStatus={toggleStatus}
-          actionLoadingId={actionLoadingId}
-          onThankYou={handleThankYou}
-        />
-      </div>
-
-      {tomorrowTasks.length > 0 && (
-        <div>
-          <div className="flex items-center justify-between border-b border-zinc-200 pb-2 text-sm font-bold text-zinc-900">
-            <div className="flex items-center gap-2">
-              <span>明日のTODO</span>
-              <span className="font-mono text-xs font-semibold text-zinc-700">
-                ({tomorrowTasks.length})
-              </span>
-            </div>
-          </div>
-          <TaskList
-            tasks={tomorrowTasks}
-            emptyText="明日のTODOはありません"
-            currentUserId={currentUser?.id}
-            myMemberIds={myMemberIds}
-            onAssignToMe={assignToMe}
-            onToggleStatus={toggleStatus}
-            actionLoadingId={actionLoadingId}
-            onThankYou={handleThankYou}
-          />
-        </div>
-      )}
-
-      <div>
-        <div className="flex items-center justify-between border-b border-zinc-200 pb-2 text-sm font-bold text-zinc-900">
-          <div className="flex items-center gap-2">
-            <span>今後のTODO</span>
-            <span className="font-mono text-xs font-semibold text-zinc-700">
-              ({upcomingTasks.length})
-            </span>
-          </div>
-        </div>
-        <TaskList
-          tasks={upcomingTasks}
-          emptyText="今後予定されているTODOはありません"
-          currentUserId={currentUser?.id}
-          myMemberIds={myMemberIds}
-          onAssignToMe={assignToMe}
-          onToggleStatus={toggleStatus}
-          actionLoadingId={actionLoadingId}
-          onThankYou={handleThankYou}
-        />
-      </div>
-
-      {doneTasks.length > 0 && (
-        <div className="pt-4">
-          <div className="flex items-center justify-between border-b border-zinc-200 pb-2 text-sm font-bold text-zinc-700">
-            <div className="flex items-center gap-2">
-              <span>完了済み</span>
-              <span className="font-mono text-xs">({doneCount})</span>
-            </div>
-          </div>
-          <TaskList
-            tasks={doneTasks}
-            emptyText=""
-            currentUserId={currentUser?.id}
-            myMemberIds={myMemberIds}
-            onAssignToMe={assignToMe}
-            onToggleStatus={toggleStatus}
-            actionLoadingId={actionLoadingId}
-          />
-        </div>
-      )}
-    </div>
-  );
+  function toggleSection(id: SectionId) {
+    setExpanded((current) => ({ ...current, [id]: !current[id] }));
+  }
 
   return (
     <PageShell>
       <PageHeader
         title="ホーム"
-        description="今日やることと提出期限を確認します"
+        description="今日やることと、そのあとの予定を確認します"
         badge={
           <span className="rounded bg-zinc-100 px-2 py-0.5 font-mono text-xs font-semibold text-zinc-700">
             未完了 {openTasks.length}件
           </span>
         }
         actions={
-          <>
-            <Link href="/tasks/new" className="button-primary">
-              <Camera size={15} />
-              <span>お便りを取込</span>
-            </Link>
-            <details className="relative group">
-              <summary className="button-icon cursor-pointer list-none [&::-webkit-details-marker]:hidden">
-                <MoreHorizontal size={15} />
-              </summary>
-              <div className="absolute right-0 z-20 mt-1 min-w-[11rem] rounded-lg border border-zinc-200 bg-white py-1 shadow-lg">
-                <button
-                  type="button"
-                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-50"
-                  onClick={() => load(true)}
-                  disabled={loading}
-                >
-                  <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
-                  最新に更新
-                </button>
-                <button
-                  type="button"
-                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-50"
-                  onClick={() => setIsWorkModalOpen(true)}
-                >
-                  <Briefcase size={14} />
-                  仕事の予定
-                </button>
-                <Link
-                  href="/tasks/new"
-                  className="flex w-full items-center gap-2 px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-50"
-                  onClick={(e) => {
-                    const details = e.currentTarget.closest("details") as HTMLDetailsElement | null;
-                    if (details) details.open = false;
-                  }}
-                >
-                  <Type size={14} />
-                  手動でタスク追加
-                </Link>
-              </div>
-            </details>
-          </>
+          <Link
+            href="/team"
+            className="inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-zinc-700 hover:text-zinc-950"
+          >
+            <span>分担</span>
+            <ArrowUpRight size={14} />
+          </Link>
         }
       />
 
-      <ConflictAlerts
-        conflicts={conflicts}
-        onSelectDate={(dateKey) => {
-          handleViewChange("calendar");
-          setCalendarSelectedDate(dateKey);
-        }}
-      />
-
-      <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <SegmentedControl value={viewMode} onChange={handleViewChange} segments={homeSegments} />
-        <Link
-          href="/team"
-          className="inline-flex items-center gap-1 text-sm font-semibold text-zinc-600 hover:text-zinc-950 transition shrink-0"
-        >
-          <span>分担ボード</span>
-          <ArrowUpRight size={14} />
-        </Link>
-      </div>
-
-      {viewMode === "list" && (
-        <div className="mt-2 flex items-center gap-4 text-sm font-mono text-zinc-600">
-          {overdueTasks.length > 0 && (
-            <span className="text-rose-700">
-              期限切れ: <strong>{overdueTasks.length}</strong>
-            </span>
-          )}
-          <span>
-            今日: <strong className="text-zinc-950">{todayTasks.length}</strong>
-          </span>
-          <span>
-            明日: <strong className="text-zinc-950">{tomorrowTasks.length}</strong>
-          </span>
-          <span>
-            完了: <strong className="text-zinc-950">{doneCount}</strong>
-          </span>
-        </div>
-      )}
-
-      <div className="mt-4">
-        {viewMode === "calendar" ? (
-          <CalendarView
-            tasks={tasks}
-            conflicts={conflicts}
-            selectedDate={calendarSelectedDate}
-            onSelectDate={setCalendarSelectedDate}
-            groupId={currentGroupId}
-            children={currentGroup?.children || []}
-            onTaskCreated={handleTaskCreated}
-          />
-        ) : viewMode === "siblings" ? (
-          <SiblingTaskTimeline
-            tasks={tasks}
-            group={groups[0]}
+      {loading && tasks.length === 0 ? (
+        <p className="mt-8 text-center text-sm text-zinc-500">読み込み中...</p>
+      ) : (
+        <div className="mt-6 space-y-6">
+          <TaskSection
+            id="today"
+            title="今日"
+            tasks={todayTasks}
+            limit={TODAY_LIMIT}
+            expanded={expanded.today}
+            onToggle={toggleSection}
+            emptyText="今日のTODOはありません"
             currentUserId={currentUser?.id}
             myMemberIds={myMemberIds}
             onAssignToMe={assignToMe}
             onToggleStatus={toggleStatus}
             actionLoadingId={actionLoadingId}
-            onThankYou={handleThankYou}
-            onChildAdded={() => load(true)}
           />
-        ) : (
-          listSections
-        )}
-      </div>
-
-      <QuickWorkScheduleModal
-        isOpen={isWorkModalOpen}
-        onClose={() => setIsWorkModalOpen(false)}
-        groupId={currentGroupId}
-        onSuccess={() => load(true)}
-      />
-
-      {thankYouMessage && (
-        <div className="fixed bottom-20 right-4 z-50 rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white shadow-soft md:bottom-6 md:right-6">
-          {thankYouMessage}
+          <TaskSection
+            id="upcoming"
+            title="今後"
+            tasks={upcomingTasks}
+            limit={UPCOMING_LIMIT}
+            expanded={expanded.upcoming}
+            onToggle={toggleSection}
+            emptyText="今後のTODOはありません"
+            currentUserId={currentUser?.id}
+            myMemberIds={myMemberIds}
+            onAssignToMe={assignToMe}
+            onToggleStatus={toggleStatus}
+            actionLoadingId={actionLoadingId}
+          />
+          {doneTasks.length > 0 ? (
+            <TaskSection
+              id="done"
+              title="完了済み"
+              tasks={doneTasks}
+              limit={DONE_LIMIT}
+              expanded={expanded.done}
+              onToggle={toggleSection}
+              emptyText=""
+              currentUserId={currentUser?.id}
+              myMemberIds={myMemberIds}
+              onAssignToMe={assignToMe}
+              onToggleStatus={toggleStatus}
+              actionLoadingId={actionLoadingId}
+            />
+          ) : null}
         </div>
       )}
     </PageShell>
+  );
+}
+
+function TaskSection({
+  id,
+  title,
+  tasks,
+  limit,
+  expanded,
+  onToggle,
+  emptyText,
+  currentUserId,
+  myMemberIds,
+  onAssignToMe,
+  onToggleStatus,
+  actionLoadingId
+}: {
+  id: SectionId;
+  title: string;
+  tasks: TaskRecord[];
+  limit: number;
+  expanded: boolean;
+  onToggle: (id: SectionId) => void;
+  emptyText: string;
+  currentUserId?: string | null;
+  myMemberIds: string[];
+  onAssignToMe: (taskId: string) => Promise<void> | void;
+  onToggleStatus: (task: TaskRecord) => Promise<void> | void;
+  actionLoadingId: string | null;
+}) {
+  const hiddenCount = Math.max(0, tasks.length - limit);
+  const visibleTasks = expanded || hiddenCount === 0 ? tasks : tasks.slice(0, limit);
+
+  return (
+    <section>
+      <div className="flex items-center justify-between border-b border-zinc-200 pb-2 text-sm font-bold text-zinc-900">
+        <div className="flex items-center gap-2">
+          <h2>{title}</h2>
+          <span className="font-mono text-xs font-semibold text-zinc-700">({tasks.length})</span>
+        </div>
+      </div>
+      <TaskList
+        tasks={visibleTasks}
+        emptyText={emptyText}
+        currentUserId={currentUserId}
+        myMemberIds={myMemberIds}
+        onAssignToMe={onAssignToMe}
+        onToggleStatus={onToggleStatus}
+        actionLoadingId={actionLoadingId}
+      />
+      {hiddenCount > 0 ? (
+        <button
+          type="button"
+          className="mt-1 inline-flex min-h-11 items-center text-sm font-semibold text-zinc-700 underline-offset-2 hover:text-zinc-950 hover:underline"
+          aria-expanded={expanded}
+          onClick={() => onToggle(id)}
+        >
+          {expanded ? "閉じる" : `ほか ${hiddenCount}件`}
+        </button>
+      ) : null}
+    </section>
   );
 }
 

@@ -37,9 +37,9 @@ describe("needsOnboarding", () => {
 });
 
 describe("shouldEnforceOnboarding", () => {
-  it("allows the onboarding flow and its import step", () => {
+  it("allows the onboarding page and keeps the app routes behind the guide", () => {
     assert.equal(shouldEnforceOnboarding("/onboarding", null), false);
-    assert.equal(shouldEnforceOnboarding("/tasks/new", "onboarding"), false);
+    assert.equal(shouldEnforceOnboarding("/tasks/new", "onboarding"), true);
     assert.equal(shouldEnforceOnboarding("/dashboard", null), true);
     assert.equal(shouldEnforceOnboarding("/tasks/new", null), true);
     assert.equal(shouldEnforceOnboarding("/chat", null), true);
