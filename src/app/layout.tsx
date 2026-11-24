@@ -4,7 +4,6 @@ import { Suspense } from "react";
 import { BottomNav } from "@/components/BottomNav";
 import { HeaderNav } from "@/components/HeaderNav";
 import { OnboardingGate } from "@/components/OnboardingGate";
-import { PageSkeleton } from "@/components/Skeleton";
 import { UserNav } from "@/components/UserNav";
 import "./globals.css";
 
@@ -36,7 +35,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           </header>
 
           <main>
-            <Suspense fallback={<PageSkeleton />}>
+            <Suspense fallback={null}>
               <OnboardingGate>{children}</OnboardingGate>
             </Suspense>
           </main>

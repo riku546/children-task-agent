@@ -155,11 +155,3 @@ export function JoinPreviewSkeleton() {
     </LoadingRegion>
   );
 }
-
-export function PageSkeleton() {
-  return (
-    <div className="mx-auto max-w-5xl px-4 pb-20 pt-6 sm:px-6 md:pb-12 md:pt-8">
-      <TaskRowsSkeleton />
-    </div>
-  );
-}
