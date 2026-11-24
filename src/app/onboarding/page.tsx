@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { setOnboardingRequiredCache } from "@/components/OnboardingGate";
 import { PageShell } from "@/components/PageShell";
-import { OnboardingSkeleton } from "@/components/Skeleton";
+import { OnboardingChoicesSkeleton } from "@/components/Skeleton";
 import { invalidateCache } from "@/lib/client-cache";
 import { hasNamedChild } from "@/lib/onboarding";
 import type { GroupRecord } from "@/lib/types";
@@ -180,7 +180,7 @@ function OnboardingContent() {
   if (loading) {
     return (
       <PageShell width="narrow">
-        <OnboardingSkeleton />
+        <OnboardingLoading />
       </PageShell>
     );
   }
@@ -392,12 +392,38 @@ function OnboardingContent() {
   );
 }
 
+function OnboardingLoading() {
+  return (
+    <>
+      <p className="text-sm font-medium text-zinc-500">はじめに</p>
+      <h1 className="mt-1 text-xl font-bold tracking-tight text-zinc-950 sm:text-2xl">
+        家族のTODOを始める
+      </h1>
+      <p className="mt-1 text-sm text-zinc-600">
+        共有グループとお子さんを設定します。お便りはチャットに送るとタスクになります。
+      </p>
+      <ol className="mt-5 flex flex-wrap gap-x-4 gap-y-1 border-b border-zinc-200 pb-3 text-sm font-semibold text-zinc-400">
+        <li>1. グループ</li>
+        <li>2. 子ども</li>
+        <li>3. TODO</li>
+      </ol>
+      <section className="mt-6 space-y-4">
+        <h2 className="text-base font-bold text-zinc-950">共有するグループを選ぶ</h2>
+        <p className="text-sm text-zinc-600">
+          家族で同じTODOを見るグループです。すでにあるものを選ぶか、新しく作れます。
+        </p>
+        <OnboardingChoicesSkeleton />
+      </section>
+    </>
+  );
+}
+
 export default function OnboardingPage() {
   return (
     <Suspense
       fallback={
         <PageShell width="narrow">
-          <OnboardingSkeleton />
+          <OnboardingLoading />
         </PageShell>
       }
     >

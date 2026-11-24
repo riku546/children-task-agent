@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import { PageShell } from "@/components/PageShell";
-import { TaskRowsSkeleton } from "@/components/Skeleton";
+import { HomeSectionsSkeleton, Skeleton } from "@/components/Skeleton";
 import { TaskList } from "@/components/TaskList";
 import { fetchJsonWithCache, getCachedData, invalidateCache } from "@/lib/client-cache";
 import { isSameDate } from "@/lib/date";
@@ -177,9 +177,13 @@ function DashboardContent() {
         title="ホーム"
         description="今日やることと、そのあとの予定を確認します"
         badge={
-          <span className="rounded bg-zinc-100 px-2 py-0.5 font-mono text-xs font-semibold text-zinc-700">
-            未完了 {openTasks.length}件
-          </span>
+          loading && tasks.length === 0 ? (
+            <Skeleton className="h-5 w-16" />
+          ) : (
+            <span className="rounded bg-zinc-100 px-2 py-0.5 font-mono text-xs font-semibold text-zinc-700">
+              未完了 {openTasks.length}件
+            </span>
+          )
         }
         actions={
           <Link
@@ -193,7 +197,7 @@ function DashboardContent() {
       />
 
       {loading && tasks.length === 0 ? (
-        <TaskRowsSkeleton />
+        <HomeSectionsSkeleton />
       ) : (
         <div className="mt-6 space-y-6">
           <TaskSection
@@ -312,7 +316,8 @@ export default function DashboardPage() {
     <Suspense
       fallback={
         <PageShell>
-          <TaskRowsSkeleton />
+          <PageHeader title="ホーム" description="今日やることと、そのあとの予定を確認します" />
+          <HomeSectionsSkeleton />
         </PageShell>
       }
     >

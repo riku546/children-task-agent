@@ -114,7 +114,9 @@ export default function GroupsPage() {
 
       <div className="mt-6">
         <div className="flex items-center justify-between pb-1">
-          <h2 className="text-sm font-bold text-zinc-900">参加中のグループ（{groups.length}）</h2>
+          <h2 className="text-sm font-bold text-zinc-900">
+            参加中のグループ{loading ? "" : `（${groups.length}）`}
+          </h2>
         </div>
         <div className="mt-3 divide-y divide-zinc-200 border-t border-zinc-200">
           {loading && groups.length === 0 ? (

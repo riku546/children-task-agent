@@ -67,6 +67,13 @@ export default function TaskDetailPage() {
   if (loading && !task) {
     return (
       <section className="mx-auto max-w-5xl px-4 pb-20 pt-6 sm:px-6 md:pb-12 md:pt-8">
+        <Link
+          href="/dashboard"
+          className="inline-flex items-center gap-1.5 text-sm font-semibold text-zinc-600"
+        >
+          <Undo2 size={14} />
+          ホーム
+        </Link>
         <TaskDetailSkeleton />
       </section>
     );

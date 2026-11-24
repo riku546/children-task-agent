@@ -4,7 +4,7 @@ import { Baby, Check, Copy, Link2, Loader2, Plus, Share2, Undo2, Users, X } from
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { SettingsSkeleton } from "@/components/Skeleton";
+import { ListRowsSkeleton } from "@/components/Skeleton";
 import { fetchJsonWithCache, getCachedData, invalidateCache } from "@/lib/client-cache";
 import { MembershipError, planMemberRemoval } from "@/lib/membership";
 import type { GroupRecord, MemberRecord } from "@/lib/types";
@@ -244,7 +244,34 @@ export default function GroupSettingsPage() {
   if (loading && !group) {
     return (
       <section className="mx-auto max-w-5xl px-4 pb-24 pt-6 sm:px-6 md:pb-12 md:pt-8">
-        <SettingsSkeleton />
+        <div className="flex items-center gap-2">
+          <Link
+            href="/groups"
+            className="inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-zinc-600"
+          >
+            <Undo2 size={14} />
+            グループ一覧
+          </Link>
+          <span className="text-zinc-300">/</span>
+          <span className="text-xs text-zinc-500">設定</span>
+        </div>
+        <h1 className="mt-1 text-xl font-bold tracking-tight text-zinc-950 sm:text-2xl">
+          グループの設定
+        </h1>
+        <div className="mt-6 grid gap-8 lg:grid-cols-2">
+          <div>
+            <h2 className="text-sm font-bold text-zinc-900">所属メンバー</h2>
+            <div className="mt-3">
+              <ListRowsSkeleton />
+            </div>
+          </div>
+          <div>
+            <h2 className="text-sm font-bold text-zinc-900">登録中の子ども</h2>
+            <div className="mt-3">
+              <ListRowsSkeleton />
+            </div>
+          </div>
+        </div>
       </section>
     );
   }

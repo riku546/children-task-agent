@@ -3,7 +3,7 @@
 import { CircleUserRound, LogOut, Save, Undo2, Users } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { ProfileSkeleton } from "@/components/Skeleton";
+import { ProfileFieldsSkeleton } from "@/components/Skeleton";
 import { fetchJsonWithCache, getCachedData, invalidateCache } from "@/lib/client-cache";
 import { createClient } from "@/lib/supabase/client";
 import type { GroupRecord } from "@/lib/types";
@@ -116,7 +116,20 @@ export default function ProfilePage() {
   if (loading) {
     return (
       <section className="mx-auto max-w-3xl px-4 pb-20 pt-6 sm:px-6 md:pb-12 md:pt-8">
-        <ProfileSkeleton />
+        <Link
+          href="/dashboard"
+          className="inline-flex items-center gap-1 text-xs font-semibold text-zinc-600"
+        >
+          <Undo2 size={13} />
+          ホームへ戻る
+        </Link>
+        <h1 className="mt-2 text-xl font-bold tracking-tight text-zinc-950 sm:text-2xl">
+          アカウント設定
+        </h1>
+        <p className="mt-0.5 text-xs text-zinc-500">
+          プロフィール情報、参加グループの確認、セッション管理を行います
+        </p>
+        <ProfileFieldsSkeleton />
       </section>
     );
   }
