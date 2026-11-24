@@ -277,10 +277,10 @@ function TaskSection({
 
   return (
     <section>
-      <div className="flex items-center justify-between border-b border-zinc-200 pb-2 text-sm font-bold text-zinc-900">
-        <div className="flex items-center gap-2">
-          <h2>{title}</h2>
-          <span className="font-mono text-xs font-semibold text-zinc-700">({tasks.length})</span>
+      <div className="flex items-center justify-between border-b border-zinc-200 pb-2">
+        <div className="flex items-baseline gap-2">
+          <h2 className="text-lg font-bold leading-none text-zinc-500">{title}</h2>
+          <span className="font-mono text-xs font-semibold text-zinc-400">({tasks.length})</span>
         </div>
       </div>
       <TaskList
