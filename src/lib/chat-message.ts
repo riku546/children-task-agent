@@ -1,8 +1,37 @@
+import { imageDataUrlSizeError } from "./image-size.ts";
+
 export type ChatTextSegment =
   | { type: "text"; text: string }
   | { type: "link"; text: string; href: string };
 
 const ATTACHMENT_PLACEHOLDER = "（添付を確認してください）";
+
+const MAX_ATTACHMENT_TEXT_CHARS = 15000;
+const MAX_MESSAGE_CHARS = 4000;
+
+export const ATTACHMENT_TEXT_LIMIT_MESSAGE = "添付できる文字数は15000文字までです";
+export const MESSAGE_LIMIT_MESSAGE = "送信できる文字数は4000文字までです";
+
+export function chatSendSizeError(input: {
+  message: string;
+  attachment: { text?: string; imageUrl?: string } | null;
+}): string | null {
+  if (input.attachment?.imageUrl) {
+    const imageError = imageDataUrlSizeError(input.attachment.imageUrl);
+    if (imageError) return imageError;
+  }
+
+  const attachmentText = input.attachment?.text;
+  if (attachmentText !== undefined && attachmentText.length > MAX_ATTACHMENT_TEXT_CHARS) {
+    return ATTACHMENT_TEXT_LIMIT_MESSAGE;
+  }
+
+  if (input.message.length > MAX_MESSAGE_CHARS) {
+    return MESSAGE_LIMIT_MESSAGE;
+  }
+
+  return null;
+}
 
 export const TASK_ANSWERS_INSTRUCTION =
   "これはタスク作成への回答です。回答にタスク名があるときは、その内容で create_task を1件呼んでください。期限、子ども、担当、種類、詳しい内容、優先度、グループは、回答に書いてあるものだけ入れてください。書いていない項目は空のままで、聞き返さないでください。タスク名が読み取れないとき、または作成をやめる依頼のときは create_task を呼ばず、タスク名が無いときだけタスク名を聞き返してください。タイトルを「タスク」や「新しいタスク」にしないでください。優先度は低を low、中を medium、高を high にしてください。";

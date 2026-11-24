@@ -3,9 +3,13 @@
 import { ArrowUp, Camera, Mic, Plus, X } from "lucide-react";
 import { type ChangeEvent, useEffect, useRef, useState } from "react";
 import { ChatMessageText } from "@/components/ChatMessageText";
-import { buildChatSendPayload } from "@/lib/chat-message";
+import { buildChatSendPayload, chatSendSizeError } from "@/lib/chat-message";
 import { invalidateCache } from "@/lib/client-cache";
-import { imageDataUrlSizeError, imageFileSizeError } from "@/lib/image-size";
+import {
+  IMAGE_SIZE_LIMIT_MESSAGE,
+  imageDataUrlSizeError,
+  imageFileSizeError
+} from "@/lib/image-size";
 
 type Turn = {
   kind: "user" | "result";
@@ -69,7 +73,10 @@ export default function ChatPage() {
   const [turns, setTurns] = useState<Turn[]>([]);
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
-  const [attachmentName, setAttachmentName] = useState("");
+  const [attachmentLabel, setAttachmentLabel] = useState("");
+  const [attachmentError, setAttachmentError] = useState<string | null>(null);
+  const [attachmentOversized, setAttachmentOversized] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
   const [attachment, setAttachment] = useState<{ text?: string; imageUrl?: string } | null>(null);
   const [pendingRemoval, setPendingRemoval] = useState<PendingRemoval>(null);
   const [streamStatus, setStreamStatus] = useState<string | null>(null);
@@ -103,6 +110,19 @@ export default function ChatPage() {
     };
   }, []);
 
+  useEffect(() => {
+    const html = document.documentElement;
+    const body = document.body;
+    const prevHtmlOverflow = html.style.overflow;
+    const prevBodyOverflow = body.style.overflow;
+    html.style.overflow = "hidden";
+    body.style.overflow = "hidden";
+    return () => {
+      html.style.overflow = prevHtmlOverflow;
+      body.style.overflow = prevBodyOverflow;
+    };
+  }, []);
+
   function buildMessages(nextTurns: Turn[]) {
     const messages: { role: "user" | "assistant"; content: string }[] = [];
     for (const turn of nextTurns) {
@@ -115,8 +135,19 @@ export default function ChatPage() {
     return messages.slice(-8);
   }
 
+  function clearAttachmentChip() {
+    setAttachment(null);
+    setAttachmentLabel("");
+    setAttachmentOversized(false);
+    setAttachmentError(null);
+  }
+
   async function handlePdf(file: File) {
-    setAttachmentName(file.name);
+    setSendError(null);
+    setAttachmentError(null);
+    setAttachmentOversized(false);
+    setAttachment(null);
+    setAttachmentLabel(file.name);
     try {
       const pdfjs = await import("pdfjs-dist");
       pdfjs.GlobalWorkerOptions.workerSrc = new URL(
@@ -153,48 +184,66 @@ export default function ChatPage() {
 
       if (chunks.length > 0) {
         setAttachment({ text: chunks.join("\n\n").trim() });
-        setAttachmentName(file.name);
+        setAttachmentLabel(file.name);
         return;
       }
 
       if (firstPageDataUrl) {
         const sizeError = imageDataUrlSizeError(firstPageDataUrl);
-        if (sizeError) {
+        if (sizeError === IMAGE_SIZE_LIMIT_MESSAGE) {
           setAttachment(null);
-          setAttachmentName(sizeError);
+          setAttachmentOversized(true);
+        } else if (sizeError) {
+          clearAttachmentChip();
+          setAttachmentError(sizeError);
         } else {
           setAttachment({ imageUrl: firstPageDataUrl });
         }
+        return;
       }
+
+      clearAttachmentChip();
+      setAttachmentError("PDFを読み取れませんでした");
     } catch {
-      setAttachment(null);
-      setAttachmentName("PDFを読み取れませんでした");
+      clearAttachmentChip();
+      setAttachmentError("PDFを読み取れませんでした");
     }
   }
 
   function handleImage(file: File) {
+    setSendError(null);
+    setAttachmentError(null);
+    setAttachmentOversized(false);
+    setAttachment(null);
+    const label = file.name || "写真";
+    setAttachmentLabel(label);
+
     const sizeError = imageFileSizeError(file.size);
-    if (sizeError) {
+    if (sizeError === IMAGE_SIZE_LIMIT_MESSAGE) {
       setAttachment(null);
-      setAttachmentName(sizeError);
+      setAttachmentOversized(true);
+      return;
+    }
+    if (sizeError) {
+      clearAttachmentChip();
+      setAttachmentError(sizeError);
       return;
     }
 
     const reader = new FileReader();
     reader.onload = () => {
       const result = typeof reader.result === "string" ? reader.result : "";
-      const dataError = imageDataUrlSizeError(result);
-      if (dataError) {
-        setAttachment(null);
-        setAttachmentName(dataError);
+      if (!result) {
+        clearAttachmentChip();
+        setAttachmentError("画像を読み取れませんでした");
         return;
       }
+      setAttachmentOversized(false);
       setAttachment({ imageUrl: result });
-      setAttachmentName(file.name);
     };
     reader.onerror = () => {
-      setAttachment(null);
-      setAttachmentName("画像を読み取れませんでした");
+      clearAttachmentChip();
+      setAttachmentError("画像を読み取れませんでした");
     };
     reader.readAsDataURL(file);
   }
@@ -254,14 +303,35 @@ export default function ChatPage() {
 
     const taskAnswersMode = awaitingTaskAnswers && overrideText === undefined;
 
+    const hasChip = Boolean(activeAttachment) || Boolean(attachmentLabel) || attachmentOversized;
+
     const payload = buildChatSendPayload({
       draft,
       mode: taskAnswersMode ? "task_answers" : null,
-      hasAttachment: Boolean(activeAttachment),
+      hasAttachment: Boolean(activeAttachment) || attachmentOversized,
       overrideText,
       overrideApiText
     });
+    if (payload === null && overrideText === undefined && !hasChip) return;
+
+    if (attachmentOverride === undefined && attachmentOversized) {
+      setSendError(IMAGE_SIZE_LIMIT_MESSAGE);
+      return;
+    }
+
+    const limitMessage = payload === null ? "" : (payload.apiText ?? payload.displayText);
+    const sizeError = chatSendSizeError({
+      message: limitMessage,
+      attachment: activeAttachment
+    });
+    if (sizeError) {
+      setSendError(sizeError);
+      return;
+    }
+
     if (payload === null) return;
+
+    setSendError(null);
 
     if (awaitingTaskAnswers) {
       setAwaitingTaskAnswers(false);
@@ -328,8 +398,7 @@ export default function ChatPage() {
           invalidateCache("/api/me");
         }
 
-        setAttachment(null);
-        setAttachmentName("");
+        clearAttachmentChip();
         return;
       }
 
@@ -421,8 +490,7 @@ export default function ChatPage() {
         invalidateCache("/api/me");
       }
 
-      setAttachment(null);
-      setAttachmentName("");
+      clearAttachmentChip();
     } catch {
       setTurns((prev) => [...prev, { kind: "result", text: "通信に失敗しました" }]);
     } finally {
@@ -432,51 +500,16 @@ export default function ChatPage() {
     }
   }
 
-  async function handleCameraCapture(event: ChangeEvent<HTMLInputElement>) {
+  function handleCameraCapture(event: ChangeEvent<HTMLInputElement>) {
     const input = event.target;
     const file = input.files?.[0];
     input.value = "";
     if (!file) return;
 
-    const sizeError = imageFileSizeError(file.size);
-    if (sizeError) {
-      setAttachment(null);
-      setAttachmentName(sizeError);
-      return;
+    handleImage(file);
+    if (!file.name.trim()) {
+      setAttachmentLabel("写真");
     }
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = typeof reader.result === "string" ? reader.result : "";
-      const dataError = imageDataUrlSizeError(result);
-      if (dataError) {
-        setAttachment(null);
-        setAttachmentName(dataError);
-        return;
-      }
-
-      const draftSnapshot = draft;
-      const userText = draftSnapshot.trim() ? draftSnapshot : "写真を送りました";
-      const apiText = draftSnapshot.trim()
-        ? `写真をタスク化して。\n${draftSnapshot.trim()}`
-        : "（添付を確認してください）";
-
-      const imageAttachment = { imageUrl: result };
-      setDraft("");
-      setAttachment(null);
-      setAttachmentName("");
-
-      void handleSend({
-        overrideText: userText,
-        overrideApiText: apiText,
-        attachmentOverride: imageAttachment
-      });
-    };
-    reader.onerror = () => {
-      setAttachment(null);
-      setAttachmentName("画像を読み取れませんでした");
-    };
-    reader.readAsDataURL(file);
   }
 
   function toggleSpeech() {
@@ -526,14 +559,13 @@ export default function ChatPage() {
     recognition.start();
   }
 
-  const sendingBubbleText = streamText || streamStatus || "送信しています";
-
-  const sendDisabled = sending || (!draft.trim() && !attachment);
-  const showAttachmentError = attachment === null && attachmentName.length > 0;
+  const hasChip = Boolean(attachment) || Boolean(attachmentLabel);
+  const sendDisabled = sending || (!draft.trim() && !hasChip);
+  const showProcessingBubble = sending && !streamText;
 
   return (
-    <section className="mx-auto flex h-[calc(100dvh-3.5rem-1px)] max-w-3xl flex-col px-4 sm:px-6">
-      <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto">
+    <section className="fixed inset-x-0 top-[calc(3.5rem+1px)] bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-20 mx-auto flex w-full max-w-3xl flex-col px-4 sm:px-6 md:bottom-0">
+      <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
         {turns.length === 0 && !sending ? (
           <div className="flex h-full items-center justify-center">
             <p className="text-sm text-zinc-500">メッセージを入力してください</p>
@@ -561,8 +593,12 @@ export default function ChatPage() {
             ))}
             {sending ? (
               <div className="flex items-start">
-                <div className="max-w-[85%] rounded-2xl bg-zinc-100 px-3 py-2 text-sm whitespace-pre-wrap text-zinc-900">
-                  <ChatMessageText text={sendingBubbleText} />
+                <div
+                  className={`max-w-[85%] rounded-2xl bg-zinc-100 px-3 py-2 text-sm whitespace-pre-wrap text-zinc-900 ${
+                    showProcessingBubble ? "animate-pulse" : ""
+                  }`}
+                >
+                  {streamText ? <ChatMessageText text={streamText} /> : "処理中です"}
                 </div>
               </div>
             ) : null}
@@ -570,7 +606,7 @@ export default function ChatPage() {
         )}
       </div>
 
-      <div className="shrink-0 pb-[calc(4.75rem+env(safe-area-inset-bottom))] pt-2 md:pb-4">
+      <div className="shrink-0 pb-2 pt-2 md:pb-4">
         <div className="mb-2 flex flex-wrap gap-2">
           <button
             type="button"
@@ -598,7 +634,8 @@ export default function ChatPage() {
           </button>
         </div>
 
-        {showAttachmentError ? <p className="mb-1 text-xs text-red-600">{attachmentName}</p> : null}
+        {sendError ? <p className="mb-1 text-xs text-red-600">{sendError}</p> : null}
+        {attachmentError ? <p className="mb-1 text-xs text-red-600">{attachmentError}</p> : null}
         {speechError ? <p className="mb-1 text-xs text-red-600">{speechError}</p> : null}
 
         <form
@@ -608,17 +645,17 @@ export default function ChatPage() {
             void handleSend();
           }}
         >
-          {attachment ? (
+          {hasChip ? (
             <div className="mb-1 flex items-center justify-between gap-2 px-2 text-sm text-zinc-700">
-              <span className="min-w-0 truncate">{attachmentName}</span>
+              <span className="min-w-0 truncate">{attachmentLabel}</span>
               <button
                 type="button"
                 aria-label="添付を外す"
                 className="flex size-8 shrink-0 items-center justify-center rounded-full text-zinc-600 hover:bg-zinc-100 disabled:opacity-40"
                 disabled={sending}
                 onClick={() => {
-                  setAttachment(null);
-                  setAttachmentName("");
+                  clearAttachmentChip();
+                  setSendError(null);
                 }}
               >
                 <X size={16} />
@@ -633,7 +670,10 @@ export default function ChatPage() {
             placeholder="メッセージを入力"
             className="max-h-40 w-full resize-none border-none bg-transparent px-2 py-2 text-sm outline-none"
             value={draft}
-            onChange={(e) => setDraft(e.target.value)}
+            onChange={(e) => {
+              setDraft(e.target.value);
+              setSendError(null);
+            }}
             disabled={sending}
             onKeyDown={(e) => {
               if (e.key !== "Enter" || e.shiftKey) return;
@@ -673,7 +713,7 @@ export default function ChatPage() {
               </button>
               <button
                 type="button"
-                aria-label="写真を撮影して送信"
+                aria-label="写真を撮影"
                 className="flex size-9 items-center justify-center rounded-full text-zinc-700 hover:bg-zinc-100 disabled:opacity-40"
                 disabled={sending}
                 onClick={() => cameraInputRef.current?.click()}

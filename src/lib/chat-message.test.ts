@@ -1,6 +1,14 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { buildChatSendPayload, splitChatText, TASK_ANSWERS_INSTRUCTION } from "./chat-message.ts";
+import {
+  ATTACHMENT_TEXT_LIMIT_MESSAGE,
+  buildChatSendPayload,
+  chatSendSizeError,
+  MESSAGE_LIMIT_MESSAGE,
+  splitChatText,
+  TASK_ANSWERS_INSTRUCTION
+} from "./chat-message.ts";
+import { IMAGE_UNREADABLE_MESSAGE } from "./image-size.ts";
 
 describe("buildChatSendPayload", () => {
   it("uses trimmed draft for a normal message", () => {
@@ -54,6 +62,48 @@ describe("buildChatSendPayload", () => {
       displayText: "招待リンクを出して",
       apiText: undefined
     });
+  });
+});
+
+describe("chatSendSizeError", () => {
+  it("returns null when within limits", () => {
+    assert.equal(
+      chatSendSizeError({
+        message: "hello",
+        attachment: { text: "notes", imageUrl: "data:image/png;base64,AA==" }
+      }),
+      null
+    );
+  });
+
+  it("returns unreadable error for invalid image data URL", () => {
+    assert.equal(
+      chatSendSizeError({
+        message: "x",
+        attachment: { imageUrl: "data:not-valid" }
+      }),
+      IMAGE_UNREADABLE_MESSAGE
+    );
+  });
+
+  it("returns attachment text limit message at 15001 characters", () => {
+    assert.equal(
+      chatSendSizeError({
+        message: "ok",
+        attachment: { text: "a".repeat(15001) }
+      }),
+      ATTACHMENT_TEXT_LIMIT_MESSAGE
+    );
+  });
+
+  it("returns message limit at 4001 characters", () => {
+    assert.equal(
+      chatSendSizeError({
+        message: "b".repeat(4001),
+        attachment: null
+      }),
+      MESSAGE_LIMIT_MESSAGE
+    );
   });
 });
 
