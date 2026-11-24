@@ -4,12 +4,12 @@ export type ChatTextSegment =
 
 const ATTACHMENT_PLACEHOLDER = "（添付を確認してください）";
 
-const CREATE_TASK_INSTRUCTION =
-  "この文章の内容をタスク化して。タイトルは文章から具体的に付ける。中身のない「タスク」という名前にはしない。";
+export const TASK_ANSWERS_INSTRUCTION =
+  "これはタスク作成への回答です。回答にタスク名があるときは、その内容で create_task を1件呼んでください。期限、子ども、担当、種類、詳しい内容、優先度、グループは、回答に書いてあるものだけ入れてください。書いていない項目は空のままで、聞き返さないでください。タスク名が読み取れないとき、または作成をやめる依頼のときは create_task を呼ばず、タスク名が無いときだけタスク名を聞き返してください。タイトルを「タスク」や「新しいタスク」にしないでください。優先度は低を low、中を medium、高を high にしてください。";
 
 export function buildChatSendPayload(input: {
   draft: string;
-  mode: "create_task" | null;
+  mode: "task_answers" | null;
   hasAttachment: boolean;
   overrideText?: string;
   overrideApiText?: string;
@@ -26,11 +26,11 @@ export function buildChatSendPayload(input: {
     return null;
   }
 
-  if (input.mode === "create_task") {
+  if (input.mode === "task_answers") {
     if (trimmed) {
       return {
         displayText: trimmed,
-        apiText: `${CREATE_TASK_INSTRUCTION}\n${trimmed}`
+        apiText: `${TASK_ANSWERS_INSTRUCTION}\n${trimmed}`
       };
     }
     return {

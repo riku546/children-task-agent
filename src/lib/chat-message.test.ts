@@ -1,9 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { buildChatSendPayload, splitChatText } from "./chat-message.ts";
-
-const CREATE_TASK_INSTRUCTION =
-  "この文章の内容をタスク化して。タイトルは文章から具体的に付ける。中身のない「タスク」という名前にはしない。";
+import { buildChatSendPayload, splitChatText, TASK_ANSWERS_INSTRUCTION } from "./chat-message.ts";
 
 describe("buildChatSendPayload", () => {
   it("uses trimmed draft for a normal message", () => {
@@ -19,22 +16,24 @@ describe("buildChatSendPayload", () => {
     assert.equal(buildChatSendPayload({ draft: "  ", mode: null, hasAttachment: false }), null);
   });
 
-  it("builds create_task payload when draft has text", () => {
+  it("builds task_answers payload when draft has text", () => {
     const payload = buildChatSendPayload({
       draft: "連絡帳を出す",
-      mode: "create_task",
+      mode: "task_answers",
       hasAttachment: false
     });
+    assert.ok(TASK_ANSWERS_INSTRUCTION.includes("タスク名"));
+    assert.ok(TASK_ANSWERS_INSTRUCTION.includes("聞き返さない"));
     assert.deepEqual(payload, {
       displayText: "連絡帳を出す",
-      apiText: `${CREATE_TASK_INSTRUCTION}\n連絡帳を出す`
+      apiText: `${TASK_ANSWERS_INSTRUCTION}\n連絡帳を出す`
     });
   });
 
-  it("uses attachment placeholder for create_task with attachment only", () => {
+  it("uses attachment placeholder for task_answers with attachment only", () => {
     const payload = buildChatSendPayload({
       draft: "",
-      mode: "create_task",
+      mode: "task_answers",
       hasAttachment: true
     });
     assert.deepEqual(payload, {
@@ -46,7 +45,7 @@ describe("buildChatSendPayload", () => {
   it("passes through override text without empty-send guard", () => {
     const payload = buildChatSendPayload({
       draft: "",
-      mode: "create_task",
+      mode: "task_answers",
       hasAttachment: false,
       overrideText: "招待リンクを出して",
       overrideApiText: undefined

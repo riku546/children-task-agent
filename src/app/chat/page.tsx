@@ -14,8 +14,6 @@ type Turn = {
   actionSummaries?: string[];
 };
 
-type ComposerMode = "create_task" | null;
-
 type PendingRemoval = {
   groupId: string;
   memberId: string;
@@ -51,11 +49,21 @@ const USAGE_GUIDE_REPLY = `このチャットでは、文章で次のことが�
 
 タスクの削除とグループの削除は、このアプリにはありません。`;
 
+const TASK_CREATE_GUIDE_REPLY = `タスクを作ります。次の内容を、このチャットに返信してください。
+
+・タスク名（必要）
+・期限
+・子ども
+・担当
+・種類（提出物、持ち物、行事、集金、仕事、連絡など）
+・詳しい内容
+・優先度（低、中、高）
+・グループ（複数あるとき）
+
+タスク名以外は、分かるものだけで大丈夫です。`;
+
 const GUIDANCE_BUTTON_CLASS =
   "rounded-full border border-zinc-300 bg-white px-3 py-1.5 text-xs font-medium text-zinc-800 hover:bg-zinc-50 disabled:opacity-40";
-
-const GUIDANCE_BUTTON_SELECTED_CLASS =
-  "rounded-full border border-zinc-900 bg-zinc-900 px-3 py-1.5 text-xs font-medium text-white disabled:opacity-40";
 
 export default function ChatPage() {
   const [turns, setTurns] = useState<Turn[]>([]);
@@ -66,7 +74,7 @@ export default function ChatPage() {
   const [pendingRemoval, setPendingRemoval] = useState<PendingRemoval>(null);
   const [streamStatus, setStreamStatus] = useState<string | null>(null);
   const [streamText, setStreamText] = useState("");
-  const [composerMode, setComposerMode] = useState<ComposerMode>(null);
+  const [awaitingTaskAnswers, setAwaitingTaskAnswers] = useState(false);
   const [listening, setListening] = useState(false);
   const [speechError, setSpeechError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -206,6 +214,7 @@ export default function ChatPage() {
   }
 
   function showUsageGuide() {
+    setAwaitingTaskAnswers(false);
     setTurns((prev) => [
       ...prev,
       { kind: "user", text: "使い方を教えて" },
@@ -213,17 +222,18 @@ export default function ChatPage() {
     ]);
   }
 
-  function enterCreateTaskMode() {
-    setComposerMode("create_task");
+  function startCreateTaskFlow() {
+    setTurns((prev) => [
+      ...prev,
+      { kind: "user", text: "タスクを作りたい" },
+      { kind: "result", text: TASK_CREATE_GUIDE_REPLY }
+    ]);
+    setAwaitingTaskAnswers(true);
     setTimeout(() => textareaRef.current?.focus(), 0);
   }
 
-  function cancelCreateTaskMode() {
-    setComposerMode(null);
-  }
-
   function handleInvite() {
-    if (composerMode) setComposerMode(null);
+    setAwaitingTaskAnswers(false);
     void handleSend("招待リンクを出して");
   }
 
@@ -242,14 +252,20 @@ export default function ChatPage() {
 
     if (sending) return;
 
+    const taskAnswersMode = awaitingTaskAnswers && overrideText === undefined;
+
     const payload = buildChatSendPayload({
       draft,
-      mode: composerMode,
+      mode: taskAnswersMode ? "task_answers" : null,
       hasAttachment: Boolean(activeAttachment),
       overrideText,
       overrideApiText
     });
     if (payload === null) return;
+
+    if (awaitingTaskAnswers) {
+      setAwaitingTaskAnswers(false);
+    }
 
     speechRecognitionRef.current?.stop();
 
@@ -262,7 +278,6 @@ export default function ChatPage() {
     if (overrideText === undefined) {
       setDraft("");
     }
-    setComposerMode(null);
     setSending(true);
     setStreamStatus(null);
     setStreamText("");
@@ -450,7 +465,6 @@ export default function ChatPage() {
       setDraft("");
       setAttachment(null);
       setAttachmentName("");
-      setComposerMode(null);
 
       void handleSend({
         overrideText: userText,
@@ -517,9 +531,6 @@ export default function ChatPage() {
   const sendDisabled = sending || (!draft.trim() && !attachment);
   const showAttachmentError = attachment === null && attachmentName.length > 0;
 
-  const textareaPlaceholder =
-    composerMode === "create_task" ? "作りたいタスクの内容を入力してください" : "メッセージを入力";
-
   return (
     <section className="mx-auto flex h-[calc(100dvh-3.5rem-1px)] max-w-3xl flex-col px-4 sm:px-6">
       <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto">
@@ -571,13 +582,9 @@ export default function ChatPage() {
           </button>
           <button
             type="button"
-            className={
-              composerMode === "create_task"
-                ? GUIDANCE_BUTTON_SELECTED_CLASS
-                : GUIDANCE_BUTTON_CLASS
-            }
+            className={GUIDANCE_BUTTON_CLASS}
             disabled={sending}
-            onClick={enterCreateTaskMode}
+            onClick={startCreateTaskFlow}
           >
             タスクを作成
           </button>
@@ -590,19 +597,6 @@ export default function ChatPage() {
             人を招待
           </button>
         </div>
-
-        {composerMode === "create_task" ? (
-          <div className="mb-1 flex items-center gap-2 text-xs text-zinc-600">
-            <span>入力した内容でタスクを作ります</span>
-            <button
-              type="button"
-              className="text-zinc-500 underline"
-              onClick={cancelCreateTaskMode}
-            >
-              やめる
-            </button>
-          </div>
-        ) : null}
 
         {showAttachmentError ? <p className="mb-1 text-xs text-red-600">{attachmentName}</p> : null}
         {speechError ? <p className="mb-1 text-xs text-red-600">{speechError}</p> : null}
@@ -636,7 +630,7 @@ export default function ChatPage() {
             ref={textareaRef}
             id="chat-body"
             rows={1}
-            placeholder={textareaPlaceholder}
+            placeholder="メッセージを入力"
             className="max-h-40 w-full resize-none border-none bg-transparent px-2 py-2 text-sm outline-none"
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
