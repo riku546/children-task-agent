@@ -101,10 +101,11 @@ export function ProfileFieldsSkeleton() {
         <p className="text-xs font-semibold text-zinc-700">メールアドレス</p>
         <Skeleton className="mt-1 h-9 w-full" />
       </div>
-      <div className="border-t border-zinc-200 pt-8">
+      <div className="pt-8">
         <h2 className="text-sm font-bold text-zinc-900">参加中の家族グループ</h2>
-        <div className="mt-3">
-          <ListRowsSkeleton />
+        <div className="mt-3 space-y-3">
+          <Skeleton className="h-4 w-40" />
+          <Skeleton className="h-4 w-32" />
         </div>
       </div>
     </LoadingRegion>
