@@ -3,6 +3,7 @@
 import { ArrowUp, Camera, Mic, Plus, X } from "lucide-react";
 import { type ChangeEvent, useEffect, useRef, useState } from "react";
 import { ChatMessageText } from "@/components/ChatMessageText";
+import { buildChatSendPayload } from "@/lib/chat-message";
 import { invalidateCache } from "@/lib/client-cache";
 import { imageDataUrlSizeError, imageFileSizeError } from "@/lib/image-size";
 
@@ -237,24 +238,23 @@ export default function ChatPage() {
       typeof options === "string" ? { overrideText: options } : (options ?? {});
     const { overrideText, overrideApiText, attachmentOverride } = opts;
 
-    const text = (overrideText ?? draft).trim();
     const activeAttachment = attachmentOverride !== undefined ? attachmentOverride : attachment;
 
     if (sending) return;
-    if (!text && !activeAttachment) return;
 
-    let userText: string;
-    let apiText: string | undefined;
+    const payload = buildChatSendPayload({
+      draft,
+      mode: composerMode,
+      hasAttachment: Boolean(activeAttachment),
+      overrideText,
+      overrideApiText
+    });
+    if (payload === null) return;
 
-    if (overrideText !== undefined) {
-      userText = overrideText;
-      apiText = overrideApiText;
-    } else if (composerMode === "create_task") {
-      userText = text;
-      apiText = `この文章の内容をタスク化して。タイトルは文章から具体的に付ける。中身のない「タスク」という名前にはしない。\n${text}`;
-    } else {
-      userText = text || "（添付を確認してください）";
-    }
+    speechRecognitionRef.current?.stop();
+
+    const userText = payload.displayText;
+    const apiText = payload.apiText;
 
     const nextTurns: Turn[] = [...turns, { kind: "user", text: userText, apiText }];
     setTurns(nextTurns);
@@ -425,6 +425,7 @@ export default function ChatPage() {
 
     const sizeError = imageFileSizeError(file.size);
     if (sizeError) {
+      setAttachment(null);
       setAttachmentName(sizeError);
       return;
     }
@@ -434,6 +435,7 @@ export default function ChatPage() {
       const result = typeof reader.result === "string" ? reader.result : "";
       const dataError = imageDataUrlSizeError(result);
       if (dataError) {
+        setAttachment(null);
         setAttachmentName(dataError);
         return;
       }
@@ -457,6 +459,7 @@ export default function ChatPage() {
       });
     };
     reader.onerror = () => {
+      setAttachment(null);
       setAttachmentName("画像を読み取れませんでした");
     };
     reader.readAsDataURL(file);
@@ -497,8 +500,11 @@ export default function ChatPage() {
       const combined = base ? `${base}${transcript}` : transcript;
       setDraft(combined);
     };
-    recognition.onerror = () => {
+    recognition.onerror = (event) => {
       setListening(false);
+      if (event.error === "aborted" || event.error === "no-speech") {
+        return;
+      }
       setSpeechError("音声を取得できませんでした。文字で入力してください。");
     };
 

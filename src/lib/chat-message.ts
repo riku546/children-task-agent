@@ -2,6 +2,48 @@ export type ChatTextSegment =
   | { type: "text"; text: string }
   | { type: "link"; text: string; href: string };
 
+const ATTACHMENT_PLACEHOLDER = "（添付を確認してください）";
+
+const CREATE_TASK_INSTRUCTION =
+  "この文章の内容をタスク化して。タイトルは文章から具体的に付ける。中身のない「タスク」という名前にはしない。";
+
+export function buildChatSendPayload(input: {
+  draft: string;
+  mode: "create_task" | null;
+  hasAttachment: boolean;
+  overrideText?: string;
+  overrideApiText?: string;
+}): { displayText: string; apiText?: string } | null {
+  if (input.overrideText !== undefined) {
+    return {
+      displayText: input.overrideText,
+      apiText: input.overrideApiText
+    };
+  }
+
+  const trimmed = input.draft.trim();
+  if (!trimmed && !input.hasAttachment) {
+    return null;
+  }
+
+  if (input.mode === "create_task") {
+    if (trimmed) {
+      return {
+        displayText: trimmed,
+        apiText: `${CREATE_TASK_INSTRUCTION}\n${trimmed}`
+      };
+    }
+    return {
+      displayText: ATTACHMENT_PLACEHOLDER,
+      apiText: ATTACHMENT_PLACEHOLDER
+    };
+  }
+
+  return {
+    displayText: trimmed || ATTACHMENT_PLACEHOLDER
+  };
+}
+
 const MARKDOWN_LINK_RE = /\[([^\]]+)\]\(([^)]+)\)/g;
 const BARE_URL_RE = /https?:\/\/[^\s<>"'`]+/g;
 
