@@ -53,7 +53,8 @@ http://localhost:3000/auth/callback
 
 - `/login`: メールアドレス/パスワードログイン、新規登録、Googleログイン
 - `/onboarding`: 初回ログイン時の案内（グループ → 子ども → TODO）。スキップできます
-- `/dashboard`: 今日・今後・完了済みのTODO。分担は `/team`
+- `/dashboard`: ホーム。今日のタスク、家族、チャットへの入口
+- `/tasks`: 今日・今後・完了済みのTODO。分担は `/team`
 - `/chat`: 文章・写真・PDF・音声からタスクを作る。`/tasks/new` はここへ移ります
 - `/tasks/[id]`: TODO詳細、編集、完了、Googleカレンダー追加
 - `/groups`: 家族グループ作成

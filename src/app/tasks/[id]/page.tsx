@@ -68,11 +68,11 @@ export default function TaskDetailPage() {
     return (
       <section className="mx-auto max-w-5xl px-4 pb-20 pt-6 sm:px-6 md:pb-12 md:pt-8">
         <Link
-          href="/dashboard"
+          href="/tasks"
           className="inline-flex items-center gap-1.5 text-sm font-semibold text-zinc-600"
         >
           <Undo2 size={14} />
-          ホーム
+          タスク
         </Link>
         <TaskDetailSkeleton />
       </section>
@@ -93,11 +93,11 @@ export default function TaskDetailPage() {
       <div className="flex flex-col gap-3 pb-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <Link
-            href="/dashboard"
+            href="/tasks"
             className="inline-flex items-center gap-1.5 text-sm font-semibold text-zinc-600 hover:text-zinc-950 transition"
           >
             <Undo2 size={14} />
-            ホーム
+            タスク
           </Link>
           <span className="text-zinc-300">/</span>
           <span className="font-mono text-xs text-zinc-500">{task.id.slice(0, 8)}</span>

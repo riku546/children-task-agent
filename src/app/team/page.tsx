@@ -56,11 +56,11 @@ function TeamContent() {
   return (
     <PageShell>
       <Link
-        href="/dashboard"
+        href="/tasks"
         className="mb-3 inline-flex items-center gap-1.5 text-sm font-semibold text-zinc-600 hover:text-zinc-950 transition"
       >
         <Undo2 size={14} />
-        ホーム
+        タスク
       </Link>
 
       <PageHeader

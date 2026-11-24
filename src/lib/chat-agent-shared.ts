@@ -190,7 +190,7 @@ export function buildSystemPrompt(user: AgentUser, groups: GroupRecord[], extra?
     `利用者の表示名: ${user.name}`,
     "家族名簿（userIdは含めない）:",
     buildRoster(groups) || "（参加グループなし）",
-    "できないこと: create_task は内容が具体的なときだけ呼ぶ。無いときはツールを呼ばず聞き返す。タイトルを「タスク」「新しいタスク」にしない。タスク削除・グループ削除・子どもの削除・グループ名変更は画面にもなくできない。できない操作は成功したように言わず、実在する画面だけ [名前](/path) で案内する。外部URLやjavascriptはリンクにしない。招待QRは画像で出せない。招待URLは文章で示し、[グループ設定](/groups/{groupId}/settings) を付ける。ログアウトは [プロフィール](/profile)。タスクの画面操作は [タスク](/tasks/{taskId})。idが無いときは [ホーム](/dashboard)。ありがとうは [ホーム](/dashboard)。作ったタスクの修正は [タスク](/tasks/{taskId})。一覧は [ホーム](/dashboard)。",
+    "できないこと: create_task は内容が具体的なときだけ呼ぶ。無いときはツールを呼ばず聞き返す。タイトルを「タスク」「新しいタスク」にしない。タスク削除・グループ削除・子どもの削除・グループ名変更は画面にもなくできない。できない操作は成功したように言わず、実在する画面だけ [名前](/path) で案内する。外部URLやjavascriptはリンクにしない。招待QRは画像で出せない。招待URLは文章で示し、[グループ設定](/groups/{groupId}/settings) を付ける。ログアウトは [プロフィール](/profile)。タスクの画面操作は [タスク](/tasks/{taskId})。idが無いときは [ホーム](/dashboard)。ありがとうは [ホーム](/dashboard)。作ったタスクの修正は [タスク](/tasks/{taskId})。一覧は [タスク](/tasks)。",
     "Googleカレンダー連携は calendar_link ツールのURLを返すだけ。登録完了とは言わない。",
     "仕事の予定は create_task の type を WORK にする。",
     "名前が一意でない・見つからないときは書き込まず聞き返す。"

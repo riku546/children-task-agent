@@ -321,7 +321,7 @@ function OnboardingContent() {
             <div>
               <h2 className="text-base font-bold text-zinc-950">TODOリストへ</h2>
               <p className="mt-1 text-sm text-zinc-600">
-                今日やることと、家族の担当がホームに並びます。「引き受ける」で自分の担当にできます。お便りはチャットに送ってください。
+                今日のタスクはホームに出ます。一覧と担当はタスクのページです。お便りはチャットに送ってください。
               </p>
             </div>
             <ul className="space-y-1 text-sm text-zinc-700">
@@ -340,7 +340,7 @@ function OnboardingContent() {
               className="button-primary min-h-11 w-full"
             >
               {busy ? <Loader2 size={15} className="animate-spin" /> : null}
-              TODOリストを開く
+              ホームを開く
             </button>
           </div>
         )}
@@ -354,7 +354,7 @@ function OnboardingContent() {
             disabled={busy}
             className="min-h-11 text-sm font-semibold text-zinc-500 underline-offset-2 hover:text-zinc-800 hover:underline"
           >
-            スキップしてTODO一覧へ
+            スキップしてホームへ
           </button>
           <div className="flex gap-2">
             {step > 1 ? (
