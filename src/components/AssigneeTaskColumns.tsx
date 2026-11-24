@@ -250,7 +250,7 @@ function TaskRow({
           </Link>
           <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
             <ChildBadge name={task.childName} isWork={isWorkTask(task)} size="sm" />
-            <DuePill dueDate={task.dueDate} />
+            <DuePill dueDate={task.dueDate} done={isDone} />
             <PriorityPill priority={task.priority} />
           </div>
         </div>

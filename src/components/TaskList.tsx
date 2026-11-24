@@ -97,7 +97,7 @@ export function TaskList({
 
               <div className="flex flex-wrap items-center gap-2 pl-8 sm:shrink-0 sm:pl-0">
                 <ChildBadge name={task.childName} isWork={isWork} size="sm" />
-                <DuePill dueDate={task.dueDate} />
+                <DuePill dueDate={task.dueDate} done={isDone} />
                 <PriorityPill priority={task.priority} />
 
                 <div className="hidden min-w-[76px] items-center gap-1.5 text-xs text-zinc-600 md:flex">
