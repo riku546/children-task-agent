@@ -3,7 +3,7 @@
 import { Check, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { ChildBadge } from "@/components/ChildBadge";
-import { DuePill, PriorityPill } from "@/components/StatusPill";
+import { DuePill } from "@/components/StatusPill";
 import { isWorkTask } from "@/lib/conflict-detector";
 import { isTaskTakenByMe } from "@/lib/task-claim";
 import type { TaskRecord } from "@/lib/types";
@@ -16,7 +16,6 @@ type Props = {
   onAssignToMe?: (taskId: string) => Promise<void> | void;
   onToggleStatus?: (task: TaskRecord) => Promise<void> | void;
   actionLoadingId?: string | null;
-  onThankYou?: (task: TaskRecord) => void;
   showHeader?: boolean;
 };
 
@@ -28,7 +27,6 @@ export function TaskList({
   onAssignToMe,
   onToggleStatus,
   actionLoadingId,
-  onThankYou,
   showHeader = false
 }: Props) {
   if (tasks.length === 0) {
@@ -98,7 +96,6 @@ export function TaskList({
               <div className="flex flex-wrap items-center gap-2 pl-8 sm:shrink-0 sm:pl-0">
                 <ChildBadge name={task.childName} isWork={isWork} size="sm" />
                 <DuePill dueDate={task.dueDate} done={isDone} />
-                <PriorityPill priority={task.priority} />
 
                 <div className="hidden min-w-[76px] items-center gap-1.5 text-xs text-zinc-600 md:flex">
                   <span className="truncate">
@@ -131,16 +128,6 @@ export function TaskList({
 
                   {task.assigneeName && !takenByMe ? (
                     <span className="text-xs text-zinc-500 md:hidden">{task.assigneeName}</span>
-                  ) : null}
-
-                  {onThankYou && !isDone && task.assigneeName ? (
-                    <button
-                      type="button"
-                      onClick={() => onThankYou(task)}
-                      className="inline-flex min-h-11 items-center text-xs font-semibold text-zinc-600 underline-offset-2 transition hover:text-zinc-900 hover:underline"
-                    >
-                      ありがとう
-                    </button>
                   ) : null}
                 </div>
               </div>

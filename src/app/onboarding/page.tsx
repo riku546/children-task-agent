@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { setOnboardingRequiredCache } from "@/components/OnboardingGate";
 import { PageShell } from "@/components/PageShell";
+import { OnboardingChoicesSkeleton } from "@/components/Skeleton";
 import { invalidateCache } from "@/lib/client-cache";
 import { hasNamedChild } from "@/lib/onboarding";
 import type { GroupRecord } from "@/lib/types";
@@ -14,8 +15,7 @@ const ONBOARDING_ACTIVE_KEY = "onboarding-active";
 const steps = [
   { id: 1, label: "グループ" },
   { id: 2, label: "子ども" },
-  { id: 3, label: "読み取り" },
-  { id: 4, label: "TODO" }
+  { id: 3, label: "TODO" }
 ];
 
 function namedChildrenOf(group: GroupRecord | undefined) {
@@ -29,7 +29,9 @@ function OnboardingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const requestedStep = Number(searchParams.get("step") || "1");
-  const [step, setStep] = useState(requestedStep >= 1 && requestedStep <= 4 ? requestedStep : 1);
+  const [step, setStep] = useState(
+    requestedStep >= 1 && requestedStep <= 3 ? requestedStep : requestedStep > 3 ? 3 : 1
+  );
   const [loading, setLoading] = useState(true);
   const [groups, setGroups] = useState<GroupRecord[]>([]);
   const [selectedGroupId, setSelectedGroupId] = useState("");
@@ -178,7 +180,7 @@ function OnboardingContent() {
   if (loading) {
     return (
       <PageShell width="narrow">
-        <p className="py-16 text-center text-sm text-zinc-400">読み込み中...</p>
+        <OnboardingLoading />
       </PageShell>
     );
   }
@@ -190,7 +192,7 @@ function OnboardingContent() {
         家族のTODOを始める
       </h1>
       <p className="mt-1 text-sm text-zinc-600">
-        共有グループ、お子さん、お便りの読み取りの順に設定します。あとからでも変更できます。
+        共有グループとお子さんを設定します。お便りはチャットに送るとタスクになります。
       </p>
 
       <ol className="mt-5 flex flex-wrap gap-x-4 gap-y-1 border-b border-zinc-200 pb-3 text-sm">
@@ -317,34 +319,9 @@ function OnboardingContent() {
         {step === 3 && (
           <div className="space-y-4">
             <div>
-              <h2 className="text-base font-bold text-zinc-950">お便りを読み取る</h2>
-              <p className="mt-1 text-sm text-zinc-600">
-                園や学校のプリントを写真かPDFで取り込むと、TODOの候補ができます。今はやらなくても大丈夫です。
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => router.push("/tasks/new?from=onboarding")}
-              className="button-primary min-h-11 w-full"
-            >
-              お便りを読み取る
-            </button>
-            <button
-              type="button"
-              onClick={() => goToStep(4)}
-              className="button-secondary min-h-11 w-full"
-            >
-              読み取りはあとで
-            </button>
-          </div>
-        )}
-
-        {step === 4 && (
-          <div className="space-y-4">
-            <div>
               <h2 className="text-base font-bold text-zinc-950">TODOリストへ</h2>
               <p className="mt-1 text-sm text-zinc-600">
-                今日やることと、家族の担当がホームに並びます。♡の「引き受ける」で自分の担当にできます。
+                今日のタスクはホームに出ます。一覧と担当はタスクのページです。お便りはチャットに送ってください。
               </p>
             </div>
             <ul className="space-y-1 text-sm text-zinc-700">
@@ -363,7 +340,7 @@ function OnboardingContent() {
               className="button-primary min-h-11 w-full"
             >
               {busy ? <Loader2 size={15} className="animate-spin" /> : null}
-              TODOリストを開く
+              ホームを開く
             </button>
           </div>
         )}
@@ -377,7 +354,7 @@ function OnboardingContent() {
             disabled={busy}
             className="min-h-11 text-sm font-semibold text-zinc-500 underline-offset-2 hover:text-zinc-800 hover:underline"
           >
-            スキップしてTODO一覧へ
+            スキップしてホームへ
           </button>
           <div className="flex gap-2">
             {step > 1 ? (
@@ -415,12 +392,38 @@ function OnboardingContent() {
   );
 }
 
+function OnboardingLoading() {
+  return (
+    <>
+      <p className="text-sm font-medium text-zinc-500">はじめに</p>
+      <h1 className="mt-1 text-xl font-bold tracking-tight text-zinc-950 sm:text-2xl">
+        家族のTODOを始める
+      </h1>
+      <p className="mt-1 text-sm text-zinc-600">
+        共有グループとお子さんを設定します。お便りはチャットに送るとタスクになります。
+      </p>
+      <ol className="mt-5 flex flex-wrap gap-x-4 gap-y-1 border-b border-zinc-200 pb-3 text-sm font-semibold text-zinc-400">
+        <li>1. グループ</li>
+        <li>2. 子ども</li>
+        <li>3. TODO</li>
+      </ol>
+      <section className="mt-6 space-y-4">
+        <h2 className="text-base font-bold text-zinc-950">共有するグループを選ぶ</h2>
+        <p className="text-sm text-zinc-600">
+          家族で同じTODOを見るグループです。すでにあるものを選ぶか、新しく作れます。
+        </p>
+        <OnboardingChoicesSkeleton />
+      </section>
+    </>
+  );
+}
+
 export default function OnboardingPage() {
   return (
     <Suspense
       fallback={
         <PageShell width="narrow">
-          <p className="py-16 text-center text-sm text-zinc-400">読み込み中...</p>
+          <OnboardingLoading />
         </PageShell>
       }
     >

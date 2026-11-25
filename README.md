@@ -52,9 +52,10 @@ http://localhost:3000/auth/callback
 ## 画面
 
 - `/login`: メールアドレス/パスワードログイン、新規登録、Googleログイン
-- `/onboarding`: 初回ログイン時の案内（グループ → 子ども → 読み取り → TODO）。スキップできます
-- `/dashboard`: 今日・明日・未完了TODO。カレンダーの日付からは、その日が期限のTODOをその場で追加できます
-- `/tasks/new`: テキスト、画像OCR、PDF抽出/OCR、音声入力、AI TODO候補確認
+- `/onboarding`: 初回ログイン時の案内（グループ → 子ども → TODO）。スキップできます
+- `/dashboard`: ホーム。今日のタスク、家族、チャットへの入口
+- `/tasks`: 今日・今後・完了済みのTODO。分担は `/team`
+- `/chat`: 文章・写真・PDF・音声からタスクを作る。`/tasks/new` はここへ移ります
 - `/tasks/[id]`: TODO詳細、編集、完了、Googleカレンダー追加
 - `/groups`: 家族グループ作成
 - `/groups/[id]/settings`: メンバー、招待リンク、子ども情報

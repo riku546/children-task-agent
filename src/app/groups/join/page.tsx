@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import { PageShell } from "@/components/PageShell";
+import { JoinPreviewSkeleton } from "@/components/Skeleton";
 import { invalidateCache } from "@/lib/client-cache";
 
 type Preview = {
@@ -94,12 +95,7 @@ function JoinContent() {
       />
 
       <div className="mt-6 space-y-4 border-t border-zinc-200 pt-6">
-        {loading ? (
-          <p className="flex items-center gap-2 text-sm font-medium text-zinc-700">
-            <Loader2 size={16} className="animate-spin" />
-            招待リンクを確認しています
-          </p>
-        ) : null}
+        {loading ? <JoinPreviewSkeleton /> : null}
 
         {error ? (
           <div className="rounded-md border border-rose-300 bg-rose-50 px-3 py-3 text-sm font-medium text-rose-950">
@@ -157,7 +153,7 @@ export default function JoinGroupPage() {
     <Suspense
       fallback={
         <PageShell width="narrow">
-          <p className="py-16 text-center text-sm font-medium text-zinc-700">読み込み中...</p>
+          <JoinPreviewSkeleton />
         </PageShell>
       }
     >

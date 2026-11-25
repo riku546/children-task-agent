@@ -4,6 +4,7 @@ import { CalendarPlus, CheckCircle2, Save, Undo2 } from "lucide-react";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { TaskDetailSkeleton } from "@/components/Skeleton";
 import { StatusPill } from "@/components/StatusPill";
 import { fetchJsonWithCache, getCachedData, invalidateCache } from "@/lib/client-cache";
 import { toDateInputValue } from "@/lib/date";
@@ -15,6 +16,7 @@ export default function TaskDetailPage() {
   const cached = params.id ? getCachedData<{ task: TaskRecord }>(`/api/tasks/${params.id}`) : null;
   const [task, setTask] = useState<TaskRecord | null>(cached?.task || null);
   const [form, setForm] = useState<Partial<TaskRecord>>(cached?.task || {});
+  const [loading, setLoading] = useState(!cached?.task);
   const calendarState = searchParams.get("calendar");
 
   async function load(force = false) {
@@ -27,6 +29,8 @@ export default function TaskDetailPage() {
       setForm(data.task || {});
     } catch (e) {
       console.error("Failed to load task", e);
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -60,8 +64,27 @@ export default function TaskDetailPage() {
     load();
   }, [params.id]);
 
+  if (loading && !task) {
+    return (
+      <section className="mx-auto max-w-5xl px-4 pb-20 pt-6 sm:px-6 md:pb-12 md:pt-8">
+        <Link
+          href="/tasks"
+          className="inline-flex items-center gap-1.5 text-sm font-semibold text-zinc-600"
+        >
+          <Undo2 size={14} />
+          タスク
+        </Link>
+        <TaskDetailSkeleton />
+      </section>
+    );
+  }
+
   if (!task) {
-    return <section className="mx-auto max-w-4xl px-4 py-12">読み込み中</section>;
+    return (
+      <section className="mx-auto max-w-5xl px-4 py-12 text-sm text-zinc-600">
+        このタスクは見つかりません。
+      </section>
+    );
   }
 
   return (
@@ -70,11 +93,11 @@ export default function TaskDetailPage() {
       <div className="flex flex-col gap-3 pb-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <Link
-            href="/dashboard"
+            href="/tasks"
             className="inline-flex items-center gap-1.5 text-sm font-semibold text-zinc-600 hover:text-zinc-950 transition"
           >
             <Undo2 size={14} />
-            ホーム
+            タスク
           </Link>
           <span className="text-zinc-300">/</span>
           <span className="font-mono text-xs text-zinc-500">{task.id.slice(0, 8)}</span>

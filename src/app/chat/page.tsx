@@ -49,7 +49,7 @@ const USAGE_GUIDE_REPLY = `このチャットでは、文章で次のことが�
 
 ・招待のQRコード: [グループ一覧](/groups) から各グループの設定
 ・ログアウト: [プロフィール](/profile)
-・候補を直してから保存: [お便りから作成](/tasks/new)
+・作ったタスクの修正: 返答のリンク、または [タスク](/tasks)
 
 タスクの削除とグループの削除は、このアプリにはありません。`;
 
@@ -561,7 +561,6 @@ export default function ChatPage() {
 
   const hasChip = Boolean(attachment) || Boolean(attachmentLabel);
   const sendDisabled = sending || (!draft.trim() && !hasChip);
-  const showProcessingBubble = sending && !streamText;
 
   return (
     <section className="fixed inset-x-0 top-[calc(3.5rem+1px)] bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-20 mx-auto flex w-full max-w-3xl flex-col px-4 sm:px-6 md:bottom-0">
@@ -593,12 +592,22 @@ export default function ChatPage() {
             ))}
             {sending ? (
               <div className="flex items-start">
-                <div
-                  className={`max-w-[85%] rounded-2xl bg-zinc-100 px-3 py-2 text-sm whitespace-pre-wrap text-zinc-900 ${
-                    showProcessingBubble ? "animate-pulse" : ""
-                  }`}
-                >
-                  {streamText ? <ChatMessageText text={streamText} /> : "処理中です"}
+                <div className="max-w-[85%] rounded-2xl bg-zinc-100 px-3 py-2 text-sm whitespace-pre-wrap text-zinc-900">
+                  {streamText ? (
+                    <ChatMessageText text={streamText} />
+                  ) : (
+                    <span className="block space-y-2 py-1" aria-busy="true">
+                      <span className="sr-only">処理中です</span>
+                      <span
+                        aria-hidden
+                        className="block h-3 w-40 animate-pulse rounded bg-zinc-300"
+                      />
+                      <span
+                        aria-hidden
+                        className="block h-3 w-24 animate-pulse rounded bg-zinc-300"
+                      />
+                    </span>
+                  )}
                 </div>
               </div>
             ) : null}

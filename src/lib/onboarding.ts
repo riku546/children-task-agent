@@ -25,8 +25,7 @@ export function needsOnboarding(input: {
   return false;
 }
 
-export function shouldEnforceOnboarding(pathname: string, from: string | null) {
+export function shouldEnforceOnboarding(pathname: string, _from: string | null) {
   if (pathname === "/onboarding") return false;
-  if (pathname === "/tasks/new" && from === "onboarding") return false;
   return APP_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
 }

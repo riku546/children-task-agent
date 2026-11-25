@@ -3,6 +3,7 @@
 import { CircleUserRound, LogOut, Save, Undo2, Users } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { ProfileFieldsSkeleton } from "@/components/Skeleton";
 import { fetchJsonWithCache, getCachedData, invalidateCache } from "@/lib/client-cache";
 import { createClient } from "@/lib/supabase/client";
 import type { GroupRecord } from "@/lib/types";
@@ -114,8 +115,21 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <section className="mx-auto max-w-2xl px-4 py-16 text-center text-sm font-semibold text-ink/60">
-        読み込み中...
+      <section className="mx-auto max-w-3xl px-4 pb-20 pt-6 sm:px-6 md:pb-12 md:pt-8">
+        <Link
+          href="/dashboard"
+          className="inline-flex items-center gap-1 text-xs font-semibold text-zinc-600"
+        >
+          <Undo2 size={13} />
+          ホームへ戻る
+        </Link>
+        <h1 className="mt-2 text-xl font-bold tracking-tight text-zinc-950 sm:text-2xl">
+          アカウント設定
+        </h1>
+        <p className="mt-0.5 text-xs text-zinc-500">
+          プロフィール情報、参加グループの確認、セッション管理を行います
+        </p>
+        <ProfileFieldsSkeleton />
       </section>
     );
   }
@@ -153,7 +167,7 @@ export default function ProfilePage() {
         </div>
       )}
 
-      <div className="mt-6 space-y-8 divide-y divide-zinc-200">
+      <div className="mt-6 space-y-8">
         {/* セクション 1: ユーザー基本情報 */}
         <form onSubmit={handleSave} className="space-y-4">
           <div className="flex items-center gap-3">
@@ -239,7 +253,7 @@ export default function ProfilePage() {
             </Link>
           </div>
 
-          <div className="mt-3 divide-y divide-zinc-200 border-t border-zinc-200">
+          <div className="mt-3">
             {groups.length === 0 ? (
               <p className="p-6 text-center text-xs text-zinc-500">参加中のグループはありません</p>
             ) : (
@@ -267,9 +281,9 @@ export default function ProfilePage() {
         </div>
 
         {/* セクション 3: アカウント操作 / サインアウト */}
-        <div className="pt-8">
+        <div className="border-t border-zinc-200 pt-8">
           <h2 className="text-sm font-bold text-zinc-900">セッション管理</h2>
-          <div className="mt-3 flex items-center justify-between border-t border-zinc-200 py-4">
+          <div className="mt-3 flex items-center justify-between py-4">
             <div>
               <div className="text-xs font-semibold text-zinc-900">サインアウト</div>
               <div className="text-[11px] text-zinc-500">

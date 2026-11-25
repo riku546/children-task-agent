@@ -35,9 +35,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           </header>
 
           <main>
-            <Suspense
-              fallback={<p className="py-16 text-center text-sm text-zinc-400">読み込み中...</p>}
-            >
+            <Suspense fallback={null}>
               <OnboardingGate>{children}</OnboardingGate>
             </Suspense>
           </main>

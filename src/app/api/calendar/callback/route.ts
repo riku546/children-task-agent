@@ -8,11 +8,11 @@ export async function GET(request: Request) {
   const taskId = url.searchParams.get("state");
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
-  if (!code || !taskId) return NextResponse.redirect(`${appUrl}/dashboard?calendar=missing`);
+  if (!code || !taskId) return NextResponse.redirect(`${appUrl}/tasks?calendar=missing`);
 
   const user = await ensureCurrentUser();
   const task = await getTask(user, taskId);
-  if (!task) return NextResponse.redirect(`${appUrl}/dashboard?calendar=not_found`);
+  if (!task) return NextResponse.redirect(`${appUrl}/tasks?calendar=not_found`);
 
   const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",

@@ -1,73 +1,29 @@
 "use client";
 
-import {
-  ArrowUpRight,
-  Briefcase,
-  CalendarDays,
-  Camera,
-  Layers,
-  ListTodo,
-  MoreHorizontal,
-  RefreshCw,
-  Type
-} from "lucide-react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
-import { CalendarView } from "@/components/CalendarView";
-import { ConflictAlerts } from "@/components/ConflictAlerts";
 import { PageHeader } from "@/components/PageHeader";
 import { PageShell } from "@/components/PageShell";
-import { QuickWorkScheduleModal } from "@/components/QuickWorkScheduleModal";
-import { SegmentedControl } from "@/components/SegmentedControl";
-import { SiblingTaskTimeline } from "@/components/SiblingTaskTimeline";
+import { Skeleton, TaskRowsSkeleton } from "@/components/Skeleton";
 import { TaskList } from "@/components/TaskList";
 import { fetchJsonWithCache, getCachedData, invalidateCache } from "@/lib/client-cache";
-import { detectAllConflicts } from "@/lib/conflict-detector";
-import { isOverdue, isSameDate } from "@/lib/date";
+import { isSameDate } from "@/lib/date";
 import type { GroupRecord, TaskRecord } from "@/lib/types";
 
-type ViewMode = "list" | "siblings" | "calendar";
-
-const homeSegments = [
-  { id: "list" as const, label: "期限", icon: ListTodo },
-  { id: "siblings" as const, label: "子ども", icon: Layers },
-  { id: "calendar" as const, label: "カレンダー", icon: CalendarDays }
-];
-
-function parseViewMode(raw: string | null): ViewMode {
-  if (raw === "siblings" || raw === "calendar" || raw === "list") {
-    return raw;
-  }
-  return "list";
-}
+const HOME_TODAY_PREVIEW = 2;
 
 function DashboardContent() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const initialViewParam = searchParams.get("view");
-
   const cachedTasks = getCachedData<{ tasks: TaskRecord[] }>("/api/tasks");
   const cachedMe = getCachedData<{ user?: { id: string; name: string }; groups?: GroupRecord[] }>(
     "/api/me"
   );
-
   const [tasks, setTasks] = useState<TaskRecord[]>(cachedTasks?.tasks || []);
   const [currentUser, setCurrentUser] = useState<{ id: string; name: string } | null>(
     cachedMe?.user || null
   );
   const [groups, setGroups] = useState<GroupRecord[]>(cachedMe?.groups || []);
-  const [loading, setLoading] = useState(!cachedTasks);
-  const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(!cachedTasks || !cachedMe);
 
-  const [viewMode, setViewMode] = useState<ViewMode>(() => parseViewMode(initialViewParam));
-
-  const [calendarSelectedDate, setCalendarSelectedDate] = useState<string | null>(null);
-  const [isWorkModalOpen, setIsWorkModalOpen] = useState(false);
-  const [thankYouMessage, setThankYouMessage] = useState<string | null>(null);
-
-  const currentGroup = groups[0];
-  const currentGroupId = currentGroup?.id || "";
   const myMemberIds = useMemo(() => {
     if (!currentUser) return [];
     return groups.flatMap((group) =>
@@ -75,23 +31,10 @@ function DashboardContent() {
     );
   }, [groups, currentUser]);
 
-  useEffect(() => {
-    const view = searchParams.get("view");
-    if (view === "assignee") {
-      router.replace("/team");
-      return;
-    }
-    setViewMode(parseViewMode(view));
-  }, [searchParams, router]);
-
-  function handleViewChange(mode: ViewMode) {
-    setViewMode(mode);
-    if (typeof window !== "undefined") {
-      const url = new URL(window.location.href);
-      url.searchParams.set("view", mode);
-      window.history.replaceState(null, "", url.toString());
-    }
-  }
+  const todayTasks = useMemo(
+    () => tasks.filter((task) => task.status !== "DONE" && isSameDate(task.dueDate, 0)),
+    [tasks]
+  );
 
   async function load(force = false) {
     if (!force) {
@@ -120,8 +63,8 @@ function DashboardContent() {
       setTasks(tasksData.tasks || []);
       setCurrentUser(meData.user || null);
       setGroups(meData.groups || []);
-    } catch (e) {
-      console.error("Failed to load dashboard data", e);
+    } catch (error) {
+      console.error("Failed to load home", error);
     } finally {
       setLoading(false);
     }
@@ -131,348 +74,105 @@ function DashboardContent() {
     load();
   }, []);
 
-  const conflicts = useMemo(() => detectAllConflicts(tasks), [tasks]);
-
   async function assignToMe(taskId: string) {
     if (!currentUser) return;
-    setActionLoadingId(taskId);
-    try {
-      const targetGroup = groups[0];
-      const member = targetGroup?.members.find((m) => m.userId === currentUser.id);
-      const res = await fetch(`/api/tasks/${taskId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          assigneeMemberId: member?.id || null,
-          assigneeName: currentUser.name
-        })
-      });
-      if (res.ok) {
-        invalidateCache("/api/tasks");
-        setTasks((prev) =>
-          prev.map((t) =>
-            t.id === taskId
-              ? {
-                  ...t,
-                  assigneeMemberId: member?.id || null,
-                  assigneeName: currentUser.name
-                }
-              : t
-          )
-        );
-      }
-    } catch (err) {
-      console.error("Failed to assign to me", err);
-    } finally {
-      setActionLoadingId(null);
-    }
+    const member = groups[0]?.members.find((item) => item.userId === currentUser.id);
+    const response = await fetch(`/api/tasks/${taskId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        assigneeMemberId: member?.id || null,
+        assigneeName: currentUser.name
+      })
+    });
+    if (!response.ok) return;
+    invalidateCache("/api/tasks");
+    setTasks((current) =>
+      current.map((task) =>
+        task.id === taskId
+          ? { ...task, assigneeMemberId: member?.id || null, assigneeName: currentUser.name }
+          : task
+      )
+    );
   }
 
   async function toggleStatus(task: TaskRecord) {
-    setActionLoadingId(task.id);
-    const newStatus = task.status === "DONE" ? "TODO" : "DONE";
-    try {
-      const res = await fetch(`/api/tasks/${task.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: newStatus })
-      });
-      if (res.ok) {
-        invalidateCache("/api/tasks");
-        setTasks((prev) => prev.map((t) => (t.id === task.id ? { ...t, status: newStatus } : t)));
-      }
-    } catch (err) {
-      console.error("Failed to toggle task status", err);
-    } finally {
-      setActionLoadingId(null);
-    }
-  }
-
-  function handleTaskCreated(task: TaskRecord) {
+    const status = task.status === "DONE" ? "TODO" : "DONE";
+    const response = await fetch(`/api/tasks/${task.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status })
+    });
+    if (!response.ok) return;
     invalidateCache("/api/tasks");
-    setTasks((prev) => [task, ...prev.filter((item) => item.id !== task.id)]);
+    setTasks((current) =>
+      current.map((item) => (item.id === task.id ? { ...item, status } : item))
+    );
   }
-
-  function handleThankYou(task: TaskRecord) {
-    const assignee = task.assigneeName || "パートナー";
-    setThankYouMessage(`❤️ ${assignee} さんに「ありがとう！」を伝えました`);
-    setTimeout(() => setThankYouMessage(null), 3000);
-  }
-
-  const todayTasks = useMemo(
-    () => tasks.filter((task) => task.status !== "DONE" && isSameDate(task.dueDate, 0)),
-    [tasks]
-  );
-  const tomorrowTasks = useMemo(
-    () => tasks.filter((task) => task.status !== "DONE" && isSameDate(task.dueDate, 1)),
-    [tasks]
-  );
-  const overdueTasks = useMemo(
-    () =>
-      tasks
-        .filter((task) => task.status !== "DONE" && isOverdue(task.dueDate))
-        .sort((a, b) => (a.dueDate ?? "").localeCompare(b.dueDate ?? "")),
-    [tasks]
-  );
-  const upcomingTasks = useMemo(
-    () =>
-      tasks.filter(
-        (task) =>
-          task.status !== "DONE" &&
-          !isOverdue(task.dueDate) &&
-          !isSameDate(task.dueDate, 0) &&
-          !isSameDate(task.dueDate, 1)
-      ),
-    [tasks]
-  );
-  const openTasks = useMemo(() => tasks.filter((task) => task.status !== "DONE"), [tasks]);
-  const doneTasks = useMemo(() => tasks.filter((task) => task.status === "DONE"), [tasks]);
-  const doneCount = doneTasks.length;
-
-  const listSections = (
-    <div className="space-y-6">
-      {overdueTasks.length > 0 && (
-        <div>
-          <div className="flex items-center justify-between border-b border-zinc-200 pb-2 text-sm font-bold text-rose-700">
-            <div className="flex items-center gap-2">
-              <span>期限切れ</span>
-              <span className="font-mono text-xs font-semibold">({overdueTasks.length})</span>
-            </div>
-            <span className="text-xs font-semibold text-rose-600">早めに対応してください</span>
-          </div>
-          <TaskList
-            tasks={overdueTasks}
-            emptyText=""
-            currentUserId={currentUser?.id}
-            myMemberIds={myMemberIds}
-            onAssignToMe={assignToMe}
-            onToggleStatus={toggleStatus}
-            actionLoadingId={actionLoadingId}
-            onThankYou={handleThankYou}
-          />
-        </div>
-      )}
-
-      <div>
-        <div className="flex items-center justify-between border-b border-zinc-200 pb-2 text-sm font-bold text-zinc-900">
-          <div className="flex items-center gap-2">
-            <span>今日のTODO</span>
-            <span className="font-mono text-xs font-semibold text-zinc-700">
-              ({todayTasks.length})
-            </span>
-          </div>
-        </div>
-        <TaskList
-          tasks={todayTasks}
-          emptyText="今日のTODOはありません"
-          currentUserId={currentUser?.id}
-          myMemberIds={myMemberIds}
-          onAssignToMe={assignToMe}
-          onToggleStatus={toggleStatus}
-          actionLoadingId={actionLoadingId}
-          onThankYou={handleThankYou}
-        />
-      </div>
-
-      {tomorrowTasks.length > 0 && (
-        <div>
-          <div className="flex items-center justify-between border-b border-zinc-200 pb-2 text-sm font-bold text-zinc-900">
-            <div className="flex items-center gap-2">
-              <span>明日のTODO</span>
-              <span className="font-mono text-xs font-semibold text-zinc-700">
-                ({tomorrowTasks.length})
-              </span>
-            </div>
-          </div>
-          <TaskList
-            tasks={tomorrowTasks}
-            emptyText="明日のTODOはありません"
-            currentUserId={currentUser?.id}
-            myMemberIds={myMemberIds}
-            onAssignToMe={assignToMe}
-            onToggleStatus={toggleStatus}
-            actionLoadingId={actionLoadingId}
-            onThankYou={handleThankYou}
-          />
-        </div>
-      )}
-
-      <div>
-        <div className="flex items-center justify-between border-b border-zinc-200 pb-2 text-sm font-bold text-zinc-900">
-          <div className="flex items-center gap-2">
-            <span>今後のTODO</span>
-            <span className="font-mono text-xs font-semibold text-zinc-700">
-              ({upcomingTasks.length})
-            </span>
-          </div>
-        </div>
-        <TaskList
-          tasks={upcomingTasks}
-          emptyText="今後予定されているTODOはありません"
-          currentUserId={currentUser?.id}
-          myMemberIds={myMemberIds}
-          onAssignToMe={assignToMe}
-          onToggleStatus={toggleStatus}
-          actionLoadingId={actionLoadingId}
-          onThankYou={handleThankYou}
-        />
-      </div>
-
-      {doneTasks.length > 0 && (
-        <div className="pt-4">
-          <div className="flex items-center justify-between border-b border-zinc-200 pb-2 text-sm font-bold text-zinc-700">
-            <div className="flex items-center gap-2">
-              <span>完了済み</span>
-              <span className="font-mono text-xs">({doneCount})</span>
-            </div>
-          </div>
-          <TaskList
-            tasks={doneTasks}
-            emptyText=""
-            currentUserId={currentUser?.id}
-            myMemberIds={myMemberIds}
-            onAssignToMe={assignToMe}
-            onToggleStatus={toggleStatus}
-            actionLoadingId={actionLoadingId}
-          />
-        </div>
-      )}
-    </div>
-  );
 
   return (
     <PageShell>
-      <PageHeader
-        title="ホーム"
-        description="今日やることと提出期限を確認します"
-        badge={
-          <span className="rounded bg-zinc-100 px-2 py-0.5 font-mono text-xs font-semibold text-zinc-700">
-            未完了 {openTasks.length}件
-          </span>
-        }
-        actions={
-          <>
-            <Link href="/tasks/new" className="button-primary">
-              <Camera size={15} />
-              <span>お便りを取込</span>
-            </Link>
-            <details className="relative group">
-              <summary className="button-icon cursor-pointer list-none [&::-webkit-details-marker]:hidden">
-                <MoreHorizontal size={15} />
-              </summary>
-              <div className="absolute right-0 z-20 mt-1 min-w-[11rem] rounded-lg border border-zinc-200 bg-white py-1 shadow-lg">
-                <button
-                  type="button"
-                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-50"
-                  onClick={() => load(true)}
-                  disabled={loading}
-                >
-                  <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
-                  最新に更新
-                </button>
-                <button
-                  type="button"
-                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-50"
-                  onClick={() => setIsWorkModalOpen(true)}
-                >
-                  <Briefcase size={14} />
-                  仕事の予定
-                </button>
-                <Link
-                  href="/tasks/new"
-                  className="flex w-full items-center gap-2 px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-50"
-                  onClick={(e) => {
-                    const details = e.currentTarget.closest("details") as HTMLDetailsElement | null;
-                    if (details) details.open = false;
-                  }}
-                >
-                  <Type size={14} />
-                  手動でタスク追加
-                </Link>
-              </div>
-            </details>
-          </>
-        }
-      />
+      <PageHeader title="ホーム" description="今日の予定、家族、お便りの入口です" />
 
-      <ConflictAlerts
-        conflicts={conflicts}
-        onSelectDate={(dateKey) => {
-          handleViewChange("calendar");
-          setCalendarSelectedDate(dateKey);
-        }}
-      />
-
-      <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <SegmentedControl value={viewMode} onChange={handleViewChange} segments={homeSegments} />
-        <Link
-          href="/team"
-          className="inline-flex items-center gap-1 text-sm font-semibold text-zinc-600 hover:text-zinc-950 transition shrink-0"
-        >
-          <span>分担ボード</span>
-          <ArrowUpRight size={14} />
-        </Link>
-      </div>
-
-      {viewMode === "list" && (
-        <div className="mt-2 flex items-center gap-4 text-sm font-mono text-zinc-600">
-          {overdueTasks.length > 0 && (
-            <span className="text-rose-700">
-              期限切れ: <strong>{overdueTasks.length}</strong>
-            </span>
+      <div className="mt-8 space-y-10">
+        <section>
+          <h2 className="text-lg font-bold leading-none text-zinc-500">今日のタスク</h2>
+          {loading ? (
+            <div className="mt-3">
+              <TaskRowsSkeleton rows={HOME_TODAY_PREVIEW} />
+            </div>
+          ) : (
+            <>
+              <p className="mt-3 text-sm text-zinc-600">未完了 {todayTasks.length}件</p>
+              <TaskList
+                tasks={todayTasks.slice(0, HOME_TODAY_PREVIEW)}
+                emptyText="今日のタスクはありません"
+                currentUserId={currentUser?.id}
+                myMemberIds={myMemberIds}
+                onAssignToMe={assignToMe}
+                onToggleStatus={toggleStatus}
+              />
+              <Link
+                href="/tasks"
+                className="mt-1 inline-flex min-h-11 items-center text-sm font-semibold text-zinc-800 underline-offset-2 hover:underline"
+              >
+                タスクを見る
+              </Link>
+            </>
           )}
-          <span>
-            今日: <strong className="text-zinc-950">{todayTasks.length}</strong>
-          </span>
-          <span>
-            明日: <strong className="text-zinc-950">{tomorrowTasks.length}</strong>
-          </span>
-          <span>
-            完了: <strong className="text-zinc-950">{doneCount}</strong>
-          </span>
-        </div>
-      )}
+        </section>
 
-      <div className="mt-4">
-        {viewMode === "calendar" ? (
-          <CalendarView
-            tasks={tasks}
-            conflicts={conflicts}
-            selectedDate={calendarSelectedDate}
-            onSelectDate={setCalendarSelectedDate}
-            groupId={currentGroupId}
-            children={currentGroup?.children || []}
-            onTaskCreated={handleTaskCreated}
-          />
-        ) : viewMode === "siblings" ? (
-          <SiblingTaskTimeline
-            tasks={tasks}
-            group={groups[0]}
-            currentUserId={currentUser?.id}
-            myMemberIds={myMemberIds}
-            onAssignToMe={assignToMe}
-            onToggleStatus={toggleStatus}
-            actionLoadingId={actionLoadingId}
-            onThankYou={handleThankYou}
-            onChildAdded={() => load(true)}
-          />
-        ) : (
-          listSections
-        )}
+        <section>
+          <h2 className="text-lg font-bold leading-none text-zinc-500">家族</h2>
+          {loading ? (
+            <Skeleton className="mt-3 h-5 w-40" />
+          ) : groups.length === 0 ? (
+            <p className="mt-3 text-sm text-zinc-600">まだ家族グループがありません。</p>
+          ) : (
+            <ul className="mt-3 space-y-1 text-sm text-zinc-800">
+              {groups.map((group) => (
+                <li key={group.id}>{group.name}</li>
+              ))}
+            </ul>
+          )}
+          <Link
+            href="/groups"
+            className="mt-1 inline-flex min-h-11 items-center text-sm font-semibold text-zinc-800 underline-offset-2 hover:underline"
+          >
+            家族の設定
+          </Link>
+        </section>
+
+        <section>
+          <h2 className="text-lg font-bold leading-none text-zinc-500">お便り</h2>
+          <p className="mt-3 text-sm leading-relaxed text-zinc-600">
+            写真やPDFはチャットに送るとタスクになります。
+          </p>
+          <Link href="/chat" className="button-primary mt-3">
+            チャットを開く
+          </Link>
+        </section>
       </div>
-
-      <QuickWorkScheduleModal
-        isOpen={isWorkModalOpen}
-        onClose={() => setIsWorkModalOpen(false)}
-        groupId={currentGroupId}
-        onSuccess={() => load(true)}
-      />
-
-      {thankYouMessage && (
-        <div className="fixed bottom-20 right-4 z-50 rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white shadow-soft md:bottom-6 md:right-6">
-          {thankYouMessage}
-        </div>
-      )}
     </PageShell>
   );
 }
@@ -482,7 +182,7 @@ export default function DashboardPage() {
     <Suspense
       fallback={
         <PageShell>
-          <p className="py-16 text-center text-sm font-medium text-zinc-600">読み込み中...</p>
+          <PageHeader title="ホーム" description="今日の予定、家族、お便りの入口です" />
         </PageShell>
       }
     >

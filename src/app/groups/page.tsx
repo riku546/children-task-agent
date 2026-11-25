@@ -4,12 +4,14 @@ import { Settings, Users, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { PageShell } from "@/components/PageShell";
+import { GroupListSkeleton } from "@/components/Skeleton";
 import { fetchJsonWithCache, getCachedData, invalidateCache } from "@/lib/client-cache";
 import type { GroupRecord } from "@/lib/types";
 
 export default function GroupsPage() {
   const cached = getCachedData<{ groups: GroupRecord[] }>("/api/groups");
   const [groups, setGroups] = useState<GroupRecord[]>(cached?.groups || []);
+  const [loading, setLoading] = useState(!cached);
   const [name, setName] = useState("わが家");
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [createError, setCreateError] = useState("");
@@ -20,14 +22,18 @@ export default function GroupsPage() {
       const c = getCachedData<{ groups: GroupRecord[] }>("/api/groups");
       if (c) {
         setGroups(c.groups || []);
+        setLoading(false);
         return;
       }
     }
+    setLoading(true);
     try {
       const data = await fetchJsonWithCache<{ groups: GroupRecord[] }>("/api/groups", { force });
       setGroups(data.groups || []);
     } catch (e) {
       console.error("Failed to load groups", e);
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -108,10 +114,14 @@ export default function GroupsPage() {
 
       <div className="mt-6">
         <div className="flex items-center justify-between pb-1">
-          <h2 className="text-sm font-bold text-zinc-900">参加中のグループ（{groups.length}）</h2>
+          <h2 className="text-sm font-bold text-zinc-900">
+            参加中のグループ{loading ? "" : `（${groups.length}）`}
+          </h2>
         </div>
         <div className="mt-3 divide-y divide-zinc-200 border-t border-zinc-200">
-          {groups.length === 0 ? (
+          {loading && groups.length === 0 ? (
+            <GroupListSkeleton />
+          ) : groups.length === 0 ? (
             <div className="p-8 text-center text-sm text-zinc-500">
               参加しているグループはありません
             </div>

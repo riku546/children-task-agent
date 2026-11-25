@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { type ReactNode, useEffect, useState } from "react";
+import { type ReactNode, useEffect } from "react";
 import { shouldEnforceOnboarding } from "@/lib/onboarding";
 
 let onboardingRequiredCache: boolean | null = null;
@@ -16,16 +16,16 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
   const router = useRouter();
   const from = searchParams.get("from");
   const enforce = shouldEnforceOnboarding(pathname, from);
-  const [ready, setReady] = useState(() => !enforce || onboardingRequiredCache === false);
 
   useEffect(() => {
-    if (!enforce || onboardingRequiredCache === false) {
-      setReady(true);
+    if (!enforce) return;
+    if (onboardingRequiredCache === true) {
+      router.replace("/onboarding");
       return;
     }
+    if (onboardingRequiredCache === false) return;
 
     let cancelled = false;
-    setReady(false);
     fetch("/api/me")
       .then(async (response) => {
         if (!response.ok) return null;
@@ -39,18 +39,13 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
           return;
         }
         onboardingRequiredCache = false;
-        setReady(true);
       })
-      .catch(() => {
-        if (!cancelled) setReady(true);
-      });
+      .catch(() => {});
 
     return () => {
       cancelled = true;
     };
   }, [enforce, pathname, router]);
 
-  if (!enforce || ready) return children;
-
-  return <p className="py-16 text-center text-sm text-zinc-400">読み込み中...</p>;
+  return children;
 }
